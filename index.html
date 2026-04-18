@@ -13,6 +13,7 @@
   .subtitle { font-size: 14px; color: #888; margin-bottom: 24px; }
   .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; align-items: center; }
   .filter-label { font-size: 13px; color: #888; }
+  .no-selection-msg { display: none; background: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
   .filter-btn { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #1a1a1a; cursor: pointer; font-size: 14px; font-family: inherit; transition: opacity 0.15s, background 0.15s; }
   .filter-btn.active { background: #f0f0ee; border-color: #bbb; }
   .filter-btn:not(.active) { opacity: 0.4; }
@@ -24,9 +25,9 @@
   .metric-card { background: #ebebea; border-radius: 8px; padding: 14px; text-align: center; position: relative; }
   .metric-card.has-crown { padding-top: 20px; }
   .metric-crown { font-size: 18px; position: absolute; top: -13px; left: 50%; transform: translateX(-50%); line-height: 1; }
-  .metric-player { font-size: 12px; font-weight: 500; margin-bottom: 6px; }
   .metric-record { font-size: 22px; font-weight: 500; letter-spacing: -0.5px; }
   .metric-ratio { font-size: 11px; color: #999; margin-top: 4px; }
+  .metric-player { font-size: 12px; font-weight: 500; margin-bottom: 6px; }
   .section-title { font-size: 14px; font-weight: 500; color: #777; margin: 24px 0 12px; }
   .chart-wrap { position: relative; width: 100%; height: 260px; background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; padding: 16px; }
   .pie-row { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; padding: 16px; }
@@ -59,17 +60,21 @@
 
   <div class="filters">
     <span class="filter-label">Filter players:</span>
-    <button class="filter-btn active" id="btn-theo" onclick="togglePlayer('theo')">
+    <button class="filter-btn active" id="btn-all" onclick="toggleAll()">
+      All <span class="check-icon">&#10003;</span>
+    </button>
+    <button class="filter-btn" id="btn-theo" onclick="togglePlayer('theo')">
       <span class="dot" style="background:#378ADD;"></span> Theo <span class="check-icon">✓</span>
     </button>
-    <button class="filter-btn active" id="btn-miles" onclick="togglePlayer('miles')">
+    <button class="filter-btn" id="btn-miles" onclick="togglePlayer('miles')">
       <span class="dot" style="background:#D85A30;"></span> Miles <span class="check-icon">✓</span>
     </button>
-    <button class="filter-btn active" id="btn-griffen" onclick="togglePlayer('griffen')">
+    <button class="filter-btn" id="btn-griffen" onclick="togglePlayer('griffen')">
       <span class="dot" style="background:#1D9E75;"></span> Griffen <span class="check-icon">✓</span>
     </button>
   </div>
 
+  <div class="no-selection-msg" id="no-selection-msg">&#9888; Select Players</div>
   <div class="metrics" id="metric-grid"></div>
 
   <p class="section-title">Points per game</p>
@@ -140,30 +145,42 @@ const ALL_GAMES = [
 const COLORS = { theo:'#378ADD', miles:'#D85A30', griffen:'#1D9E75' };
 const LIGHT  = { theo:'#B5D4F4', miles:'#F5C4B3', griffen:'#9FE1CB' };
 
-let active = { theo:true, miles:true, griffen:true };
+let allActive = true;
+let active = { theo:false, miles:false, griffen:false };
 let lineInst = null, cumulInst = null, pieInst = null;
 
+function toggleAll() {
+  allActive = true;
+  active = { theo:false, miles:false, griffen:false };
+  document.getElementById('btn-all').classList.add('active');
+  ['theo','miles','griffen'].forEach(p => document.getElementById('btn-'+p).classList.remove('active'));
+  document.getElementById('no-selection-msg').style.display = 'none';
+  render();
+}
+
 function togglePlayer(p) {
+  if (allActive) {
+    allActive = false;
+    document.getElementById('btn-all').classList.remove('active');
+  }
   active[p] = !active[p];
   document.getElementById('btn-'+p).classList.toggle('active', active[p]);
+  const anyActive = ['theo','miles','griffen'].some(p => active[p]);
+  document.getElementById('no-selection-msg').style.display = anyActive ? 'none' : 'block';
   render();
 }
 
 function getGames() {
+  if (allActive) return ALL_GAMES;
   const activePlayers = ['theo','miles','griffen'].filter(p => active[p]);
   if (activePlayers.length === 0) return [];
-
   if (activePlayers.length === 1) {
-    // Solo: show all games where that player has a valid score
     const p = activePlayers[0];
     return ALL_GAMES.filter(g => g[p] !== null);
   }
-
-  // 2 or 3 players: show games where exactly the selected set participated
-  // Theo and Miles always have scores; Griffen's presence is determined by non-null
   return ALL_GAMES.filter(g => {
     const griffenPlayed = g.griffen !== null;
-    const gamePlayers = ['theo', 'miles'].concat(griffenPlayed ? ['griffen'] : []);
+    const gamePlayers = ['theo','miles'].concat(griffenPlayed ? ['griffen'] : []);
     if (gamePlayers.length !== activePlayers.length) return false;
     return activePlayers.every(p => gamePlayers.includes(p));
   });
@@ -171,40 +188,35 @@ function getGames() {
 
 function render() {
   const games = getGames();
-  const activePlayers = ['theo','miles','griffen'].filter(p => active[p]);
+  const activePlayers = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p => active[p]);
   const solo = activePlayers.length === 1;
   renderMetrics(games, solo);
   renderLine(games);
   renderCumul(games);
   renderPie(games, solo);
-  renderTable(games);
+  renderTable(games, solo);
   ['theo','miles','griffen'].forEach(p => {
-    document.getElementById('th-'+p).style.display = active[p] ? '' : 'none';
+    document.getElementById('th-'+p).style.display = (allActive || active[p] || solo) ? '' : 'none';
   });
 }
 
 function renderMetrics(games, solo) {
   const grid = document.getElementById('metric-grid');
   grid.innerHTML = '';
-  const players = ['theo','miles','griffen'].filter(p => active[p]);
-
+  const players = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p => active[p]);
   const stats = players.map(p => {
-    const played = p === 'griffen'
-      ? games.filter(g => g.griffen !== null).length
-      : games.length;
+    const played = games.filter(g => g[p] !== null).length;
     const wins   = games.filter(g => g.winner === p).length;
     const losses = played - wins;
     const ratio  = played === 0 ? 0 : wins / played;
-    return { p, wins, losses, ratio, played };
+    const pts    = games.reduce((s,g) => s+(g[p]||0), 0);
+    const avg    = played ? (pts/played).toFixed(1) : '0.0';
+    return { p, wins, losses, ratio, played, avg };
   });
-
   const bestRatio = solo ? -1 : Math.max(...stats.filter(s => s.played > 0).map(s => s.ratio));
-
-  stats.forEach(({ p, wins, losses, ratio, played }) => {
+  stats.forEach(({ p, wins, losses, ratio, played, avg }) => {
     const isBest   = !solo && played > 0 && ratio === bestRatio;
     const ratioStr = played === 0 ? '-' : ratio.toFixed(2);
-    const pts = games.reduce((s,g) => s+(g[p]||0), 0);
-    const avg = played ? (pts / played).toFixed(1) : '0.0';
     const c = document.createElement('div');
     c.className = 'metric-card' + (isBest ? ' has-crown' : '');
     c.innerHTML = `
@@ -219,7 +231,7 @@ function renderMetrics(games, solo) {
 function renderLine(games) {
   const ctx = document.getElementById('lineChart');
   if (lineInst) lineInst.destroy();
-  const players = ['theo','miles','griffen'].filter(p=>active[p]);
+  const players = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p=>active[p]);
   lineInst = new Chart(ctx, {
     type: 'line',
     data: {
@@ -246,13 +258,11 @@ function renderLine(games) {
 function renderCumul(games) {
   const ctx = document.getElementById('cumulChart');
   if (cumulInst) cumulInst.destroy();
-  const players = ['theo','miles','griffen'].filter(p => active[p]);
+  const players = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p => active[p]);
   const datasets = players.map(p => {
     let running = 0;
     const data = games.map(g => {
-      const pts = g[p];
-      if (pts == null) return null;
-      running += pts;
+      if (g[p] != null) running += g[p];
       return running;
     });
     return {
@@ -260,8 +270,7 @@ function renderCumul(games) {
       data,
       borderColor: COLORS[p], backgroundColor: LIGHT[p],
       pointBackgroundColor: COLORS[p],
-      tension: 0.3, spanGaps: false, pointRadius: 3, borderWidth: 2,
-      fill: false
+      tension: 0.3, spanGaps: true, pointRadius: 3, borderWidth: 2, fill: false
     };
   });
   cumulInst = new Chart(ctx, {
@@ -279,7 +288,7 @@ function renderCumul(games) {
 }
 
 function renderPie(games, solo) {
-  const pieRow = document.getElementById('pie-row');
+  const pieRow   = document.getElementById('pie-row');
   const pieTitle = document.getElementById('pie-title');
   if (solo) {
     pieRow.style.display = 'none';
@@ -291,7 +300,7 @@ function renderPie(games, solo) {
   pieTitle.style.display = '';
   if (pieInst) { pieInst.destroy(); pieInst = null; }
   const ctx = document.getElementById('pieChart');
-  const players = ['theo','miles','griffen'].filter(p=>active[p]);
+  const players = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p=>active[p]);
   const wins = players.map(p=>games.filter(g=>g.winner===p).length);
   const total = wins.reduce((a,b)=>a+b,0);
   pieInst = new Chart(ctx, {
@@ -311,15 +320,21 @@ function renderPie(games, solo) {
   }).join('');
 }
 
-function renderTable(games) {
+function renderTable(games, solo) {
   const tbody = document.getElementById('game-table');
   tbody.innerHTML = '';
   games.forEach(g => {
     const wName = g.winner[0].toUpperCase()+g.winner.slice(1);
     let cells = `<td style="color:#888">${g.n}</td><td>${g.date}</td>`;
-    if (active.theo)    cells += `<td style="font-weight:${g.winner==='theo'?'500':'400'}">${g.theo}</td>`;
-    if (active.miles)   cells += `<td style="font-weight:${g.winner==='miles'?'500':'400'}">${g.miles}</td>`;
-    if (active.griffen) cells += `<td style="font-weight:${g.winner==='griffen'?'500':'400'}">${g.griffen!=null?g.griffen:'—'}</td>`;
+    if (solo) {
+      ['theo','miles','griffen'].forEach(p => {
+        cells += `<td style="font-weight:${g.winner===p?'500':'400'};color:${g[p]===null?'#bbb':'inherit'}">${g[p]!==null?g[p]:'-'}</td>`;
+      });
+    } else {
+      if (allActive || active.theo)    cells += `<td style="font-weight:${g.winner==='theo'?'500':'400'}">${g.theo}</td>`;
+      if (allActive || active.miles)   cells += `<td style="font-weight:${g.winner==='miles'?'500':'400'}">${g.miles}</td>`;
+      if (allActive || active.griffen) cells += `<td style="font-weight:${g.winner==='griffen'?'500':'400'}">${g.griffen!=null?g.griffen:'-'}</td>`;
+    }
     cells += `<td><span class="win-badge" style="background:${LIGHT[g.winner]};color:${COLORS[g.winner]};">${wName}</span></td>`;
     const row = document.createElement('tr');
     row.innerHTML = cells;
