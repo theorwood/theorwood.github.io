@@ -194,13 +194,13 @@ function renderMetrics(games) {
 
   stats.forEach(({ p, wins, losses, ratio, played }) => {
     const isBest   = played > 0 && ratio === bestRatio;
-    const ratioStr = losses === 0 ? (wins > 0 ? '∞' : '—') : (wins / losses).toFixed(2);
+    const ratioStr = losses === 0 ? (wins > 0 ? '∞' : '—') : (wins / played).toFixed(2);
     const c = document.createElement('div');
     c.className = 'metric-card' + (isBest ? ' has-crown' : '');
     c.innerHTML = `
       ${isBest ? '<div class="metric-crown">👑</div>' : ''}
       <div class="metric-player" style="color:${COLORS[p]}">${p[0].toUpperCase()+p.slice(1)}</div>
-      <div class="metric-record">${wins}W - ${played}L</div>
+      <div class="metric-record">${wins}W - ${losses}L</div>
       <div class="metric-ratio">${ratioStr} W/L ratio</div>`;
     grid.appendChild(c);
   });
