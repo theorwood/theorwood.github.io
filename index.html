@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -267,7 +266,7 @@ function renderCumul(games) {
   });
   cumulInst = new Chart(ctx, {
     type: 'line',
-    data: { labels: games.map(g => '#' + g.n), datasets },
+    data: { labels: games.map(g => g.date), datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
@@ -330,6 +329,5 @@ function renderTable(games) {
 
 render();
 </script>
-
 </body>
 </html>
