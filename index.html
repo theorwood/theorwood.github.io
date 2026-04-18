@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Basketball Stats</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: #888; margin-bottom: 24px; }
+  .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; align-items: center; }
+  .filter-label { font-size: 13px; color: #888; }
+  .filter-btn { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #1a1a1a; cursor: pointer; font-size: 14px; font-family: inherit; transition: opacity 0.15s, background 0.15s; }
+  .filter-btn.active { background: #f0f0ee; border-color: #bbb; }
+  .filter-btn:not(.active) { opacity: 0.4; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .check-icon { font-size: 13px; width: 14px; text-align: center; transition: opacity 0.15s; }
+  .filter-btn.active .check-icon { opacity: 1; }
+  .filter-btn:not(.active) .check-icon { opacity: 0; }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 28px; }
+  .metric-card { background: #ebebea; border-radius: 8px; padding: 14px; text-align: center; position: relative; }
+  .metric-card.has-crown { padding-top: 20px; }
+  .metric-crown { font-size: 18px; position: absolute; top: -13px; left: 50%; transform: translateX(-50%); line-height: 1; }
+  .metric-player { font-size: 12px; font-weight: 500; margin-bottom: 6px; }
+  .metric-record { font-size: 22px; font-weight: 500; letter-spacing: -0.5px; }
+  .metric-ratio { font-size: 11px; color: #999; margin-top: 4px; }
+  .section-title { font-size: 14px; font-weight: 500; color: #777; margin: 24px 0 12px; }
+  .chart-wrap { position: relative; width: 100%; height: 260px; background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; padding: 16px; }
+  .pie-row { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; padding: 16px; }
+  .pie-wrap { position: relative; width: 160px; height: 160px; flex-shrink: 0; }
+  .pie-legend { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; font-size: 13px; }
+  .table-card { background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; overflow: hidden; margin-top: 4px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 500; font-size: 12px; color: #888; padding: 10px 12px; border-bottom: 1px solid #eee; background: #fafafa; }
+  td { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; color: #1a1a1a; }
+  tr:last-child td { border-bottom: none; }
+  .win-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 6px; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #1a1a1a; color: #e8e8e6; }
+    .filter-btn { background: #2a2a2a; border-color: #444; color: #e8e8e6; }
+    .filter-btn.active { background: #333; border-color: #555; }
+    .metric-card { background: #252525; }
+    .metric-ratio { color: #666; }
+    .chart-wrap, .pie-row, .table-card { background: #242424; border-color: #333; }
+    th { background: #2a2a2a; color: #aaa; border-bottom-color: #333; }
+    td { border-bottom-color: #2e2e2e; color: #e8e8e6; }
+    .filter-label, .section-title, .subtitle { color: #aaa; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🏀 Basketball Stats</h1>
+  <p class="subtitle">Theo · Miles · Griffen — Inter Sport Sport League 2026</p>
+
+  <div class="filters">
+    <span class="filter-label">Filter players:</span>
+    <button class="filter-btn active" id="btn-theo" onclick="togglePlayer('theo')">
+      <span class="dot" style="background:#378ADD;"></span> Theo <span class="check-icon">✓</span>
+    </button>
+    <button class="filter-btn active" id="btn-miles" onclick="togglePlayer('miles')">
+      <span class="dot" style="background:#D85A30;"></span> Miles <span class="check-icon">✓</span>
+    </button>
+    <button class="filter-btn active" id="btn-griffen" onclick="togglePlayer('griffen')">
+      <span class="dot" style="background:#1D9E75;"></span> Griffen <span class="check-icon">✓</span>
+    </button>
+  </div>
+
+  <div class="metrics" id="metric-grid"></div>
+
+  <p class="section-title">Points per game</p>
+  <div class="chart-wrap">
+    <canvas id="lineChart" role="img" aria-label="Line chart of points scored per game"></canvas>
+  </div>
+
+  <p class="section-title">Total points over time</p>
+  <div class="chart-wrap">
+    <canvas id="cumulChart" role="img" aria-label="Cumulative points over time"></canvas>
+  </div>
+
+  <p class="section-title">Wins breakdown</p>
+  <div class="pie-row">
+    <div class="pie-wrap">
+      <canvas id="pieChart" role="img" aria-label="Doughnut chart of wins by player"></canvas>
+    </div>
+    <div class="pie-legend" id="pie-legend"></div>
+  </div>
+
+  <p class="section-title">Game Log</p>
+  <div class="table-card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Date</th>
+            <th id="th-theo">Theo</th>
+            <th id="th-miles">Miles</th>
+            <th id="th-griffen">Griffen</th>
+            <th>Winner</th>
+          </tr>
+        </thead>
+        <tbody id="game-table"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const ALL_GAMES = [
+  {n:1,  date:'02/03/26', theo:20, miles:14, griffen:null, winner:'theo'},
+  {n:2,  date:'02/03/26', theo:8,  miles:4,  griffen:null, winner:'theo'},
+  {n:3,  date:'02/03/26', theo:8,  miles:4,  griffen:null, winner:'theo'},
+  {n:4,  date:'02/04/26', theo:31, miles:16, griffen:null, winner:'theo'},
+  {n:5,  date:'02/04/26', theo:12, miles:6,  griffen:null, winner:'theo'},
+  {n:6,  date:'02/11/26', theo:51, miles:46, griffen:null, winner:'theo'},
+  {n:7,  date:'02/12/26', theo:51, miles:41, griffen:null, winner:'theo'},
+  {n:8,  date:'02/15/26', theo:51, miles:30, griffen:6,    winner:'theo'},
+  {n:9,  date:'02/21/26', theo:22, miles:20, griffen:8,    winner:'theo'},
+  {n:10, date:'02/22/26', theo:22, miles:20, griffen:9,    winner:'theo'},
+  {n:11, date:'03/10/26', theo:22, miles:6,  griffen:null, winner:'theo'},
+  {n:12, date:'03/11/26', theo:21, miles:16, griffen:null, winner:'theo'},
+  {n:13, date:'03/13/26', theo:22, miles:16, griffen:null, winner:'theo'},
+  {n:14, date:'03/13/26', theo:22, miles:20, griffen:null, winner:'theo'},
+  {n:15, date:'03/16/26', theo:18, miles:22, griffen:null, winner:'miles'},
+  {n:16, date:'03/18/26', theo:22, miles:16, griffen:null, winner:'theo'},
+  {n:17, date:'03/23/26', theo:23, miles:30, griffen:null, winner:'miles'},
+  {n:18, date:'03/23/26', theo:22, miles:18, griffen:null, winner:'theo'},
+  {n:19, date:'03/24/26', theo:21, miles:20, griffen:null, winner:'theo'},
+  {n:20, date:'03/25/26', theo:27, miles:31, griffen:null, winner:'miles'},
+  {n:21, date:'03/27/26', theo:30, miles:31, griffen:null, winner:'miles'},
+  {n:22, date:'03/29/26', theo:8,  miles:21, griffen:null, winner:'miles'},
+  {n:23, date:'04/06/26', theo:22, miles:20, griffen:null, winner:'theo'},
+  {n:24, date:'04/10/26', theo:21, miles:4,  griffen:null, winner:'theo'},
+];
+
+const COLORS = { theo:'#378ADD', miles:'#D85A30', griffen:'#1D9E75' };
+const LIGHT  = { theo:'#B5D4F4', miles:'#F5C4B3', griffen:'#9FE1CB' };
+
+let active = { theo:true, miles:true, griffen:true };
+let lineInst = null, cumulInst = null, pieInst = null;
+
+function togglePlayer(p) {
+  active[p] = !active[p];
+  document.getElementById('btn-'+p).classList.toggle('active', active[p]);
+  render();
+}
+
+function getGames() {
+  const activePlayers = ['theo','miles','griffen'].filter(p => active[p]);
+  if (activePlayers.length === 0) return [];
+  return ALL_GAMES.filter(g => {
+    if (active.griffen && g.griffen === null) return false;
+    return true;
+  });
+}
+
+function render() {
+  const games = getGames();
+  renderMetrics(games);
+  renderLine(games);
+  renderCumul(games);
+  renderPie(games);
+  renderTable(games);
+  ['theo','miles','griffen'].forEach(p => {
+    document.getElementById('th-'+p).style.display = active[p] ? '' : 'none';
+  });
+}
+
+function renderMetrics(games) {
+  const grid = document.getElementById('metric-grid');
+  grid.innerHTML = '';
+  const players = ['theo','miles','griffen'].filter(p => active[p]);
+
+  const stats = players.map(p => {
+    const played = p === 'griffen'
+      ? games.filter(g => g.griffen !== null).length
+      : games.length;
+    const wins   = games.filter(g => g.winner === p).length;
+    const losses = played - wins;
+    const ratio  = losses === 0 ? (wins > 0 ? Infinity : 0) : wins / losses;
+    return { p, wins, losses, ratio, played };
+  });
+
+  const bestRatio = Math.max(...stats.filter(s => s.played > 0).map(s => s.ratio));
+
+  stats.forEach(({ p, wins, losses, ratio, played }) => {
+    const isBest   = played > 0 && ratio === bestRatio;
+    const ratioStr = losses === 0 ? (wins > 0 ? '∞' : '—') : (wins / losses).toFixed(2);
+    const c = document.createElement('div');
+    c.className = 'metric-card' + (isBest ? ' has-crown' : '');
+    c.innerHTML = `
+      ${isBest ? '<div class="metric-crown">👑</div>' : ''}
+      <div class="metric-player" style="color:${COLORS[p]}">${p[0].toUpperCase()+p.slice(1)}</div>
+      <div class="metric-record">${wins}W [– ${losses}L</div>
+      <div class="metric-ratio">${ratioStr} W/L ratio</div>`;
+    grid.appendChild(c);
+  });
+}
+
+function renderLine(games) {
+  const ctx = document.getElementById('lineChart');
+  if (lineInst) lineInst.destroy();
+  const players = ['theo','miles','griffen'].filter(p => active[p]);
+  lineInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: games.map(g => '#' + g.n),
+      datasets: players.map(p => ({
+        label: p[0].toUpperCase()+p.slice(1),
+        data: games.map(g => g[p] != null ? g[p] : null),
+        borderColor: COLORS[p], backgroundColor: LIGHT[p],
+        pointBackgroundColor: COLORS[p],
+        tension: 0.3, spanGaps: false, pointRadius: 3, borderWidth: 2
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: {size:11}, autoSkip: true, maxTicksLimit: 12 }, grid: { color: 'rgba(128,128,128,0.1)' } },
+        y: { ticks: { font: {size:11} }, grid: { color: 'rgba(128,128,128,0.1)' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function renderCumul(games) {
+  const ctx = document.getElementById('cumulChart');
+  if (cumulInst) cumulInst.destroy();
+  const players = ['theo','miles','griffen'].filter(p => active[p]);
+
+  const datasets = players.map(p => {
+    let running = 0;
+    const data = games.map(g => {
+      const pts = g[p];
+      if (pts == null) return null;
+      running += pts;
+      return running;
+    });
+    return {
+      label: p[0].toUpperCase()+p.slice(1),
+      data,
+      borderColor: COLORS[p],
+      backgroundColor: LIGHT[p],
+      pointBackgroundColor: COLORS[p],
+      tension: 0.3, spanGaps: false, pointRadius: 3, borderWidth: 2,
+      fill: false
+    };
+  });
+
+  cumulInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: games.map(g => '#' + g.n),
+      datasets
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: {size:11}, autoSkip: true, maxTicksLimit: 12 }, grid: { color: 'rgba(128,128,128,0.1)' } },
+        y: { ticks: { font: {size:11} }, grid: { color: 'rgba(128,128,128,0.1)' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function renderPie(games) {
+  const ctx = document.getElementById('pieChart');
+  if (pieInst) pieInst.destroy();
+  const players = ['theo','miles','griffen'].filter(p => active[p]);
+  const wins  = players.map(p => games.filter(g => g.winner === p).length);
+  const total = wins.reduce((a,b) => a+b, 0);
+  pieInst = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: players.map(p => p[0].toUpperCase()+p.slice(1)),
+      datasets: [{ data: wins, backgroundColor: players.map(p => COLORS[p]), borderWidth: 2, borderColor: 'transparent' }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '55%' }
+  });
+  document.getElementById('pie-legend').innerHTML = players.map((p,i) => {
+    const pct = total ? Math.round(wins[i]/total*100) : 0;
+    return `<span style="display:flex;align-items:center;gap:6px;">
+      <span style="width:10px;height:10px;border-radius:2px;background:${COLORS[p]};flex-shrink:0;"></span>
+      <strong style="font-weight:500;">${p[0].toUpperCase()+p.slice(1)}</strong>: ${wins[i]} wins (${pct}%)
+    </span>`;
+  }).join('');
+}
+
+function renderTable(games) {
+  const tbody = document.getElementById('game-table');
+  tbody.innerHTML = '';
+  games.forEach(g => {
+    const wName = g.winner[0].toUpperCase()+g.winner.slice(1);
+    let cells = `<td style="color:#888">${g.n}</td><td>${g.date}</td>`;
+    if (active.theo)    cells += `<td style="font-weight:${g.winner==='theo'?'500':'400'}">${g.theo}</td>`;
+    if (active.miles)   cells += `<td style="font-weight:${g.winner==='miles'?'500':'400'}">${g.miles}</td>`;
+    if (active.griffen) cells += `<td style="font-weight:${g.winner==='griffen'?'500':'400'}">${g.griffen!=null?g.griffen:'—'}</td>`;
+    cells += `<td><span class="win-badge" style="background:${LIGHT[g.winner]};color:${COLORS[g.winner]};">${wName}</span></td>`;
+    const row = document.createElement('tr');
+    row.innerHTML = cells;
+    tbody.appendChild(row);
+  });
+}
+
+render();
+</script>
+</body>
+</html>
