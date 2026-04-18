@@ -201,7 +201,7 @@ function renderMetrics(games) {
       ${isBest ? '<div class="metric-crown">👑</div>' : ''}
       <div class="metric-player" style="color:${COLORS[p]}">${p[0].toUpperCase()+p.slice(1)}</div>
       <div class="metric-record">${wins}W - ${losses}L</div>
-      <div class="metric-ratio">${ratioStr} W/L ratio</div>`;
+      <div class="metric-ratio">${ratioStr} W/L</div>`;
     grid.appendChild(c);
   });
 }
