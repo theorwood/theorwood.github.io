@@ -147,7 +147,7 @@ async function loadData() {
   const errorEl   = document.getElementById('error-msg');
   try {
     loadingEl.style.display = 'block';
-    const res = await fetch(https://docs.google.com/spreadsheets/d/e/2PACX-1vSiML1olNaCM-l1RtwhHUxsycvyaedsX48WIYNOITeJ9cqdOzyggVVnP5f0sHpfgXbdC-LUM80De3UO/pubhtml);
+    const res = await fetch(SHEET_CSV_URL);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
     ALL_GAMES = parseCSV(text);
