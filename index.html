@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -77,14 +78,19 @@
   <div class="no-selection-msg" id="no-selection-msg">&#9888; Select Players</div>
   <div class="metrics" id="metric-grid"></div>
 
-  <p class="section-title">Points Per Game</p>
-  <div class="chart-wrap">
-    <canvas id="lineChart" role="img" aria-label="Line chart of points scored per game"></canvas>
+  <p class="section-title" id="wins-time-title">Total Wins Over Time</p>
+  <div class="chart-wrap" id="wins-time-wrap">
+    <canvas id="winsChart" role="img" aria-label="Cumulative wins over time"></canvas>
   </div>
 
   <p class="section-title">Total Points Over Time</p>
   <div class="chart-wrap">
     <canvas id="cumulChart" role="img" aria-label="Cumulative points over time"></canvas>
+  </div>
+
+  <p class="section-title">Points Per Game</p>
+  <div class="chart-wrap">
+    <canvas id="lineChart" role="img" aria-label="Line chart of points scored per game"></canvas>
   </div>
 
   <p class="section-title" id="pie-title">Wins Breakdown</p>
@@ -147,7 +153,7 @@ const LIGHT  = { theo:'#B5D4F4', miles:'#F5C4B3', griffen:'#9FE1CB' };
 
 let allActive = true;
 let active = { theo:false, miles:false, griffen:false };
-let lineInst = null, cumulInst = null, pieInst = null;
+let lineInst = null, cumulInst = null, winsInst = null, pieInst = null;
 
 function toggleAll() {
   allActive = true;
@@ -191,8 +197,9 @@ function render() {
   const activePlayers = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p => active[p]);
   const solo = activePlayers.length === 1;
   renderMetrics(games, solo);
-  renderLine(games);
+  renderWins(games, solo);
   renderCumul(games);
+  renderLine(games);
   renderPie(games, solo);
   renderTable(games, solo);
   ['theo','miles','griffen'].forEach(p => {
@@ -228,6 +235,63 @@ function renderMetrics(games, solo) {
   });
 }
 
+function buildDateGrouped(games, players, valueFn) {
+  // Group games by date, accumulating values per player
+  const dateMap = {};
+  const dateOrder = [];
+  games.forEach(g => {
+    if (!dateMap[g.date]) {
+      dateMap[g.date] = {};
+      players.forEach(p => dateMap[g.date][p] = 0);
+      dateOrder.push(g.date);
+    }
+    players.forEach(p => {
+      dateMap[g.date][p] += valueFn(g, p);
+    });
+  });
+  return { dateOrder, dateMap };
+}
+
+function renderWins(games, solo) {
+  const winsWrap  = document.getElementById('wins-time-wrap');
+  const winsTitle = document.getElementById('wins-time-title');
+  if (solo) {
+    winsWrap.style.display = 'none';
+    winsTitle.style.display = 'none';
+    if (winsInst) { winsInst.destroy(); winsInst = null; }
+    return;
+  }
+  winsWrap.style.display = '';
+  winsTitle.style.display = '';
+  if (winsInst) { winsInst.destroy(); winsInst = null; }
+  const ctx = document.getElementById('winsChart');
+  const players = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p => active[p]);
+  const { dateOrder, dateMap } = buildDateGrouped(games, players, (g, p) => (g[p] !== null && g.winner === p) ? 1 : 0);
+  const datasets = players.map(p => {
+    let running = 0;
+    const data = dateOrder.map(d => { running += dateMap[d][p]; return running; });
+    return {
+      label: p[0].toUpperCase()+p.slice(1),
+      data,
+      borderColor: COLORS[p], backgroundColor: LIGHT[p],
+      pointBackgroundColor: COLORS[p],
+      tension: 0.3, spanGaps: true, pointRadius: 3, borderWidth: 2, fill: false
+    };
+  });
+  winsInst = new Chart(ctx, {
+    type: 'line',
+    data: { labels: dateOrder, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: {size:11}, autoSkip: true, maxTicksLimit: 12 }, grid: { color: 'rgba(128,128,128,0.1)' } },
+        y: { ticks: { font: {size:11}, stepSize: 1 }, grid: { color: 'rgba(128,128,128,0.1)' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
 function renderLine(games) {
   const ctx = document.getElementById('lineChart');
   if (lineInst) lineInst.destroy();
@@ -256,15 +320,13 @@ function renderLine(games) {
 }
 
 function renderCumul(games) {
+  if (cumulInst) { cumulInst.destroy(); cumulInst = null; }
   const ctx = document.getElementById('cumulChart');
-  if (cumulInst) cumulInst.destroy();
   const players = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p => active[p]);
+  const { dateOrder, dateMap } = buildDateGrouped(games, players, (g, p) => g[p] != null ? g[p] : 0);
   const datasets = players.map(p => {
     let running = 0;
-    const data = games.map(g => {
-      if (g[p] != null) running += g[p];
-      return running;
-    });
+    const data = dateOrder.map(d => { running += dateMap[d][p]; return running; });
     return {
       label: p[0].toUpperCase()+p.slice(1),
       data,
@@ -275,7 +337,7 @@ function renderCumul(games) {
   });
   cumulInst = new Chart(ctx, {
     type: 'line',
-    data: { labels: games.map(g => g.date), datasets },
+    data: { labels: dateOrder, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
@@ -344,5 +406,6 @@ function renderTable(games, solo) {
 
 render();
 </script>
+
 </body>
 </html>
