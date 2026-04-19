@@ -14,6 +14,11 @@
   .subtitle { font-size: 14px; color: #888; margin-bottom: 24px; }
   .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; align-items: center; }
   .filter-label { font-size: 13px; color: #888; }
+  .chart-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .chart-nav-btn { background: #ebebea; border: none; border-radius: 6px; padding: 4px 12px; font-size: 16px; cursor: pointer; color: #555; transition: background 0.15s; }
+  .chart-nav-btn:hover { background: #ddd; }
+  .chart-nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .chart-nav-label { font-size: 12px; color: #999; }
   .no-selection-msg { display: none; background: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
   .filter-btn { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #1a1a1a; cursor: pointer; font-size: 14px; font-family: inherit; transition: opacity 0.15s, background 0.15s; }
   .filter-btn.active { background: #f0f0ee; border-color: #bbb; }
@@ -78,8 +83,8 @@
   <div class="no-selection-msg" id="no-selection-msg">&#9888; Select Players</div>
   <div class="metrics" id="metric-grid"></div>
 
-  <p class="section-title" id="wins-time-title">Total Wins Over Time</p>
-  <div class="chart-wrap" id="wins-time-wrap">
+  <p class="section-title">Total Wins Over Time</p>
+  <div class="chart-wrap">
     <canvas id="winsChart" role="img" aria-label="Cumulative wins over time"></canvas>
   </div>
 
@@ -91,6 +96,11 @@
   <p class="section-title">Points Per Game</p>
   <div class="chart-wrap">
     <canvas id="lineChart" role="img" aria-label="Line chart of points scored per game"></canvas>
+  </div>
+  <div class="chart-nav">
+    <button class="chart-nav-btn" id="ppg-prev" onclick="shiftPage(-1)" disabled>&#8592;</button>
+    <span class="chart-nav-label" id="ppg-label"></span>
+    <button class="chart-nav-btn" id="ppg-next" onclick="shiftPage(1)">&#8594;</button>
   </div>
 
   <p class="section-title" id="pie-title">Wins Breakdown</p>
@@ -154,8 +164,11 @@ const LIGHT  = { theo:'#B5D4F4', miles:'#F5C4B3', griffen:'#9FE1CB' };
 let allActive = true;
 let active = { theo:false, miles:false, griffen:false };
 let lineInst = null, cumulInst = null, winsInst = null, pieInst = null;
+let ppgOffset = Infinity; // will clamp to last page on first render
+const PPG_PAGE = 10;
 
 function toggleAll() {
+  ppgOffset = Infinity;
   allActive = true;
   active = { theo:false, miles:false, griffen:false };
   document.getElementById('btn-all').classList.add('active');
@@ -169,6 +182,7 @@ function togglePlayer(p) {
     allActive = false;
     document.getElementById('btn-all').classList.remove('active');
   }
+  ppgOffset = Infinity;
   active[p] = !active[p];
   document.getElementById('btn-'+p).classList.toggle('active', active[p]);
   const anyActive = ['theo','miles','griffen'].some(p => active[p]);
@@ -236,7 +250,6 @@ function renderMetrics(games, solo) {
 }
 
 function buildDateGrouped(games, players, valueFn) {
-  // Group games by date, accumulating values per player
   const dateMap = {};
   const dateOrder = [];
   games.forEach(g => {
@@ -245,28 +258,20 @@ function buildDateGrouped(games, players, valueFn) {
       players.forEach(p => dateMap[g.date][p] = 0);
       dateOrder.push(g.date);
     }
-    players.forEach(p => {
-      dateMap[g.date][p] += valueFn(g, p);
-    });
+    players.forEach(p => { dateMap[g.date][p] += valueFn(g, p); });
   });
   return { dateOrder, dateMap };
 }
 
 function renderWins(games, solo) {
-  const winsWrap  = document.getElementById('wins-time-wrap');
-  const winsTitle = document.getElementById('wins-time-title');
-  if (solo) {
-    winsWrap.style.display = 'none';
-    winsTitle.style.display = 'none';
-    if (winsInst) { winsInst.destroy(); winsInst = null; }
-    return;
-  }
-  winsWrap.style.display = '';
-  winsTitle.style.display = '';
   if (winsInst) { winsInst.destroy(); winsInst = null; }
   const ctx = document.getElementById('winsChart');
+  // In solo mode use ALL_GAMES for that player so all wins are visible
   const players = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p => active[p]);
-  const { dateOrder, dateMap } = buildDateGrouped(games, players, (g, p) => (g[p] !== null && g.winner === p) ? 1 : 0);
+  const sourceGames = solo
+    ? ALL_GAMES.filter(g => g[players[0]] !== null)
+    : games;
+  const { dateOrder, dateMap } = buildDateGrouped(sourceGames, players, (g, p) => (g[p] !== null && g.winner === p) ? 1 : 0);
   const datasets = players.map(p => {
     let running = 0;
     const data = dateOrder.map(d => { running += dateMap[d][p]; return running; });
@@ -292,17 +297,33 @@ function renderWins(games, solo) {
   });
 }
 
+function shiftPage(dir) {
+  const games = getGames();
+  const maxOffset = Math.max(0, games.length - PPG_PAGE);
+  ppgOffset = Math.min(maxOffset, Math.max(0, ppgOffset + dir * PPG_PAGE));
+  renderLine(games);
+}
+
 function renderLine(games) {
   const ctx = document.getElementById('lineChart');
   if (lineInst) lineInst.destroy();
   const players = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p=>active[p]);
+  // Clamp offset in case game count changed due to filter switch
+  const maxOffset = Math.max(0, games.length - PPG_PAGE);
+  ppgOffset = Math.min(ppgOffset, maxOffset);
+  const page = games.slice(ppgOffset, ppgOffset + PPG_PAGE);
+  // Update nav controls
+  document.getElementById('ppg-prev').disabled = ppgOffset === 0;
+  document.getElementById('ppg-next').disabled = ppgOffset >= maxOffset;
+  const end = Math.min(ppgOffset + PPG_PAGE, games.length);
+  document.getElementById('ppg-label').textContent = games.length <= PPG_PAGE ? '' : `Games ${ppgOffset + 1}-${end} of ${games.length}`;
   lineInst = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: games.map(g=>'#'+g.n),
+      labels: page.map(g=>'#'+g.n),
       datasets: players.map(p=>({
         label: p[0].toUpperCase()+p.slice(1),
-        data: games.map(g=>g[p]!=null?g[p]:null),
+        data: page.map(g=>g[p]!=null?g[p]:null),
         borderColor: COLORS[p], backgroundColor: LIGHT[p],
         pointBackgroundColor: COLORS[p],
         tension:0.3, spanGaps:false, pointRadius:3, borderWidth:2
