@@ -318,7 +318,7 @@ function renderWins(games, solo) {
 function shiftPage(dir) {
   const games = getGames();
   const maxOffset = Math.max(0, games.length - PPG_PAGE);
-  ppgOffset = Math.min(maxOffset, Math.max(0, ppgOffset + dir * PPG_PAGE));
+  ppgOffset = Math.min(maxOffset, Math.max(0, ppgOffset + dir * 2));
   renderLine(games);
 }
 
