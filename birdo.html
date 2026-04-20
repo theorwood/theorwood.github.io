@@ -262,9 +262,9 @@ function renderMetrics(games, solo) {
     const avg    = played ? (pts/played).toFixed(1) : '0.0';
     return { p, wins, losses, ratio, played, avg };
   });
-  const bestRatio = solo ? -1 : Math.max(...stats.filter(s => s.played > 0).map(s => s.ratio));
+  const mostWins = solo ? -1 : Math.max(...stats.map(s => s.wins));
   stats.forEach(({ p, wins, losses, ratio, played, avg }) => {
-    const isBest   = !solo && played > 0 && ratio === bestRatio;
+    const isBest   = !solo && wins > 0 && wins === mostWins;
     const ratioStr = played === 0 ? '-' : ratio.toFixed(2);
     const c = document.createElement('div');
     c.className = 'metric-card' + (isBest ? ' has-crown' : '');
