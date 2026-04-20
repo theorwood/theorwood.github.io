@@ -64,7 +64,7 @@
 <body>
 <div class="container">
   <h1>🎲 Mario Party Stats</h1>
-  <p class="subtitle">Theo · Miles · Griffen — Inter Sport Sport League 2026</p>
+  <p class="subtitle">Theo · Miles · Griffen · Birdo — Inter Sport Sport League 2026</p>
 
   <div class="filters">
     <span class="filter-label">Filter players:</span>
@@ -79,6 +79,9 @@
     </button>
     <button class="filter-btn" id="btn-griffen" onclick="togglePlayer('griffen')">
       <span class="dot" style="background:#1D9E75;"></span> Griffen <span class="check-icon">✓</span>
+    </button>
+    <button class="filter-btn" id="btn-birdo" onclick="togglePlayer('birdo')">
+      <span class="dot" style="background:#E91E8C;"></span> Birdo <span class="check-icon">✓</span>
     </button>
   </div>
 
@@ -125,6 +128,7 @@
             <th id="th-theo">Theo</th>
             <th id="th-miles">Miles</th>
             <th id="th-griffen">Griffen</th>
+            <th id="th-birdo">Birdo</th>
             <th>Winner</th>
           </tr>
         </thead>
@@ -136,6 +140,7 @@
 
 <script>
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR-U-3trfgcf0EpbD9hK4LVzo2Vtz00rbXmHnn-mHyrWJb_R85GICLi9h8umatkvrWvI8WYSwqSuxlO/pub?gid=2090319849&single=true&output=csv';
+const ALL_PLAYERS = ['theo','miles','griffen','birdo'];
 let ALL_GAMES = [];
 
 function parseCSV(text) {
@@ -153,6 +158,7 @@ function parseCSV(text) {
       theo:    get('theo')    !== '' ? parseInt(get('theo'))    : null,
       miles:   get('miles')   !== '' ? parseInt(get('miles'))   : null,
       griffen: get('griffen') !== '' ? parseInt(get('griffen')) : null,
+      birdo:   get('birdo')   !== '' ? parseInt(get('birdo'))   : null,
       winner:  get('winner')
     };
   }).filter(g => !isNaN(g.n));
@@ -176,21 +182,22 @@ async function loadData() {
     console.error('Failed to load sheet:', e);
   }
 }
-const COLORS = { theo:'#378ADD', miles:'#D85A30', griffen:'#1D9E75' };
-const LIGHT  = { theo:'#B5D4F4', miles:'#F5C4B3', griffen:'#9FE1CB' };
+
+const COLORS = { theo:'#378ADD', miles:'#D85A30', griffen:'#1D9E75', birdo:'#E91E8C' };
+const LIGHT  = { theo:'#B5D4F4', miles:'#F5C4B3', griffen:'#9FE1CB', birdo:'#F9B8DC' };
 
 let allActive = true;
-let active = { theo:false, miles:false, griffen:false };
+let active = { theo:false, miles:false, griffen:false, birdo:false };
 let lineInst = null, cumulInst = null, winsInst = null, pieInst = null;
-let ppgOffset = Infinity; // will clamp to last page on first render
+let ppgOffset = Infinity;
 const PPG_PAGE = 10;
 
 function toggleAll() {
   ppgOffset = Infinity;
   allActive = true;
-  active = { theo:false, miles:false, griffen:false };
+  active = { theo:false, miles:false, griffen:false, birdo:false };
   document.getElementById('btn-all').classList.add('active');
-  ['theo','miles','griffen'].forEach(p => document.getElementById('btn-'+p).classList.remove('active'));
+  ALL_PLAYERS.forEach(p => document.getElementById('btn-'+p).classList.remove('active'));
   document.getElementById('no-selection-msg').style.display = 'none';
   render();
 }
@@ -203,22 +210,25 @@ function togglePlayer(p) {
   ppgOffset = Infinity;
   active[p] = !active[p];
   document.getElementById('btn-'+p).classList.toggle('active', active[p]);
-  const anyActive = ['theo','miles','griffen'].some(p => active[p]);
+  const anyActive = ALL_PLAYERS.some(p => active[p]);
   document.getElementById('no-selection-msg').style.display = anyActive ? 'none' : 'block';
   render();
 }
 
+function getActivePlayers() {
+  return allActive ? ALL_PLAYERS : ALL_PLAYERS.filter(p => active[p]);
+}
+
 function getGames() {
   if (allActive) return ALL_GAMES;
-  const activePlayers = ['theo','miles','griffen'].filter(p => active[p]);
+  const activePlayers = ALL_PLAYERS.filter(p => active[p]);
   if (activePlayers.length === 0) return [];
   if (activePlayers.length === 1) {
     const p = activePlayers[0];
     return ALL_GAMES.filter(g => g[p] !== null);
   }
   return ALL_GAMES.filter(g => {
-    const griffenPlayed = g.griffen !== null;
-    const gamePlayers = ['theo','miles'].concat(griffenPlayed ? ['griffen'] : []);
+    const gamePlayers = ALL_PLAYERS.filter(p => g[p] !== null);
     if (gamePlayers.length !== activePlayers.length) return false;
     return activePlayers.every(p => gamePlayers.includes(p));
   });
@@ -226,7 +236,7 @@ function getGames() {
 
 function render() {
   const games = getGames();
-  const activePlayers = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p => active[p]);
+  const activePlayers = getActivePlayers();
   const solo = activePlayers.length === 1;
   renderMetrics(games, solo);
   renderWins(games, solo);
@@ -234,7 +244,7 @@ function render() {
   renderLine(games);
   renderPie(games, solo);
   renderTable(games, solo);
-  ['theo','miles','griffen'].forEach(p => {
+  ALL_PLAYERS.forEach(p => {
     document.getElementById('th-'+p).style.display = (allActive || active[p] || solo) ? '' : 'none';
   });
 }
@@ -242,7 +252,7 @@ function render() {
 function renderMetrics(games, solo) {
   const grid = document.getElementById('metric-grid');
   grid.innerHTML = '';
-  const players = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p => active[p]);
+  const players = getActivePlayers();
   const stats = players.map(p => {
     const played = games.filter(g => g[p] !== null).length;
     const wins   = games.filter(g => g.winner === p).length;
@@ -252,9 +262,9 @@ function renderMetrics(games, solo) {
     const avg    = played ? (pts/played).toFixed(1) : '0.0';
     return { p, wins, losses, ratio, played, avg };
   });
-  const bestRatio = solo ? -1 : Math.max(...stats.filter(s => s.played > 0).map(s => s.ratio));
+  const mostWins = solo ? -1 : Math.max(...stats.map(s => s.wins));
   stats.forEach(({ p, wins, losses, ratio, played, avg }) => {
-    const isBest   = !solo && played > 0 && ratio === bestRatio;
+    const isBest   = !solo && wins > 0 && wins === mostWins;
     const ratioStr = played === 0 ? '-' : ratio.toFixed(2);
     const c = document.createElement('div');
     c.className = 'metric-card' + (isBest ? ' has-crown' : '');
@@ -284,11 +294,8 @@ function buildDateGrouped(games, players, valueFn) {
 function renderWins(games, solo) {
   if (winsInst) { winsInst.destroy(); winsInst = null; }
   const ctx = document.getElementById('winsChart');
-  // In solo mode use ALL_GAMES for that player so all wins are visible
-  const players = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p => active[p]);
-  const sourceGames = solo
-    ? ALL_GAMES.filter(g => g[players[0]] !== null)
-    : games;
+  const players = getActivePlayers();
+  const sourceGames = solo ? ALL_GAMES.filter(g => g[players[0]] !== null) : games;
   const { dateOrder, dateMap } = buildDateGrouped(sourceGames, players, (g, p) => (g[p] !== null && g.winner === p) ? 1 : 0);
   const datasets = players.map(p => {
     let running = 0;
@@ -325,12 +332,10 @@ function shiftPage(dir) {
 function renderLine(games) {
   const ctx = document.getElementById('lineChart');
   if (lineInst) lineInst.destroy();
-  const players = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p=>active[p]);
-  // Clamp offset in case game count changed due to filter switch
+  const players = getActivePlayers();
   const maxOffset = Math.max(0, games.length - PPG_PAGE);
   ppgOffset = Math.min(ppgOffset, maxOffset);
   const page = games.slice(ppgOffset, ppgOffset + PPG_PAGE);
-  // Update nav controls
   document.getElementById('ppg-prev').disabled = ppgOffset === 0;
   document.getElementById('ppg-next').disabled = ppgOffset >= maxOffset;
   const end = Math.min(ppgOffset + PPG_PAGE, games.length);
@@ -361,7 +366,7 @@ function renderLine(games) {
 function renderCumul(games) {
   if (cumulInst) { cumulInst.destroy(); cumulInst = null; }
   const ctx = document.getElementById('cumulChart');
-  const players = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p => active[p]);
+  const players = getActivePlayers();
   const { dateOrder, dateMap } = buildDateGrouped(games, players, (g, p) => g[p] != null ? g[p] : 0);
   const datasets = players.map(p => {
     let running = 0;
@@ -401,7 +406,7 @@ function renderPie(games, solo) {
   pieTitle.style.display = '';
   if (pieInst) { pieInst.destroy(); pieInst = null; }
   const ctx = document.getElementById('pieChart');
-  const players = allActive ? ['theo','miles','griffen'] : ['theo','miles','griffen'].filter(p=>active[p]);
+  const players = getActivePlayers();
   const wins = players.map(p=>games.filter(g=>g.winner===p).length);
   const total = wins.reduce((a,b)=>a+b,0);
   pieInst = new Chart(ctx, {
@@ -425,18 +430,20 @@ function renderTable(games, solo) {
   const tbody = document.getElementById('game-table');
   tbody.innerHTML = '';
   games.forEach(g => {
-    const wName = g.winner[0].toUpperCase()+g.winner.slice(1);
+    const wName = g.winner ? g.winner[0].toUpperCase()+g.winner.slice(1) : '-';
     let cells = `<td style="color:#888">${g.n}</td><td>${g.date}</td>`;
     if (solo) {
-      ['theo','miles','griffen'].forEach(p => {
+      ALL_PLAYERS.forEach(p => {
         cells += `<td style="font-weight:${g.winner===p?'500':'400'};color:${g[p]===null?'#bbb':'inherit'}">${g[p]!==null?g[p]:'-'}</td>`;
       });
     } else {
-      if (allActive || active.theo)    cells += `<td style="font-weight:${g.winner==='theo'?'500':'400'}">${g.theo}</td>`;
-      if (allActive || active.miles)   cells += `<td style="font-weight:${g.winner==='miles'?'500':'400'}">${g.miles}</td>`;
-      if (allActive || active.griffen) cells += `<td style="font-weight:${g.winner==='griffen'?'500':'400'}">${g.griffen!=null?g.griffen:'-'}</td>`;
+      ALL_PLAYERS.forEach(p => {
+        if (allActive || active[p]) {
+          cells += `<td style="font-weight:${g.winner===p?'500':'400'};color:${g[p]==null?'#bbb':'inherit'}">${g[p]!=null?g[p]:'-'}</td>`;
+        }
+      });
     }
-    cells += `<td><span class="win-badge" style="background:${LIGHT[g.winner]};color:${COLORS[g.winner]};">${wName}</span></td>`;
+    cells += `<td><span class="win-badge" style="background:${LIGHT[g.winner]||'#eee'};color:${COLORS[g.winner]||'#888'};">${wName}</span></td>`;
     const row = document.createElement('tr');
     row.innerHTML = cells;
     tbody.appendChild(row);
