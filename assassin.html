@@ -224,6 +224,36 @@
   .kill-card.revealed { animation: fadeIn 0.25s ease both; }
 
 
+  /* Nav dropdown */
+  .nav-menu { position: relative; }
+  .nav-toggle {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 14px;
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted); cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .nav-toggle:hover { border-color: #3a3a48; color: var(--text); }
+  .nav-toggle-arrow { font-size: 10px; transition: transform 0.2s; }
+  .nav-toggle-arrow.open { transform: rotate(180deg); }
+  .nav-dropdown {
+    display: none; position: absolute; right: 0; top: calc(100% + 6px);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; min-width: 150px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 100;
+  }
+  .nav-dropdown.open { display: block; }
+  .nav-dropdown a {
+    display: block; padding: 10px 16px;
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted); text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+  }
+  .nav-dropdown a:hover { background: var(--surface2); color: var(--text); }
+  .nav-dropdown a + a { border-top: 1px solid var(--border); }
 </style>
 </head>
 <body>
@@ -232,6 +262,15 @@
     <div class="title-block">
       <h1><span>ASSASSIN</span></h1>
       <div class="subtitle">🔫 STATS FOR LIFE</div>
+    </div>
+    <div class="nav-menu">
+      <button class="nav-toggle" onclick="toggleNav(this)">
+        Menu <span class="nav-toggle-arrow">▾</span>
+      </button>
+      <div class="nav-dropdown" id="nav-dropdown">
+        <a href="index.html">🏠 Home</a>
+        <a href="https://docs.google.com/spreadsheets/d/1GN9FQlcL7AHvyefIPwTQKhdGa4m13GwSCazg_RJi0Xc/edit?usp=sharing" target="_blank" rel="noopener">✏️ Edit Data</a>
+      </div>
     </div>
   </div>
 
@@ -711,6 +750,17 @@ function render() {
   buildMetrics();
   buildCharts();
   buildLog();
+}
+
+function toggleNav(btn) {
+  const dropdown = document.getElementById('nav-dropdown');
+  const arrow = btn.querySelector('.nav-toggle-arrow');
+  const isOpen = dropdown.classList.toggle('open');
+  arrow.classList.toggle('open', isOpen);
+  if (isOpen) {
+    const close = (e) => { if (!btn.closest('.nav-menu').contains(e.target)) { dropdown.classList.remove('open'); arrow.classList.remove('open'); document.removeEventListener('click', close); } };
+    setTimeout(() => document.addEventListener('click', close), 0);
+  }
 }
 
 loadData();
