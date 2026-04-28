@@ -524,9 +524,10 @@ function buildCharts() {
 function drawKillSVG(container, assassin, target, distance, label, label2) {
   // distance 1-5 → visual spread
   const W = container.clientWidth || 300;
-  const topH = (label ? 18 : 0) + (label2 ? 16 : 0);
-  const botPad = label2 ? 16 : 0;
-  const H = 56 + topH + botPad;
+  const topPad = 8 + (label ? 18 : 0) + (label2 ? 16 : 0);
+  const botPad = 8;
+  const graphicH = 56;
+  const H = topPad + graphicH + botPad;
   const minSep = 30;
   const maxSep = W - 60;
   const sep = minSep + ((distance - 1) / 4) * (maxSep - minSep);
@@ -534,7 +535,7 @@ function drawKillSVG(container, assassin, target, distance, label, label2) {
   const cx = W / 2;
   const shooterX = cx - sep / 2;
   const targetX = cx + sep / 2;
-  const groundY = H - 8;
+  const groundY = topPad + graphicH - 8;
 
   const aColor = COLORS[assassin] || '#fff';
   const tColor = COLORS[target] || '#888';
@@ -565,6 +566,7 @@ function drawKillSVG(container, assassin, target, distance, label, label2) {
     svg.appendChild(labelEl);
   }
 
+  // Second label line (b column)
   if (label2) {
     const label2El = document.createElementNS(svgNS, 'text');
     label2El.setAttribute('x', W / 2);
