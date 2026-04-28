@@ -174,21 +174,23 @@
       height: 60px;
     }
     .kill-score-block {
-      grid-column: 2;
-      align-items: flex-start;
+      grid-column: 1 / -1;
+      align-items: center;
       flex-direction: row;
       flex-wrap: wrap;
+      justify-content: center;
       gap: 4px 10px;
       min-width: 0;
+      text-align: center;
     }
     .kill-num {
       grid-row: 1;
       padding-top: 4px;
     }
     .kill-date { order: 1; }
-    .kill-names { order: 2; text-align: left; }
+    .kill-names { order: 2; text-align: center; }
     .kill-pts { order: 3; }
-    .kill-pts-label { order: 4; align-self: flex-end; margin-bottom: 2px; }
+    .kill-pts-label { order: 4; align-self: center; }
   }
 
   /* Loading / error */
