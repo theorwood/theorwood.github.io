@@ -174,31 +174,7 @@
 
   .no-data { text-align: center; color: var(--muted); padding: 30px; font-size: 13px; }
 
-  /* Scoreboard totals bar */
-  .totals-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 28px;
-    align-items: center;
-  }
-  .totals-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-right: 4px; }
-  .totals-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--surface2);
-    border-radius: 8px;
-    padding: 5px 12px;
-    font-size: 13px;
-    font-weight: 500;
-  }
-  .totals-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .totals-pts { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; margin-left: 4px; }
+
 </style>
 </head>
 <body>
@@ -212,12 +188,6 @@
 
   <div class="loading-msg" id="loading-msg">⏳ Loading assassination data...</div>
   <div class="error-msg" id="error-msg"></div>
-
-  <!-- Totals bar -->
-  <div class="totals-bar" id="totals-bar" style="display:none;">
-    <span class="totals-label">Total pts</span>
-    <span id="totals-items"></span>
-  </div>
 
   <!-- Metric cards -->
   <div class="metrics" id="metric-grid"></div>
@@ -284,12 +254,14 @@ function parseCSV(text) {
     const dist = parseFloat(get(vals, 'distance')) || 5;
     const distClamped = Math.max(1, Math.min(10, dist));
 
-    // Points: base point for assassin + bonus
-    const bonus = parseFloat(get(vals, 'bonus points') || get(vals, 'bonus_points') || get(vals, 'bonus') || '0') || 0;
-    // Each assassination = 1 point + bonus
-    const total_pts = 1 + bonus;
+    // Try multiple possible column names for bonus points
+    const bonusRaw = get(vals, 'bonus points') || get(vals, 'bonus_points') || get(vals, 'bonuspoints') || get(vals, 'bonus') || get(vals, 'points') || '0';
+    const bonus = parseFloat(bonusRaw);
+    const bonusSafe = isNaN(bonus) ? 0 : bonus;
+    // 1 point for the assassination itself + any bonus points
+    const total_pts = 1 + bonusSafe;
 
-    return { n, date, assassin, target, distance: distClamped, bonus, total_pts };
+    return { n, date, assassin, target, distance: distClamped, bonus: bonusSafe, total_pts };
   }).filter(Boolean);
 }
 
@@ -351,18 +323,18 @@ function buildMetrics() {
     return { p, kills, pts, deaths };
   });
 
-  const maxKills = Math.max(...stats.map(s => s.kills));
+  const maxPts = Math.max(...stats.map(s => s.pts));
 
   stats.forEach(({ p, kills, pts, deaths }) => {
-    const isBest = kills > 0 && kills === maxKills;
+    const isBest = pts > 0 && pts === maxPts;
     const c = document.createElement('div');
     c.className = 'metric-card' + (isBest ? ' crown' : '');
     c.innerHTML = `
       ${isBest ? '<div class="metric-crown">🎯</div>' : ''}
       <div class="metric-player" style="color:${COLORS[p]}">${cap(p)}</div>
-      <div class="metric-num" style="color:${COLORS[p]}">${kills}</div>
-      <div class="metric-label">Assassinations</div>
-      <div class="metric-sub">${pts} pts · ${deaths} deaths</div>
+      <div class="metric-num" style="color:${COLORS[p]}">${pts}</div>
+      <div class="metric-label">Total Points</div>
+      <div class="metric-sub">💧 ${kills} kills · ☠️ ${deaths} deaths</div>
     `;
     grid.appendChild(c);
   });
@@ -394,14 +366,14 @@ function buildCharts() {
     });
   });
 
-  const commonOpts = {
+  const commonOpts = (isPoints) => ({
     responsive: true, maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: {
       x: { ticks: { color: '#6a6a78', font: { size: 10, family: 'DM Mono' }, autoSkip: true, maxTicksLimit: 10 }, grid: { color: 'rgba(255,255,255,0.05)' } },
-      y: { ticks: { color: '#6a6a78', font: { size: 10 }, stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+      y: { ticks: { color: '#6a6a78', font: { size: 10 }, ...(isPoints ? {} : { stepSize: 1 }) }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
     }
-  };
+  });
 
   const mkDatasets = (dataMap) => PLAYERS.map(p => ({
     label: cap(p), data: dataMap[p],
@@ -414,14 +386,14 @@ function buildCharts() {
   killsChartInst = new Chart(document.getElementById('killsChart'), {
     type: 'line',
     data: { labels: dates, datasets: mkDatasets(killsData) },
-    options: { ...commonOpts }
+    options: { ...commonOpts(false) }
   });
 
   if (ptsChartInst) ptsChartInst.destroy();
   ptsChartInst = new Chart(document.getElementById('ptsChart'), {
     type: 'line',
     data: { labels: dates, datasets: mkDatasets(ptsData) },
-    options: { ...commonOpts }
+    options: { ...commonOpts(true) }
   });
 }
 
@@ -573,7 +545,6 @@ function buildLog() {
 
 function render() {
   buildLegend();
-  buildTotals();
   buildMetrics();
   buildCharts();
   buildLog();
