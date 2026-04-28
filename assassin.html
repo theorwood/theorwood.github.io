@@ -288,7 +288,7 @@ function parseCSV(text) {
     const date     = get(vals, 'date');
     const target   = get(vals, 'target').toLowerCase().trim();
     const dist     = parseFloat(get(vals, 'distance')) || 5;
-    const distClamped = Math.max(1, Math.min(10, dist));
+    const distClamped = Math.max(1, Math.min(5, dist));
 
     // Bonus points column
     const bonusRaw = get(vals, 'bonus points');
@@ -451,12 +451,12 @@ function buildCharts() {
 }
 
 function drawKillSVG(container, assassin, target, distance) {
-  // distance 1-10 → visual spread
+  // distance 1-5 → visual spread
   const W = container.clientWidth || 300;
   const H = 56;
   const minSep = 30;
   const maxSep = W - 60;
-  const sep = minSep + ((distance - 1) / 9) * (maxSep - minSep);
+  const sep = minSep + ((distance - 1) / 4) * (maxSep - minSep);
 
   const cx = W / 2;
   const shooterX = cx - sep / 2;
@@ -467,7 +467,7 @@ function drawKillSVG(container, assassin, target, distance) {
   const tColor = COLORS[target] || '#888';
 
   // Arc control point: higher arc for longer distance
-  const arcH = 10 + (distance / 10) * 28;
+  const arcH = 10 + (distance / 5) * 28;
   const cpY = groundY - arcH;
   const midX = (shooterX + targetX) / 2;
 
