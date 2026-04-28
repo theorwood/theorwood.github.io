@@ -524,10 +524,21 @@ function buildCharts() {
 function drawKillSVG(container, assassin, target, distance, label, label2) {
   // distance 1-5 → visual spread
   const W = container.clientWidth || 300;
+  const isMobile = window.innerWidth <= 520;
+  const labelCount = (label ? 1 : 0) + (label2 ? 1 : 0);
   const topPad = 8 + (label ? 18 : 0) + (label2 ? 16 : 0);
-  const botPad = 8;
-  const graphicH = 56;
-  const H = topPad + graphicH + botPad;
+  // On mobile the stats text sits below the SVG — add extra botPad to center
+  // the graphic in the space between the last label and where the stats begin.
+  // Approximate stats block height: ~48px (date + pts + names).
+  const botPad = isMobile ? 24 : 8;
+  // Graphic visual footprint: stick figure is ~26px tall above ground, arc peaks above that.
+  // Center the ground line in the middle of the available zone.
+  const availH = 56; // fixed zone for the graphic itself
+  const H = topPad + availH + botPad;
+  // groundY: center of available zone, biased toward bottom (ground = feet level)
+  const zoneTop = topPad;
+  const zoneBot = topPad + availH;
+  const groundY = zoneBot - 8;
   const minSep = 30;
   const maxSep = W - 60;
   const sep = minSep + ((distance - 1) / 4) * (maxSep - minSep);
@@ -535,7 +546,6 @@ function drawKillSVG(container, assassin, target, distance, label, label2) {
   const cx = W / 2;
   const shooterX = cx - sep / 2;
   const targetX = cx + sep / 2;
-  const groundY = topPad + graphicH - 8;
 
   const aColor = COLORS[assassin] || '#fff';
   const tColor = COLORS[target] || '#888';
