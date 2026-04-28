@@ -242,13 +242,17 @@ function parseCSV(text) {
   const clean = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
   const lines = clean.split('\n').filter(l => l.trim());
 
-  const headers = splitCSVLine(lines[0]).map(h => h.toLowerCase().replace(/"/g, '').replace(/\r/g, '').trim());
+  const headers = splitCSVLine(lines[0]).map(h => h.toLowerCase().replace(/"/g, '').trim());
   console.log('[Assassin] CSV headers:', headers);
 
   const get = (vals, col) => {
     const i = headers.indexOf(col);
-    return (i >= 0 && vals[i] !== undefined) ? vals[i].replace(/\r/g, '').trim() : '';
+    return (i >= 0 && vals[i] !== undefined) ? vals[i].trim() : '';
   };
+
+  // The sheet has columns: n, date, target, distance, bonus points, theo, miles, griffen, ...
+  // Whichever player column has a value on a row is the assassin.
+  // That value is their base kill point. bonus points is added on top.
 
   const rows = lines.slice(1).map(line => {
     const vals = splitCSVLine(line);
@@ -256,48 +260,47 @@ function parseCSV(text) {
     const n = parseInt(get(vals, 'n'));
     if (isNaN(n)) return null;
 
-    const assassin = get(vals, 'assassin').toLowerCase().trim();
-    const target   = get(vals, 'target').toLowerCase().trim();
     const date     = get(vals, 'date');
+    const target   = get(vals, 'target').toLowerCase().trim();
     const dist     = parseFloat(get(vals, 'distance')) || 5;
     const distClamped = Math.max(1, Math.min(10, dist));
 
-    // Try every plausible bonus column name
-    let bonusSafe = 0;
-    for (const col of ['bonus points', 'bonus_points', 'bonuspoints', 'bonus', 'bonus pts']) {
-      const raw = get(vals, col);
+    // Bonus points column
+    const bonusRaw = get(vals, 'bonus points');
+    const bonus = bonusRaw !== '' && !isNaN(parseFloat(bonusRaw)) ? parseFloat(bonusRaw) : 0;
+
+    // Find which player column has a value — that player is the assassin
+    // Their column value is their kill point (e.g. 1), bonus is added on top
+    let assassin = '';
+    let killPt = 0;
+    for (const p of PLAYERS) {
+      const raw = get(vals, p);
       if (raw !== '') {
-        const parsed = parseFloat(raw);
-        if (!isNaN(parsed)) { bonusSafe = parsed; break; }
+        const v = parseFloat(raw);
+        if (!isNaN(v)) {
+          assassin = p;
+          killPt = v;
+          break;
+        }
       }
     }
 
-    const total_pts = 1 + bonusSafe;
-    return { n, date, assassin, target, distance: distClamped, bonus: bonusSafe, total_pts };
+    if (!assassin) return null; // no player had a value, skip row
+
+    const total_pts = killPt + bonus;
+
+    return { n, date, assassin, target, distance: distClamped, bonus, killPt, total_pts };
   }).filter(Boolean);
 
-  console.log('[Assassin] Parsed', rows.length, 'rows. Sample:', rows.slice(0,2));
-  const unknown = [...new Set(rows.map(r => r.assassin))].filter(a => !PLAYERS.includes(a));
-  // Surface debug info visibly on page
+  console.log('[Assassin] Parsed', rows.length, 'rows. Sample:', rows.slice(0,3));
+
+  // Debug panel — hide it now that logic is correct, but keep for transparency
   const panel = document.getElementById('debug-panel');
   if (panel) {
-    const lines = [];
-    lines.push('Headers found: ' + headers.join(', '));
-    lines.push('Rows parsed: ' + rows.length);
-    if (rows.length > 0) {
-      lines.push('Sample row: ' + JSON.stringify(rows[0]));
-    }
-    if (unknown.length) {
-      lines.push('⚠️ Name(s) not matching PLAYERS list — won\'t appear in metrics/charts: ' + unknown.join(', '));
-      lines.push('   PLAYERS list expects: ' + PLAYERS.join(', '));
-      panel.style.display = 'block';
-    }
-    panel.textContent = lines.join('\n');
-    if (unknown.length === 0 && rows.length > 0) panel.style.display = 'none';
-    else panel.style.display = 'block';
+    panel.textContent = 'Headers: ' + headers.join(', ') + '\nRows: ' + rows.length + (rows[0] ? '\nSample: ' + JSON.stringify(rows[0]) : '');
+    panel.style.display = 'none'; // hidden unless you need to debug
   }
 
-  if (unknown.length) console.warn('[Assassin] Names not in PLAYERS list (won\'t show in charts/metrics):', unknown);
   return rows;
 }
 
