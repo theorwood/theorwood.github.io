@@ -488,10 +488,11 @@ function drawKillSVG(container, assassin, target, distance) {
 
   // Water gun emoji (shooter)
   const gunText = document.createElementNS(svgNS, 'text');
-  gunText.setAttribute('x', shooterX);
+  gunText.setAttribute('x', -shooterX);
   gunText.setAttribute('y', groundY);
   gunText.setAttribute('text-anchor', 'middle');
   gunText.setAttribute('font-size', '18');
+  gunText.setAttribute('transform', 'scale(-1,1)');
   gunText.textContent = '🔫';
   svg.appendChild(gunText);
 
