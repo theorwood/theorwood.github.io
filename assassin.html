@@ -344,7 +344,8 @@ function parseCSV(text) {
 
     const total_pts = killPt + bonus;
 
-    return { n, date, assassin, target, distance: distClamped, bonus, killPt, total_pts };
+    const t = get(vals, 't');
+    return { n, date, assassin, target, distance: distClamped, bonus, killPt, total_pts, t };
   }).filter(Boolean);
 
   console.log('[Assassin] Parsed', rows.length, 'rows. Sample:', rows.slice(0,3));
@@ -480,10 +481,11 @@ function buildCharts() {
   });
 }
 
-function drawKillSVG(container, assassin, target, distance) {
+function drawKillSVG(container, assassin, target, distance, label) {
   // distance 1-5 → visual spread
   const W = container.clientWidth || 300;
-  const H = 56;
+  const labelH = label ? 18 : 0;
+  const H = 56 + labelH;
   const minSep = 30;
   const maxSep = W - 60;
   const sep = minSep + ((distance - 1) / 4) * (maxSep - minSep);
@@ -506,6 +508,21 @@ function drawKillSVG(container, assassin, target, distance) {
   svg.setAttribute('width', W);
   svg.setAttribute('height', H);
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  // Label text above the graphic
+  if (label) {
+    const svgNS2 = 'http://www.w3.org/2000/svg';
+    const labelEl = document.createElementNS(svgNS2, 'text');
+    labelEl.setAttribute('x', W / 2);
+    labelEl.setAttribute('y', 13);
+    labelEl.setAttribute('text-anchor', 'middle');
+    labelEl.setAttribute('font-size', '11');
+    labelEl.setAttribute('font-family', 'DM Sans, sans-serif');
+    labelEl.setAttribute('font-style', 'italic');
+    labelEl.setAttribute('fill', 'rgba(150,150,165,0.9)');
+    labelEl.textContent = label;
+    svg.appendChild(labelEl);
+  }
 
   // Arc path (water stream)
   const path = document.createElementNS(svgNS, 'path');
@@ -636,7 +653,7 @@ function buildLog() {
   requestAnimationFrame(() => {
     sorted.slice(0, PREVIEW).forEach(k => {
       const container = document.getElementById('kv-' + k.n);
-      if (container) drawKillSVG(container, k.assassin, k.target, k.distance);
+      if (container) drawKillSVG(container, k.assassin, k.target, k.distance, k.t);
     });
   });
 }
@@ -671,7 +688,7 @@ function toggleLog() {
       sorted.forEach(k => {
         const container = document.getElementById('kv-' + k.n);
         if (container && container.children.length === 0) {
-          drawKillSVG(container, k.assassin, k.target, k.distance);
+          drawKillSVG(container, k.assassin, k.target, k.distance, k.t);
         }
       });
     });
