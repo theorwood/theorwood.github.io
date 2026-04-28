@@ -107,34 +107,16 @@ background: var(–surface);
 border: 1px solid var(–border);
 border-radius: 10px;
 padding: 12px 16px;
-display: flex;
-flex-direction: column;
-gap: 0;
+display: grid;
+grid-template-columns: 38px 1fr auto;
+align-items: center;
+gap: 12px;
 transition: border-color 0.15s;
 animation: fadeIn 0.3s ease both;
 }
 .kill-card:hover { border-color: #3a3a48; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-
-.kill-label {
-font-size: 11px;
-color: var(–muted);
-font-style: italic;
-text-align: center;
-padding: 0 4px 4px;
-letter-spacing: 0.2px;
-line-height: 1.3;
-width: 100%;
-}
-
-.kill-card-inner {
-display: grid;
-grid-template-columns: 38px 1fr auto;
-align-items: center;
-gap: 12px;
-width: 100%;
-}
 
 .kill-num {
 font-family: ‘DM Mono’, monospace;
@@ -183,7 +165,7 @@ white-space: nowrap;
 }
 
 @media (max-width: 520px) {
-.kill-card-inner {
+.kill-card {
 grid-template-columns: 28px 1fr;
 grid-template-rows: auto auto;
 gap: 6px 8px;
@@ -202,25 +184,6 @@ gap: 4px 10px;
 min-width: 0;
 text-align: center;
 }
-.kill-label {
-font-size: 11px;
-color: var(–muted);
-font-style: italic;
-text-align: center;
-padding: 0 4px 4px;
-letter-spacing: 0.2px;
-line-height: 1.3;
-width: 100%;
-}
-
-.kill-card-inner {
-display: grid;
-grid-template-columns: 38px 1fr auto;
-align-items: center;
-gap: 12px;
-width: 100%;
-}
-
 .kill-num {
 grid-row: 1;
 padding-top: 4px;
@@ -384,7 +347,6 @@ function parseCSV(text) {
     const total_pts = killPt + bonus;
 
     const t = get(vals, 't');
-
     return { n, date, assassin, target, distance: distClamped, bonus, killPt, total_pts, t };
   }).filter(Boolean);
 
@@ -650,19 +612,16 @@ function buildLog() {
     const tColor = COLORS[k.target] || '#888';
 
     card.innerHTML = `
-      ${k.t ? `<div class="kill-label">${k.t}</div>` : ''}
-      <div class="kill-card-inner">
-        <div class="kill-num">#${k.n}</div>
-        <div class="kill-visual" id="kv-${k.n}"></div>
-        <div class="kill-score-block">
-          <div class="kill-date">${k.date}</div>
-          <div class="kill-pts" style="color:${aColor}">${k.total_pts}</div>
-          <div class="kill-pts-label">pts${k.bonus > 0 ? ` (+${k.bonus})` : ''}</div>
-          <div class="kill-names">
-            <span style="color:${aColor}">${cap(k.assassin)}</span>
-            <span style="color:var(--muted)"> → </span>
-            <span style="color:${tColor}">${cap(k.target)}</span>
-          </div>
+      <div class="kill-num">#${k.n}</div>
+      ${k.t ? `<div style="grid-column:2;font-size:11px;color:var(--muted);font-style:italic;margin-bottom:-6px;">${k.t}</div>` : ''}<div class="kill-visual" id="kv-${k.n}"></div>
+      <div class="kill-score-block">
+        <div class="kill-date">${k.date}</div>
+        <div class="kill-pts" style="color:${aColor}">${k.total_pts}</div>
+        <div class="kill-pts-label">pts${k.bonus > 0 ? ` (+${k.bonus})` : ''}</div>
+        <div class="kill-names">
+          <span style="color:${aColor}">${cap(k.assassin)}</span>
+          <span style="color:var(--muted)"> → </span>
+          <span style="color:${tColor}">${cap(k.target)}</span>
         </div>
       </div>
     `;
