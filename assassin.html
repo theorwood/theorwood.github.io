@@ -163,6 +163,34 @@
     white-space: nowrap;
   }
 
+  @media (max-width: 520px) {
+    .kill-card {
+      grid-template-columns: 28px 1fr;
+      grid-template-rows: auto auto;
+      gap: 6px 8px;
+    }
+    .kill-visual {
+      grid-column: 1 / -1;
+      height: 60px;
+    }
+    .kill-score-block {
+      grid-column: 2;
+      align-items: flex-start;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      min-width: 0;
+    }
+    .kill-num {
+      grid-row: 1;
+      padding-top: 4px;
+    }
+    .kill-date { order: 1; }
+    .kill-names { order: 2; text-align: left; }
+    .kill-pts { order: 3; }
+    .kill-pts-label { order: 4; align-self: flex-end; margin-bottom: 2px; }
+  }
+
   /* Loading / error */
   .loading-msg { text-align: center; color: var(--muted); font-size: 13px; padding: 40px 0; display: none; font-family: 'DM Mono', monospace; letter-spacing: 1px; }
   .error-msg { background: rgba(255,80,80,0.1); border: 1px solid rgba(255,80,80,0.3); color: #ff8080; border-radius: 8px; padding: 10px 16px; font-size: 13px; margin-bottom: 16px; display: none; }
