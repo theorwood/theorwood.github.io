@@ -1,347 +1,176 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🏀⭐️</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Stats</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-```
-:root {
-  --orange: #E85D00;
-  --yellow: #FFD600;
-  --blue:   #1050C8;
-  --dark:   #080808;
-}
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: #1f1f1f;
+      --text: #e8e8e8;
+      --muted: #444;
+      --accent: #c8ff00;
+    }
 
-html, body {
-  height: 100%;
-  overflow: hidden;
-}
+    html, body {
+      height: 100%;
+    }
 
-body {
-  font-family: 'Rajdhani', sans-serif;
-  background: var(--dark);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
 
-/* ═══════════════════════════════════════
-   SCROLLING COLLAGE BACKGROUND
-═══════════════════════════════════════ */
-.collage-bg {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 6px 0;
-}
+    /* Subtle grain overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 100;
+    }
 
-.collage-row {
-  display: flex;
-  gap: 10px;
-  flex-shrink: 0;
-  will-change: transform;
-}
+    /* Horizontal rule lines across bg */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent 39px,
+        rgba(255,255,255,0.02) 39px,
+        rgba(255,255,255,0.02) 40px
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
 
-.collage-row:nth-child(1) { animation: scroll-left  28s linear infinite; }
-.collage-row:nth-child(2) { animation: scroll-right 34s linear infinite; }
-.collage-row:nth-child(3) { animation: scroll-left  22s linear infinite; }
-.collage-row:nth-child(4) { animation: scroll-right 30s linear infinite; }
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      width: min(520px, 90vw);
+    }
 
-@keyframes scroll-left  { from { transform: translateX(0); }    to { transform: translateX(-50%); } }
-@keyframes scroll-right { from { transform: translateX(-50%); } to { transform: translateX(0); }    }
+    .label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.4em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 48px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards;
+      animation-delay: 0.1s;
+    }
 
-.card {
-  flex-shrink: 0;
-  border-radius: 10px;
-  overflow: hidden;
-  position: relative;
-  height: 160px;
-  background: #111;
-}
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 28px 40px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(36px, 8vw, 64px);
+      letter-spacing: 0.05em;
+      text-decoration: none;
+      text-align: center;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+      transition: color 0.25s ease, border-color 0.25s ease;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards;
+    }
 
-.card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  filter: brightness(0.55) saturate(0.8);
-}
+    .btn:nth-child(2) { animation-delay: 0.25s; border-bottom: none; }
+    .btn:nth-child(3) { animation-delay: 0.38s; border-bottom: none; }
+    .btn:nth-child(4) { animation-delay: 0.51s; }
 
-.card .fallback {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3.5rem;
-  opacity: 0.4;
-}
+    /* Fill sweep on hover */
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.35s cubic-bezier(0.76, 0, 0.24, 1);
+      z-index: 0;
+    }
 
-/* Dark vignette overlay */
-.collage-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  background: radial-gradient(ellipse at center,
-    rgba(0,0,0,0.25) 0%,
-    rgba(0,0,0,0.65) 100%);
-  pointer-events: none;
-}
+    .btn:hover::before {
+      transform: scaleX(1);
+    }
 
-/* ═══════════════════════════════════════
-   FOREGROUND CONTENT
-═══════════════════════════════════════ */
-.stage {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 48px;
-}
+    .btn:hover {
+      color: #0a0a0a;
+      border-color: var(--accent);
+    }
 
-.title {
-  text-align: center;
-  line-height: 1;
-}
+    .btn-inner {
+      position: relative;
+      z-index: 1;
+      display: block;
+      text-align: center;
+    }
 
-.title h1 {
-  font-family: 'Bebas Neue', cursive;
-  font-size: clamp(3.5rem, 10vw, 7.5rem);
-  letter-spacing: 0.04em;
-  background: linear-gradient(135deg, var(--orange) 0%, var(--yellow) 50%, #fff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 0 40px rgba(255,150,0,0.6));
-}
+    .btn.assassin::before  { background: var(--accent); }
+    .btn.mario::before     { background: #ff5fa0; }
+    .btn.bball::before     { background: #ff6a1a; }
 
-.title p {
-  font-size: clamp(0.75rem, 2vw, 1rem);
-  letter-spacing: 0.35em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.4);
-  margin-top: 4px;
-}
+    .btn.mario:hover  { border-color: #ff5fa0; }
+    .btn.bball:hover  { border-color: #ff6a1a; }
 
-.buttons {
-  display: flex;
-  gap: clamp(24px, 5vw, 64px);
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.btn {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: clamp(190px, 26vw, 300px);
-  height: clamp(120px, 16vw, 180px);
-  border-radius: 18px;
-  text-decoration: none;
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.22s ease, box-shadow 0.22s ease;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.14);
-}
-
-.btn:hover  { transform: translateY(-8px) scale(1.04); }
-.btn:active { transform: translateY(-3px) scale(1.01); }
-
-.btn-label {
-  font-family: 'Bebas Neue', cursive;
-  font-size: clamp(2rem, 5vw, 3.4rem);
-  letter-spacing: 0.06em;
-  color: #fff;
-  position: relative;
-  z-index: 2;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
-}
-
-.btn-sub {
-  font-size: clamp(0.6rem, 1.4vw, 0.78rem);
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.65);
-  position: relative;
-  z-index: 2;
-  margin-top: 2px;
-}
-
-.btn-emoji {
-  position: absolute;
-  font-size: 7rem;
-  opacity: 0.13;
-  bottom: -14px;
-  right: -8px;
-  z-index: 1;
-  transition: transform 0.4s ease, opacity 0.3s;
-  line-height: 1;
-}
-
-.btn:hover .btn-emoji { transform: scale(1.2) rotate(12deg); opacity: 0.22; }
-
-.btn-bball {
-  background: linear-gradient(135deg,
-    rgba(180,55,0,0.88) 0%,
-    rgba(235,100,0,0.88) 60%,
-    rgba(255,140,30,0.78) 100%);
-  box-shadow: 0 8px 32px rgba(220,80,0,0.55);
-}
-.btn-bball:hover {
-  box-shadow: 0 18px 56px rgba(255,110,0,0.7), 0 0 80px rgba(255,110,0,0.25);
-}
-
-.btn-mario {
-  background: linear-gradient(135deg,
-    rgba(10,60,170,0.90) 0%,
-    rgba(20,110,210,0.88) 55%,
-    rgba(220,170,0,0.78) 100%);
-  box-shadow: 0 8px 32px rgba(20,80,200,0.55);
-}
-.btn-mario:hover {
-  box-shadow: 0 18px 56px rgba(20,100,230,0.65), 0 0 80px rgba(255,210,0,0.2);
-}
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.title      { animation: fadeUp 0.7s ease 0.1s both; }
-.btn-bball  { animation: fadeUp 0.6s ease 0.4s both; }
-.btn-mario  { animation: fadeUp 0.6s ease 0.55s both; }
-```
-
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
   </style>
 </head>
 <body>
+  <div class="container">
+    <p class="label">Select Game</p>
 
-  <div class="collage-bg" id="collageBg"></div>
-  <div class="collage-overlay"></div>
+    <a href="assassin.html" class="btn assassin">
+      <span class="btn-inner">Assassin</span>
+    </a>
 
-  <div class="stage">
-    <div class="title">
-      <h1>Hoops &amp; Party</h1>
-      <p>Choose your game</p>
-    </div>
-    <div class="buttons">
-      <a href="bball.html" class="btn btn-bball">
-        <span class="btn-label">Basketball</span>
-        <span class="btn-sub">Enter the Court</span>
-        <span class="btn-emoji">🏀</span>
-      </a>
-      <a href="mp.html" class="btn btn-mario">
-        <span class="btn-label">Mario Party</span>
-        <span class="btn-sub">Start the Party</span>
-        <span class="btn-emoji">⭐</span>
-      </a>
-    </div>
+    <a href="mp.html" class="btn mario">
+      <span class="btn-inner">Mario Party</span>
+    </a>
+
+    <a href="bball.html" class="btn bball">
+      <span class="btn-inner">Basketball</span>
+    </a>
   </div>
-
-  <script>
-    const NBA = [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Michael_Jordan_in_lay_up.jpg/300px-Michael_Jordan_in_lay_up.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Kobe_Bryant_2002_%28cropped%29.jpg/300px-Kobe_Bryant_2002_%28cropped%29.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/LeBron_James_%2851959977144%29_%28cropped%29.jpg/300px-LeBron_James_%2851959977144%29_%28cropped%29.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Stephen_Curry_2019_%28cropped%29.jpg/300px-Stephen_Curry_2019_%28cropped%29.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Shaquille_O%27Neal_2009.jpg/300px-Shaquille_O%27Neal_2009.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Earvin_Johnson_1989.jpg/300px-Earvin_Johnson_1989.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Larry_Bird_1981_%28cropped%29.jpg/300px-Larry_Bird_1981_%28cropped%29.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Euroleague_2008-2009_-_Partizan_vs_Real_Madrid_01.jpg/400px-Euroleague_2008-2009_-_Partizan_vs_Real_Madrid_01.jpg",
-    ];
-
-    const MARIO = [
-      "https://upload.wikimedia.org/wikipedia/en/6/6e/SuperMarioParty.jpg",
-      "https://upload.wikimedia.org/wikipedia/en/8/87/MarioPartySuperstars.jpg",
-      "https://upload.wikimedia.org/wikipedia/en/5/57/Mario_Party_10_box_art.jpg",
-      "https://upload.wikimedia.org/wikipedia/en/2/28/Mario_Party_DS_boxart.jpg",
-      "https://upload.wikimedia.org/wikipedia/en/8/8d/Mario_Party_9_Boxart.png",
-      "https://upload.wikimedia.org/wikipedia/en/thumb/b/b9/Super_Mario_Party_Jamboree_cover_art.jpg/300px-Super_Mario_Party_Jamboree_cover_art.jpg",
-      "https://upload.wikimedia.org/wikipedia/en/c/ca/Mario_Party_logo.png",
-      "https://upload.wikimedia.org/wikipedia/en/thumb/9/98/Super_Mario_Odyssey.jpg/300px-Super_Mario_Odyssey.jpg",
-    ];
-
-    const NBA_POOL  = NBA.map(src  => ({ src, emoji: '🏀', color: 'linear-gradient(135deg,#7a2800,#c85000)' }));
-    const MARIO_POOL = MARIO.map(src => ({ src, emoji: '⭐', color: 'linear-gradient(135deg,#0a2e8a,#1a6ed8)' }));
-
-    // Build a strictly-alternating sequence of length n starting with startType
-    function makeAlternating(n, startWithNBA) {
-      const seq = [];
-      let nbaIdx = 0, marioIdx = 0;
-      for (let i = 0; i < n; i++) {
-        const useNBA = startWithNBA ? (i % 2 === 0) : (i % 2 === 1);
-        if (useNBA) {
-          seq.push(NBA_POOL[nbaIdx % NBA_POOL.length]);
-          nbaIdx++;
-        } else {
-          seq.push(MARIO_POOL[marioIdx % MARIO_POOL.length]);
-          marioIdx++;
-        }
-      }
-      return seq;
-    }
-
-    // Card widths vary per row for organic collage feel
-    const widths = [
-      [220,280,200,260,240,210,270,230,250,215],
-      [260,210,290,230,200,260,220,280,240,200],
-      [200,270,230,250,210,290,240,210,270,220],
-      [280,220,250,200,270,230,260,220,240,280],
-    ];
-
-    const bg = document.getElementById('collageBg');
-
-    for (let r = 0; r < 4; r++) {
-      const row = document.createElement('div');
-      row.className = 'collage-row';
-
-      // Alternate 🏀/⭐ strictly; odd rows start with Mario so adjacent rows feel varied
-      const base  = makeAlternating(16, r % 2 === 0);
-      // Duplicate for seamless loop
-      const items = [...base, ...base];
-
-      items.forEach((item, idx) => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        const w = widths[r][idx % widths[r].length];
-        card.style.width = w + 'px';
-
-        const img = document.createElement('img');
-        img.alt = '';
-        img.src = item.src;
-
-        img.onerror = () => {
-          img.remove();
-          card.style.background = item.color;
-          const fb = document.createElement('div');
-          fb.className = 'fallback';
-          fb.textContent = item.emoji;
-          card.appendChild(fb);
-        };
-
-        card.appendChild(img);
-        row.appendChild(card);
-      });
-
-      bg.appendChild(row);
-    }
-  </script>
-
 </body>
 </html>
