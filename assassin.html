@@ -188,6 +188,7 @@
 
   <div class="loading-msg" id="loading-msg">⏳ Loading assassination data...</div>
   <div class="error-msg" id="error-msg"></div>
+  <div id="debug-panel" style="display:none;background:rgba(255,200,0,0.08);border:1px solid rgba(255,200,0,0.3);color:#f0c040;border-radius:8px;padding:10px 14px;font-size:11px;font-family:monospace;margin-bottom:16px;white-space:pre-wrap;line-height:1.6;"></div>
 
   <!-- Metric cards -->
   <div class="metrics" id="metric-grid"></div>
@@ -224,45 +225,80 @@ let killsChartInst = null, ptsChartInst = null;
 
 function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : ''; }
 
+function splitCSVLine(line) {
+  const vals = [];
+  let cur = '', inQ = false;
+  for (let c of line.replace(/\r/g, '')) {
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { vals.push(cur); cur = ''; }
+    else cur += c;
+  }
+  vals.push(cur);
+  return vals.map(v => v.trim());
+}
+
 function parseCSV(text) {
-  const lines = text.trim().split('\n').filter(l => l.trim());
-  const raw_headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g,''));
-  const headers = raw_headers;
+  // Strip BOM, normalize line endings
+  const clean = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+  const lines = clean.split('\n').filter(l => l.trim());
+
+  const headers = splitCSVLine(lines[0]).map(h => h.toLowerCase().replace(/"/g, '').replace(/\r/g, '').trim());
+  console.log('[Assassin] CSV headers:', headers);
 
   const get = (vals, col) => {
     const i = headers.indexOf(col);
-    return (i >= 0 && vals[i] !== undefined) ? vals[i].trim().replace(/"/g,'') : '';
+    return (i >= 0 && vals[i] !== undefined) ? vals[i].replace(/\r/g, '').trim() : '';
   };
 
-  return lines.slice(1).map((line, idx) => {
-    // Handle quoted CSV properly
-    const vals = [];
-    let cur = '', inQ = false;
-    for (let c of line) {
-      if (c === '"') { inQ = !inQ; }
-      else if (c === ',' && !inQ) { vals.push(cur); cur = ''; }
-      else cur += c;
-    }
-    vals.push(cur);
+  const rows = lines.slice(1).map(line => {
+    const vals = splitCSVLine(line);
 
     const n = parseInt(get(vals, 'n'));
     if (isNaN(n)) return null;
 
-    const assassin = get(vals, 'assassin').toLowerCase();
-    const target = get(vals, 'target').toLowerCase();
-    const date = get(vals, 'date');
-    const dist = parseFloat(get(vals, 'distance')) || 5;
+    const assassin = get(vals, 'assassin').toLowerCase().trim();
+    const target   = get(vals, 'target').toLowerCase().trim();
+    const date     = get(vals, 'date');
+    const dist     = parseFloat(get(vals, 'distance')) || 5;
     const distClamped = Math.max(1, Math.min(10, dist));
 
-    // Try multiple possible column names for bonus points
-    const bonusRaw = get(vals, 'bonus points') || get(vals, 'bonus_points') || get(vals, 'bonuspoints') || get(vals, 'bonus') || get(vals, 'points') || '0';
-    const bonus = parseFloat(bonusRaw);
-    const bonusSafe = isNaN(bonus) ? 0 : bonus;
-    // 1 point for the assassination itself + any bonus points
-    const total_pts = 1 + bonusSafe;
+    // Try every plausible bonus column name
+    let bonusSafe = 0;
+    for (const col of ['bonus points', 'bonus_points', 'bonuspoints', 'bonus', 'bonus pts']) {
+      const raw = get(vals, col);
+      if (raw !== '') {
+        const parsed = parseFloat(raw);
+        if (!isNaN(parsed)) { bonusSafe = parsed; break; }
+      }
+    }
 
+    const total_pts = 1 + bonusSafe;
     return { n, date, assassin, target, distance: distClamped, bonus: bonusSafe, total_pts };
   }).filter(Boolean);
+
+  console.log('[Assassin] Parsed', rows.length, 'rows. Sample:', rows.slice(0,2));
+  const unknown = [...new Set(rows.map(r => r.assassin))].filter(a => !PLAYERS.includes(a));
+  // Surface debug info visibly on page
+  const panel = document.getElementById('debug-panel');
+  if (panel) {
+    const lines = [];
+    lines.push('Headers found: ' + headers.join(', '));
+    lines.push('Rows parsed: ' + rows.length);
+    if (rows.length > 0) {
+      lines.push('Sample row: ' + JSON.stringify(rows[0]));
+    }
+    if (unknown.length) {
+      lines.push('⚠️ Name(s) not matching PLAYERS list — won\'t appear in metrics/charts: ' + unknown.join(', '));
+      lines.push('   PLAYERS list expects: ' + PLAYERS.join(', '));
+      panel.style.display = 'block';
+    }
+    panel.textContent = lines.join('\n');
+    if (unknown.length === 0 && rows.length > 0) panel.style.display = 'none';
+    else panel.style.display = 'block';
+  }
+
+  if (unknown.length) console.warn('[Assassin] Names not in PLAYERS list (won\'t show in charts/metrics):', unknown);
+  return rows;
 }
 
 async function loadData() {
@@ -293,24 +329,6 @@ function buildLegend() {
     </div>`).join('');
 }
 
-function buildTotals() {
-  const bar = document.getElementById('totals-bar');
-  const items = document.getElementById('totals-items');
-  bar.style.display = 'flex';
-
-  const totals = {};
-  PLAYERS.forEach(p => totals[p] = 0);
-  ALL_KILLS.forEach(k => {
-    if (totals[k.assassin] !== undefined) totals[k.assassin] += k.total_pts;
-  });
-
-  items.innerHTML = PLAYERS.map(p => `
-    <div class="totals-item">
-      <span class="totals-dot" style="background:${COLORS[p]}"></span>
-      <span>${cap(p)}</span>
-      <span class="totals-pts" style="color:${COLORS[p]}">${totals[p]}</span>
-    </div>`).join('');
-}
 
 function buildMetrics() {
   const grid = document.getElementById('metric-grid');
