@@ -356,7 +356,7 @@
   <!-- BALANCE + CHART -->
   <section id="balance-section">
     <div class="balance-card">
-      <div class="label">NET BALANCE</div>
+      <div class="label">TOTAL BALANCE</div>
       <div class="amount" id="balance-amount">—</div>
       <div class="change" id="balance-change"></div>
     </div>
@@ -369,9 +369,9 @@
   <!-- VENN + STATS -->
   <section id="analytics-section">
     <div class="venn-card">
-      <h3>Win / Loss Distribution</h3>
-      <svg id="venn-svg" viewBox="0 0 300 200" width="300" height="200"></svg>
-      <div id="venn-legend" style="text-align:center;margin-top:10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)"></div>
+      <h3>Prediction Win Rate</h3>
+      <canvas id="donut-chart" width="260" height="260" style="display:block;margin:0 auto;"></canvas>
+      <div id="donut-legend" style="text-align:center;margin-top:10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)"></div>
     </div>
     <div class="stats-card">
       <div class="section-label" style="margin-bottom:16px">Performance Stats</div>
@@ -386,14 +386,14 @@
       <thead>
         <tr>
           <th>#</th>
-          <th>Bet Team</th>
+          <th>Team (Bet)</th>
           <th>Opponent</th>
           <th>Type</th>
-          <th>Wager</th>
-          <th>Odds</th>
+          <th>Amount</th>
+          <th>Odds %</th>
           <th>Payout</th>
           <th>Result</th>
-          <th>Profit</th>
+          <th>Profit / Loss</th>
         </tr>
       </thead>
       <tbody id="log-body"></tbody>
@@ -485,7 +485,7 @@ function renderPending(rows) {
         <div>Wager: <strong>$${amt ? amt.toFixed(2) : '—'}</strong></div>
         <div>Odds: <strong>${odds}</strong></div>
       </div>
-      ${theoretical ? `<div class="potential">Potential: +$${theoretical.toFixed(2)}</div>` : ''}
+      ${theoretical ? `<div class="potential">Potential: <span style="color:var(--text)">$${theoretical.toFixed(2)}</span> <span style="color:var(--green)">(+$${(theoretical - (amt || 0)).toFixed(2)})</span></div>` : ''}
     `;
     container.appendChild(card);
   });
@@ -493,29 +493,31 @@ function renderPending(rows) {
 
 // ─── BALANCE + CHART ───
 function renderBalance(rows) {
+  const STARTING_BALANCE = 25;
   const completed = rows.filter(r => !isPending(r));
 
-  // Build running balance
-  let running = 0;
-  const points = [];
-  const labels = [];
+  // Build running total balance starting from $25
+  let running = STARTING_BALANCE;
+  const points = [STARTING_BALANCE];
+  const labels = ['Start'];
 
   completed.forEach((r, i) => {
     const wager  = parseMoney(r[5]) || 0;
     const payout = parseMoney(r[7]) || 0;
     const profit = payout - wager;
-    running += profit;
-    points.push(parseFloat(running.toFixed(2)));
+    running = parseFloat((running + profit).toFixed(2));
+    points.push(running);
     labels.push(`Bet ${i + 1}`);
   });
 
-  const totalProfit = running;
+  const totalBalance = running;
+  const isUp = totalBalance >= STARTING_BALANCE;
   const el = document.getElementById('balance-amount');
-  el.textContent = `$${Math.abs(totalProfit).toFixed(2)}`;
-  el.className = 'amount ' + (totalProfit >= 0 ? 'positive' : 'negative');
+  el.textContent = `$${totalBalance.toFixed(2)}`;
+  el.className = 'amount ' + (isUp ? 'positive' : 'negative');
 
   // Change vs prior bet
-  const change = points.length >= 2 ? points[points.length-1] - points[points.length-2] : 0;
+  const change = points.length >= 3 ? points[points.length-1] - points[points.length-2] : 0;
   const changeEl = document.getElementById('balance-change');
   changeEl.textContent = change >= 0 ? `▲ +$${change.toFixed(2)} last bet` : `▼ -$${Math.abs(change).toFixed(2)} last bet`;
   changeEl.className = 'change ' + (change >= 0 ? 'positive' : 'negative');
@@ -525,7 +527,7 @@ function renderBalance(rows) {
   if (balanceChart) balanceChart.destroy();
 
   const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-  gradient.addColorStop(0, totalProfit >= 0 ? 'rgba(0,230,118,0.25)' : 'rgba(255,68,68,0.25)');
+  gradient.addColorStop(0, isUp ? 'rgba(0,230,118,0.25)' : 'rgba(255,68,68,0.25)');
   gradient.addColorStop(1, 'rgba(0,0,0,0)');
 
   balanceChart = new Chart(ctx, {
@@ -534,11 +536,11 @@ function renderBalance(rows) {
       labels,
       datasets: [{
         data: points,
-        borderColor: totalProfit >= 0 ? '#00e676' : '#ff4444',
+        borderColor: isUp ? '#00e676' : '#ff4444',
         backgroundColor: gradient,
         borderWidth: 2,
-        pointRadius: points.length > 20 ? 0 : 3,
-        pointBackgroundColor: totalProfit >= 0 ? '#00e676' : '#ff4444',
+        pointRadius: points.length > 22 ? 0 : 3,
+        pointBackgroundColor: isUp ? '#00e676' : '#ff4444',
         fill: true,
         tension: 0.35,
       }]
@@ -565,85 +567,108 @@ function renderBalance(rows) {
   });
 }
 
-// ─── VENN + STATS ───
+// ─── DONUT + STATS ───
+let donutChart = null;
 function renderAnalytics(rows) {
   const completed = rows.filter(r => !isPending(r));
-  const wins = completed.filter(r => {
-    const payout = parseMoney(r[7]) || 0;
-    const wager  = parseMoney(r[5]) || 0;
-    return payout > wager;
-  });
-  const losses = completed.filter(r => {
-    const payout = parseMoney(r[7]) || 0;
-    const wager  = parseMoney(r[5]) || 0;
-    return payout <= wager && payout > 0;
-  });
-  const pushes = completed.filter(r => parseMoney(r[7]) === parseMoney(r[5]));
 
-  const total = completed.length;
+  // Win = payout > 0, Loss = payout === 0
+  const wins   = completed.filter(r => (parseMoney(r[7]) || 0) > 0);
+  const losses = completed.filter(r => (parseMoney(r[7]) || 0) === 0);
+
+  const total    = completed.length;
   const winCount = wins.length;
   const lossCount = losses.length;
-  const winPct = total > 0 ? ((winCount / total) * 100).toFixed(1) : 0;
+  const winPct   = total > 0 ? ((winCount / total) * 100) : 0;
 
-  // Draw venn (actually an overlapping circles diagram)
-  const svg = document.getElementById('venn-svg');
-  const winR = Math.max(20, (winCount / total) * 120);
-  const lossR = Math.max(20, (lossCount / total) * 120);
-  svg.innerHTML = `
-    <circle cx="110" cy="100" r="${winR}" fill="#00e676" fill-opacity="0.18" stroke="#00e676" stroke-opacity="0.6" stroke-width="1.5"/>
-    <circle cx="${190}" cy="100" r="${lossR}" fill="#ff4444" fill-opacity="0.18" stroke="#ff4444" stroke-opacity="0.6" stroke-width="1.5"/>
-    <text x="90" y="96" text-anchor="middle" font-family="Bebas Neue,sans-serif" font-size="28" fill="#00e676">${winCount}</text>
-    <text x="90" y="112" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="#00e676" opacity=".7">WINS</text>
-    <text x="210" y="96" text-anchor="middle" font-family="Bebas Neue,sans-serif" font-size="28" fill="#ff4444">${lossCount}</text>
-    <text x="210" y="112" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="#ff4444" opacity=".7">LOSSES</text>
-    <text x="150" y="185" text-anchor="middle" font-family="DM Mono,monospace" font-size="11" fill="#9aa0ab">${winPct}% WIN RATE</text>
-  `;
+  // Draw donut chart via Canvas API (no extra lib needed, Chart.js is loaded)
+  const ctx = document.getElementById('donut-chart').getContext('2d');
+  if (donutChart) donutChart.destroy();
+
+  donutChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Wins', 'Losses'],
+      datasets: [{
+        data: [winCount || 0, lossCount || 0],
+        backgroundColor: ['rgba(0,230,118,0.85)', 'rgba(255,68,68,0.5)'],
+        borderColor: ['#00e676', '#ff4444'],
+        borderWidth: 2,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      cutout: '72%',
+      responsive: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1e24',
+          borderColor: '#252a32',
+          borderWidth: 1,
+          bodyColor: '#e8eaed',
+          callbacks: { label: c => ` ${c.label}: ${c.parsed} (${total > 0 ? ((c.parsed/total)*100).toFixed(1) : 0}%)` }
+        }
+      }
+    },
+    plugins: [{
+      id: 'centerText',
+      afterDraw(chart) {
+        const { ctx, chartArea: { top, bottom, left, right } } = chart;
+        const cx = (left + right) / 2;
+        const cy = (top + bottom) / 2;
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold 36px "Bebas Neue", sans-serif';
+        ctx.fillStyle = winPct >= 50 ? '#00e676' : '#ff4444';
+        ctx.fillText(`${winPct.toFixed(1)}%`, cx, cy - 10);
+        ctx.font = '11px "DM Mono", monospace';
+        ctx.fillStyle = '#9aa0ab';
+        ctx.fillText('WIN RATE', cx, cy + 16);
+        ctx.restore();
+      }
+    }]
+  });
+
+  document.getElementById('donut-legend').textContent = `${winCount} wins · ${lossCount} losses · ${total} total`;
 
   // Spreads
-  const spreads = completed.filter(r => /[+-]\d/.test(String(r[2] || '')));
-  const spreadWins = spreads.filter(r => (parseMoney(r[7]) || 0) > (parseMoney(r[5]) || 0));
-  const spreadPct = spreads.length > 0 ? ((spreadWins.length / spreads.length) * 100).toFixed(1) : 'N/A';
+  const spreads     = completed.filter(r => /[+-]\d/.test(String(r[2] || '')));
+  const spreadWins  = spreads.filter(r => (parseMoney(r[7]) || 0) > 0);
+  const spreadPct   = spreads.length > 0 ? ((spreadWins.length / spreads.length) * 100).toFixed(1) : 'N/A';
 
   // Moneylines
-  const mls = completed.filter(r => /ml/i.test(String(r[2] || '')));
-  const mlWins = mls.filter(r => (parseMoney(r[7]) || 0) > (parseMoney(r[5]) || 0));
-  const mlPct = mls.length > 0 ? ((mlWins.length / mls.length) * 100).toFixed(1) : 'N/A';
+  const mls    = completed.filter(r => /ml/i.test(String(r[2] || '')));
+  const mlWins = mls.filter(r => (parseMoney(r[7]) || 0) > 0);
+  const mlPct  = mls.length > 0 ? ((mlWins.length / mls.length) * 100).toFixed(1) : 'N/A';
 
-  // Best profit
+  // Best profit & biggest loss
   let bestProfit = null, bestBet = null;
   let biggestLoss = null, biggestLossBet = null;
-
   completed.forEach(r => {
     const w = parseMoney(r[5]) || 0;
     const p = parseMoney(r[7]) || 0;
     const profit = p - w;
-    if (profit > 0 && (bestProfit === null || profit > bestProfit)) {
-      bestProfit = profit; bestBet = r[2];
-    }
-    if (profit < 0 && (biggestLoss === null || profit < biggestLoss)) {
-      biggestLoss = profit; biggestLossBet = r[2];
-    }
+    if (profit > 0 && (bestProfit === null || profit > bestProfit)) { bestProfit = profit; bestBet = r[2]; }
+    if (profit < 0 && (biggestLoss === null || profit < biggestLoss)) { biggestLoss = profit; biggestLossBet = r[2]; }
   });
 
-  // Biggest single wager
   let biggestWager = 0;
-  completed.forEach(r => {
-    const w = parseMoney(r[5]) || 0;
-    if (w > biggestWager) biggestWager = w;
-  });
+  completed.forEach(r => { const w = parseMoney(r[5]) || 0; if (w > biggestWager) biggestWager = w; });
 
   const grid = document.getElementById('stats-grid');
   grid.innerHTML = '';
 
   const tiles = [
-    { label: 'Win Rate', val: `${winPct}%`, sub: `${winCount}W / ${lossCount}L`, cls: parseFloat(winPct) >= 50 ? 'positive' : 'negative' },
-    { label: 'Total Bets', val: total, sub: `${spreads.length} spreads · ${mls.length} ML`, cls: '' },
-    { label: 'Spread Win %', val: spreadPct === 'N/A' ? '—' : `${spreadPct}%`, sub: `${spreadWins.length}/${spreads.length} spread bets`, cls: parseFloat(spreadPct) >= 50 ? 'positive' : 'negative' },
-    { label: 'ML Win %', val: mlPct === 'N/A' ? '—' : `${mlPct}%`, sub: `${mlWins.length}/${mls.length} ML bets`, cls: parseFloat(mlPct) >= 50 ? 'positive' : 'negative' },
-    { label: 'Best Profit', val: bestProfit !== null ? `+$${bestProfit.toFixed(2)}` : '—', sub: bestBet || '', cls: 'positive' },
-    { label: 'Biggest Loss', val: biggestLoss !== null ? `-$${Math.abs(biggestLoss).toFixed(2)}` : '—', sub: biggestLossBet || '', cls: 'negative' },
-    { label: 'Largest Wager', val: `$${biggestWager.toFixed(2)}`, sub: 'single bet', cls: '' },
-    { label: 'Pending', val: rows.filter(isPending).length, sub: 'active bets', cls: 'neutral' },
+    { label: 'Win Rate',      val: `${winPct.toFixed(1)}%`,                              sub: `${winCount}W / ${lossCount}L`,                cls: winPct >= 50 ? 'positive' : 'negative' },
+    { label: 'Total Bets',    val: total,                                                  sub: `${spreads.length} spreads · ${mls.length} ML`, cls: '' },
+    { label: 'Spread Win %',  val: spreadPct === 'N/A' ? '—' : `${spreadPct}%`,           sub: `${spreadWins.length}/${spreads.length} bets`,  cls: parseFloat(spreadPct) >= 50 ? 'positive' : 'negative' },
+    { label: 'ML Win %',      val: mlPct === 'N/A' ? '—' : `${mlPct}%`,                  sub: `${mlWins.length}/${mls.length} bets`,           cls: parseFloat(mlPct) >= 50 ? 'positive' : 'negative' },
+    { label: 'Best Profit',   val: bestProfit !== null ? `+$${bestProfit.toFixed(2)}` : '—', sub: bestBet || '',                               cls: 'positive' },
+    { label: 'Biggest Loss',  val: biggestLoss !== null ? `-$${Math.abs(biggestLoss).toFixed(2)}` : '—', sub: biggestLossBet || '',            cls: 'negative' },
+    { label: 'Largest Wager', val: `$${biggestWager.toFixed(2)}`,                          sub: 'single bet',                                  cls: '' },
+    { label: 'Pending',       val: rows.filter(isPending).length,                          sub: 'active bets',                                 cls: 'neutral' },
   ];
 
   tiles.forEach(t => {
@@ -699,12 +724,13 @@ function appendRow(tbody, r, num) {
   const payout = parseMoney(r[7]);
   const type   = betType(team);
 
-  const won = payout !== null && wager !== null && payout > wager;
-  const push = payout !== null && wager !== null && payout === wager;
+  const won  = payout !== null && payout > 0;
+  const lost = payout !== null && payout === 0;
+  const push = payout !== null && wager !== null && payout === wager && payout > 0;
   const profit = (payout !== null && wager !== null) ? payout - wager : null;
 
-  const resultClass = won ? 'won' : (push ? 'neutral' : 'lost');
-  const resultLabel = won ? 'WIN' : (push ? 'PUSH' : 'LOSS');
+  const resultClass = won ? 'won' : (lost ? 'lost' : 'neutral');
+  const resultLabel = won ? 'WIN' : (lost ? 'LOSS' : '—');
 
   const tr = document.createElement('tr');
   tr.innerHTML = `
