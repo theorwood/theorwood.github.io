@@ -110,14 +110,15 @@
   .pending-card::before {
     content: 'PENDING';
     position: absolute;
-    top: 10px; right: -18px;
-    background: var(--gold);
-    color: #fff;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 11px;
+    bottom: 6px; right: 8px;
+    background: none;
+    color: var(--gold);
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
     letter-spacing: 2px;
-    padding: 2px 28px;
-    transform: rotate(35deg);
+    padding: 0;
+    transform: none;
+    opacity: 0.6;
   }
 
   .pending-card .matchup {
@@ -472,12 +473,21 @@ function renderPending(rows) {
     const odds = r[6] || '—';
     const theoretical = parseMoney(r[8]);
 
+    const bet  = String(r[2] || '').trim();
+    const type = betType(bet);
+
     // Championship bet: opponent cell is empty or contains "championship"
     const isChampionship = !opp || /championship/i.test(opp);
 
+    const betLabel = /ml/i.test(bet) ? 'Win' : bet;
+
+    const betBadge = !isChampionship && betLabel
+      ? ` <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);font-weight:normal">${betLabel}</span>`
+      : '';
+
     const matchupHTML = isChampionship
       ? `<span>${team}</span> Championship 🏆`
-      : `<span>${team}</span> vs ${opp}`;
+      : `<span>${team}</span> vs ${opp}${betBadge}`;
 
     const card = document.createElement('div');
     card.className = 'pending-card';
