@@ -13,7 +13,7 @@
     --border: #252a32;
     --green: #00e676;
     --red: #ff4444;
-    --gold: #f5c842;
+    --gold: #b57bee;
     --blue: #4fc3f7;
     --muted: #5a6370;
     --text: #e8eaed;
@@ -112,7 +112,7 @@
     position: absolute;
     top: 10px; right: -18px;
     background: var(--gold);
-    color: #000;
+    color: #fff;
     font-family: 'Bebas Neue', sans-serif;
     font-size: 11px;
     letter-spacing: 2px;
@@ -467,16 +467,23 @@ function renderPending(rows) {
 
   pending.forEach((r, idx) => {
     const team = r[2] || '?';
-    const opp  = r[3] || '?';
+    const opp  = String(r[3] || '').trim();
     const amt  = parseMoney(r[5]);
     const odds = r[6] || '—';
     const theoretical = parseMoney(r[8]);
+
+    // Championship bet: opponent cell is empty or contains "championship"
+    const isChampionship = !opp || /championship/i.test(opp);
+
+    const matchupHTML = isChampionship
+      ? `<span>${team}</span> Championship 🏆`
+      : `<span>${team}</span> vs ${opp}`;
 
     const card = document.createElement('div');
     card.className = 'pending-card';
     card.style.animationDelay = `${idx * 0.08}s`;
     card.innerHTML = `
-      <div class="matchup"><span>${team}</span> vs ${opp}</div>
+      <div class="matchup">${matchupHTML}</div>
       <div class="meta">
         <div>Wager: <strong>$${amt ? amt.toFixed(2) : '—'}</strong></div>
         <div>Odds: <strong>${odds}</strong></div>
@@ -492,18 +499,20 @@ function renderBalance(rows) {
   const STARTING_BALANCE = 25;
   const completed = rows.filter(r => !isPending(r));
 
-  // Build running total balance starting from $25
+  // Build running total balance starting from $25, using date from col B (r[1])
   let running = STARTING_BALANCE;
   const points = [STARTING_BALANCE];
   const labels = ['Start'];
 
-  completed.forEach((r, i) => {
+  completed.forEach((r) => {
     const wager  = parseMoney(r[5]) || 0;
     const payout = parseMoney(r[7]) || 0;
     const profit = payout - wager;
     running = parseFloat((running + profit).toFixed(2));
     points.push(running);
-    labels.push(`Bet ${i + 1}`);
+    // Use col B as date label, fallback to row number
+    const rawDate = String(r[1] || '').trim();
+    labels.push(rawDate || `#${r[0] || ''}`);
   });
 
   const pendingWagered = rows.filter(isPending).reduce((sum, r) => sum + (parseMoney(r[5]) || 0), 0);
@@ -513,11 +522,13 @@ function renderBalance(rows) {
   el.textContent = `$${totalBalance.toFixed(2)}`;
   el.className = 'amount ' + (isUp ? 'positive' : 'negative');
 
-  // Change vs prior bet
-  const change = points.length >= 3 ? points[points.length-1] - points[points.length-2] : 0;
+  // % change from starting balance
+  const pctChange = (((totalBalance - STARTING_BALANCE) / STARTING_BALANCE) * 100);
   const changeEl = document.getElementById('balance-change');
-  changeEl.textContent = change >= 0 ? `▲ +$${change.toFixed(2)} last bet` : `▼ -$${Math.abs(change).toFixed(2)} last bet`;
-  changeEl.className = 'change ' + (change >= 0 ? 'positive' : 'negative');
+  const lastBetChange = points.length >= 3 ? points[points.length-1] - points[points.length-2] : 0;
+  const lastLabel = lastBetChange >= 0 ? `▲ +$${lastBetChange.toFixed(2)} last bet` : `▼ -$${Math.abs(lastBetChange).toFixed(2)} last bet`;
+  changeEl.innerHTML = `<span class="${isUp ? 'positive' : 'negative'}">${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(1)}% from start</span><br><span style="color:var(--muted);font-size:11px">${lastLabel}</span>`;
+  changeEl.className = 'change';
 
   // Chart
   const ctx = document.getElementById('balance-chart').getContext('2d');
@@ -553,7 +564,7 @@ function renderBalance(rows) {
         callbacks: { label: ctx => `$${ctx.parsed.y.toFixed(2)}` }
       }},
       scales: {
-        x: { grid: { color: '#1a1e24' }, ticks: { color: '#5a6370', font: { family: 'DM Mono', size: 10 } } },
+        x: { grid: { color: '#1a1e24' }, ticks: { color: '#5a6370', font: { family: 'DM Mono', size: 10 }, maxRotation: 35, autoSkip: true, maxTicksLimit: 12 } },
         y: {
           grid: { color: '#1a1e24' },
           ticks: { color: '#5a6370', font: { family: 'DM Mono', size: 10 }, callback: v => `$${v}` },
@@ -640,16 +651,25 @@ function renderAnalytics(rows) {
   const mlWins = mls.filter(r => (parseMoney(r[7]) || 0) > 0);
   const mlPct  = mls.length > 0 ? ((mlWins.length / mls.length) * 100).toFixed(1) : 'N/A';
 
-  // Best profit & biggest loss
-  let bestProfit = null, bestBet = null;
-  let biggestLoss = null, biggestLossBet = null;
+  // Best profit & biggest loss — capture full row for detail
+  let bestProfit = null, bestBetRow = null;
+  let biggestLoss = null, biggestLossRow = null;
   completed.forEach(r => {
     const w = parseMoney(r[5]) || 0;
     const p = parseMoney(r[7]) || 0;
     const profit = p - w;
-    if (profit > 0 && (bestProfit === null || profit > bestProfit)) { bestProfit = profit; bestBet = r[2]; }
-    if (profit < 0 && (biggestLoss === null || profit < biggestLoss)) { biggestLoss = profit; biggestLossBet = r[2]; }
+    if (profit > 0 && (bestProfit === null || profit > bestProfit)) { bestProfit = profit; bestBetRow = r; }
+    if (profit < 0 && (biggestLoss === null || profit < biggestLoss)) { biggestLoss = profit; biggestLossRow = r; }
   });
+
+  function betDetailSub(r) {
+    if (!r) return '';
+    const team = r[2] || '';
+    const odds = r[6] ? `${r[6]}%` : '';
+    const type = betType(r[2]);
+    const date = String(r[1] || '').trim();
+    return [team, odds, type, date].filter(Boolean).join(' · ');
+  }
 
   let biggestWager = 0;
   completed.forEach(r => { const w = parseMoney(r[5]) || 0; if (w > biggestWager) biggestWager = w; });
@@ -658,14 +678,14 @@ function renderAnalytics(rows) {
   grid.innerHTML = '';
 
   const tiles = [
-    { label: 'Win Rate',      val: `${winPct.toFixed(1)}%`,                              sub: `${winCount}W / ${lossCount}L`,                cls: winPct >= 50 ? 'positive' : 'negative' },
-    { label: 'Total Bets',    val: total,                                                  sub: `${spreads.length} spreads · ${mls.length} ML`, cls: '' },
-    { label: 'Spread Win %',  val: spreadPct === 'N/A' ? '—' : `${spreadPct}%`,           sub: `${spreadWins.length}/${spreads.length} bets`,  cls: parseFloat(spreadPct) >= 50 ? 'positive' : 'negative' },
-    { label: 'ML Win %',      val: mlPct === 'N/A' ? '—' : `${mlPct}%`,                  sub: `${mlWins.length}/${mls.length} bets`,           cls: parseFloat(mlPct) >= 50 ? 'positive' : 'negative' },
-    { label: 'Best Profit',   val: bestProfit !== null ? `+$${bestProfit.toFixed(2)}` : '—', sub: bestBet || '',                               cls: 'positive' },
-    { label: 'Biggest Loss',  val: biggestLoss !== null ? `-$${Math.abs(biggestLoss).toFixed(2)}` : '—', sub: biggestLossBet || '',            cls: 'negative' },
-    { label: 'Largest Wager', val: `$${biggestWager.toFixed(2)}`,                          sub: 'single bet',                                  cls: '' },
-    { label: 'Pending',       val: rows.filter(isPending).length,                          sub: 'active bets',                                 cls: 'neutral' },
+    { label: 'Win Rate',      val: `${winPct.toFixed(1)}%`,                                        sub: `${winCount}W / ${lossCount}L`,                cls: winPct >= 50 ? 'positive' : 'negative' },
+    { label: 'Total Bets',    val: total,                                                            sub: `${spreads.length} spreads · ${mls.length} ML`, cls: '' },
+    { label: 'Spread Win %',  val: spreadPct === 'N/A' ? '—' : `${spreadPct}%`,                     sub: `${spreadWins.length}/${spreads.length} bets`,   cls: parseFloat(spreadPct) >= 50 ? 'positive' : 'negative' },
+    { label: 'ML Win %',      val: mlPct === 'N/A' ? '—' : `${mlPct}%`,                            sub: `${mlWins.length}/${mls.length} bets`,            cls: parseFloat(mlPct) >= 50 ? 'positive' : 'negative' },
+    { label: 'Best Profit',   val: bestProfit !== null ? `+$${bestProfit.toFixed(2)}` : '—',        sub: betDetailSub(bestBetRow),                         cls: 'positive' },
+    { label: 'Biggest Loss',  val: biggestLoss !== null ? `-$${Math.abs(biggestLoss).toFixed(2)}` : '—', sub: betDetailSub(biggestLossRow),               cls: 'negative' },
+    { label: 'Largest Wager', val: `$${biggestWager.toFixed(2)}`,                                   sub: 'single bet',                                    cls: '' },
+    { label: 'Pending',       val: rows.filter(isPending).length,                                   sub: 'active bets',                                   cls: 'neutral' },
   ];
 
   tiles.forEach(t => {
