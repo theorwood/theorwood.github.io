@@ -385,15 +385,11 @@
     <table id="log-table">
       <thead>
         <tr>
-          <th>#</th>
           <th>Team (Bet)</th>
-          <th>Opponent</th>
-          <th>Type</th>
-          <th>Amount</th>
-          <th>Odds %</th>
+          <th>vs</th>
+          <th>Bet</th>
+          <th>%</th>
           <th>Payout</th>
-          <th>Result</th>
-          <th>Profit / Loss</th>
         </tr>
       </thead>
       <tbody id="log-body"></tbody>
@@ -510,7 +506,8 @@ function renderBalance(rows) {
     labels.push(`Bet ${i + 1}`);
   });
 
-  const totalBalance = running;
+  const pendingWagered = rows.filter(isPending).reduce((sum, r) => sum + (parseMoney(r[5]) || 0), 0);
+  const totalBalance = parseFloat((running - pendingWagered).toFixed(2));
   const isUp = totalBalance >= STARTING_BALANCE;
   const el = document.getElementById('balance-amount');
   el.textContent = `$${totalBalance.toFixed(2)}`;
@@ -685,7 +682,11 @@ function renderAnalytics(rows) {
 
 // ─── LOG ───
 function renderLog(rows) {
-  allCompletedBets = rows.filter(r => !isPending(r)).slice().reverse();
+  // Only completed bets (no pending), sorted by col A descending numerically
+  allCompletedBets = rows
+    .filter(r => !isPending(r))
+    .slice()
+    .sort((a, b) => (parseFloat(b[0]) || 0) - (parseFloat(a[0]) || 0));
   renderLogRows();
 }
 
@@ -693,17 +694,10 @@ function renderLogRows() {
   const tbody = document.getElementById('log-body');
   tbody.innerHTML = '';
 
-  const show = showAll ? allCompletedBets : allCompletedBets.slice(0, 5);
-  const rest = showAll ? [] : allCompletedBets.slice(5);
-
   allCompletedBets.forEach((r, absIdx) => {
     if (!showAll && absIdx >= 5) return;
-    appendRow(tbody, r, absIdx + 1);
+    appendRow(tbody, r);
   });
-
-  if (!showAll && allCompletedBets.length > 5) {
-    // placeholder hidden rows
-  }
 
   const btn = document.getElementById('expand-btn');
   const lbl = document.getElementById('expand-label');
@@ -716,35 +710,38 @@ function renderLogRows() {
   }
 }
 
-function appendRow(tbody, r, num) {
+function appendRow(tbody, r) {
   const team   = r[2] || '—';
   const opp    = r[3] || '—';
   const wager  = parseMoney(r[5]);
-  const odds   = r[6] || '—';
+  const odds   = r[6] ? `${r[6]}%` : '—';
   const payout = parseMoney(r[7]);
-  const type   = betType(team);
 
-  const won  = payout !== null && payout > 0;
-  const lost = payout !== null && payout === 0;
-  const push = payout !== null && wager !== null && payout === wager && payout > 0;
-  const profit = (payout !== null && wager !== null) ? payout - wager : null;
+  // Win = payout > 0, Loss = payout === 0
+  const isLoss  = payout !== null && payout === 0;
+  const profit  = (payout !== null && wager !== null) ? payout - wager : null;
 
-  const resultClass = won ? 'won' : (lost ? 'lost' : 'neutral');
-  const resultLabel = won ? 'WIN' : (lost ? 'LOSS' : '—');
+  const payoutDisplay = payout !== null
+    ? (isLoss
+        ? `<span style="color:var(--red)">$0.00</span>`
+        : `<span style="color:var(--green)">$${payout.toFixed(2)}</span>`)
+    : '—';
+
+  const profitDisplay = profit !== null
+    ? (profit > 0
+        ? `<span style="color:var(--green)">+$${profit.toFixed(2)}</span>`
+        : `<span style="color:var(--red)">-$${Math.abs(profit).toFixed(2)}</span>`)
+    : '—';
 
   const tr = document.createElement('tr');
+  if (isLoss) tr.style.opacity = '0.7';
+
   tr.innerHTML = `
-    <td>${num}</td>
-    <td class="team">${team}</td>
+    <td class="team" style="${isLoss ? 'color:var(--red)' : ''}">${team}</td>
     <td>${opp}</td>
-    <td>${type}</td>
     <td>$${wager !== null ? wager.toFixed(2) : '—'}</td>
     <td>${odds}</td>
-    <td>$${payout !== null ? payout.toFixed(2) : '—'}</td>
-    <td class="${resultClass}">${resultLabel}</td>
-    <td class="${profit !== null ? (profit >= 0 ? 'positive' : 'negative') : ''}">
-      ${profit !== null ? (profit >= 0 ? `+$${profit.toFixed(2)}` : `-$${Math.abs(profit).toFixed(2)}`) : '—'}
-    </td>
+    <td>${payoutDisplay} <span style="font-size:10px;color:var(--muted)">(${profitDisplay})</span></td>
   `;
   tbody.appendChild(tr);
 }
