@@ -496,16 +496,36 @@ function renderPending(rows) {
 function renderBalance(rows) {
   const START = 25;
   const completed = rows.filter(r => !isPending(r));
-  let running = START;
-  const points = [START], labels = ['Start'];
+  const pending   = rows.filter(r => isPending(r));
 
+  // ── Group completed bets by date, accumulate profit per day ──
+  // Keep insertion order (sorted by col A already via sheet order)
+  const dayMap = new Map(); // date -> cumulative profit for that day
   completed.forEach(r => {
-    running = parseFloat((running + (parseMoney(r[7])||0) - (parseMoney(r[5])||0)).toFixed(2));
-    points.push(running);
-    labels.push(String(r[1]||'').trim() || `#${r[0]}`);
+    const date = String(r[1]||'').trim() || `#${r[0]}`;
+    const profit = (parseMoney(r[7])||0) - (parseMoney(r[5])||0);
+    dayMap.set(date, (dayMap.get(date)||0) + profit);
   });
 
-  const pendingOut = rows.filter(isPending).reduce((s,r) => s+(parseMoney(r[5])||0), 0);
+  // Build pending deductions per date
+  const pendingByDate = new Map();
+  pending.forEach(r => {
+    const date = String(r[1]||'').trim();
+    if (date) pendingByDate.set(date, (pendingByDate.get(date)||0) + (parseMoney(r[5])||0));
+  });
+
+  // Build chart points: one per unique day, deducting pending wagers on their date
+  let running = START;
+  const points = [START], labels = ['Start'];
+  dayMap.forEach((profit, date) => {
+    running = parseFloat((running + profit).toFixed(2));
+    const pendingDeduct = pendingByDate.get(date) || 0;
+    points.push(parseFloat((running - pendingDeduct).toFixed(2)));
+    labels.push(date);
+  });
+
+  // Displayed balance: running total minus all pending wagers
+  const pendingOut = pending.reduce((s,r) => s+(parseMoney(r[5])||0), 0);
   const balance = parseFloat((running - pendingOut).toFixed(2));
   const isUp = balance >= START;
 
@@ -516,7 +536,9 @@ function renderBalance(rows) {
   const pct = (((balance - START) / START) * 100);
   const pctStr = `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
 
-  const yest = new Date(); yest.setDate(yest.getDate() - 1);
+  // Yesterday
+  const now = new Date();
+  const yest = new Date(now); yest.setDate(now.getDate() - 1);
   const yStr = `${yest.getMonth()+1}/${yest.getDate()}/${String(yest.getFullYear()).slice(-2)}`;
   let yProfit = 0;
   completed.forEach(r => {
@@ -528,9 +550,25 @@ function renderBalance(rows) {
     : yProfit < 0 ? `▼ -$${Math.abs(yProfit).toFixed(2)} yesterday`
     : `— $0 yesterday`;
 
-  document.getElementById('balance-change').innerHTML =
-    `<span class="${isUp?'positive':'negative'}">${pctStr} from start</span><br><span style="color:var(--muted);font-size:10px">${yLabel}</span>`;
+  // Last week (7 days ago)
+  const week = new Date(now); week.setDate(now.getDate() - 7);
+  const wStr = `${week.getMonth()+1}/${week.getDate()}/${String(week.getFullYear()).slice(-2)}`;
+  let wProfit = 0;
+  completed.forEach(r => {
+    if (String(r[1]||'').trim() === wStr)
+      wProfit += (parseMoney(r[7])||0) - (parseMoney(r[5])||0);
+  });
+  wProfit = parseFloat(wProfit.toFixed(2));
+  const wLabel = wProfit > 0 ? `▲ +$${wProfit.toFixed(2)} last week`
+    : wProfit < 0 ? `▼ -$${Math.abs(wProfit).toFixed(2)} last week`
+    : `— $0 last week`;
 
+  document.getElementById('balance-change').innerHTML =
+    `<span class="${isUp?'positive':'negative'}">${pctStr} from start</span><br>` +
+    `<span style="color:var(--muted);font-size:10px">${yLabel}</span><br>` +
+    `<span style="color:var(--muted);font-size:10px">${wLabel}</span>`;
+
+  // Chart
   const ctx = document.getElementById('balance-chart').getContext('2d');
   if (balanceChart) balanceChart.destroy();
   const grad = ctx.createLinearGradient(0,0,0,160);
@@ -607,33 +645,51 @@ function renderAnalytics(rows) {
     if(w>bigW){bigW=w;bigWR=r;}
   });
 
+  // Sub: date · team · bet type/spread · odds%
   function sub(r) {
     if(!r) return '';
-    const odds = String(r[6]||'').replace(/%/g,'').trim();
-    const type = /ml/i.test(r[2])?'Win':(/[+-]\d/.test(r[2])?'Spread':'');
-    return [(r[3]||''), odds?odds+'%':'', type, String(r[1]||'').trim()].filter(Boolean).join(' · ');
+    const date = String(r[1]||'').trim();
+    const team = (r[3]||'').trim();
+    const betRaw = String(r[2]||'').trim();
+    const betLabel = /ml/i.test(betRaw) ? 'Win' : (/[+-]\d/.test(betRaw) ? betRaw : '');
+    const oddsRaw = String(r[6]||'').replace(/%/g,'').trim();
+    const odds = oddsRaw ? oddsRaw+'%' : '';
+    return [date, team, betLabel, odds].filter(Boolean).join(' · ');
   }
 
-  let longest=0,cur=0;
-  completed.slice().sort((a,b)=>(parseFloat(a[0])||0)-(parseFloat(b[0])||0)).forEach(r=>{
-    if((parseMoney(r[7])||0)>0){cur++;if(cur>longest)longest=cur;}else cur=0;
+  // Win streaks: longest and current
+  const ordered = completed.slice().sort((a,b)=>(parseFloat(a[0])||0)-(parseFloat(b[0])||0));
+  let longest=0, curStreak=0;
+  ordered.forEach(r=>{
+    if((parseMoney(r[7])||0)>0){curStreak++;if(curStreak>longest)longest=curStreak;}else curStreak=0;
   });
+  // curStreak is now the current active streak at end of sorted list
 
-  const tCount={};
-  completed.forEach(r=>{const t=(r[3]||'').trim();if(t)tCount[t]=(tCount[t]||0)+1;});
-  const topTeam=Object.entries(tCount).sort((a,b)=>b[1]-a[1])[0];
+  // Most bet team — count bets and wins
+  const tBets={}, tWins={};
+  completed.forEach(r=>{
+    const t=(r[3]||'').trim();
+    if(t){
+      tBets[t]=(tBets[t]||0)+1;
+      if((parseMoney(r[7])||0)>0) tWins[t]=(tWins[t]||0)+1;
+    }
+  });
+  const topTeam=Object.entries(tBets).sort((a,b)=>b[1]-a[1])[0];
+  const topTeamWins = topTeam ? (tWins[topTeam[0]]||0) : 0;
+  const topTeamSub = topTeam ? `${topTeam[1]} bets · ${topTeamWins}W / ${topTeam[1]-topTeamWins}L` : '';
 
   const lwPayout=bigWR?(parseMoney(bigWR[7])||0):0;
   const lwWon=lwPayout>0;
 
   const tiles=[
-    {label:'Win Streak 🔥', val:String(longest), sub:'longest streak', cls:longest>0?'positive':''},
+    {label:'Current Streak 🔥', val:String(curStreak), sub:'active win streak', cls:curStreak>0?'positive':'neutral'},
+    {label:'Longest Streak 🏆', val:String(longest), sub:'all time best', cls:longest>0?'positive':''},
     {label:'Spread Win %', val:spreadPct!==null?`${spreadPct}%`:'—', sub:`${spreadWins.length}/${spreads.length} bets`, cls:spreadPct!==null&&parseFloat(spreadPct)>=50?'positive':'negative'},
     {label:'ML Win %', val:mlPct!==null?`${mlPct}%`:'—', sub:`${mlWins.length}/${mls.length} bets`, cls:mlPct!==null&&parseFloat(mlPct)>=50?'positive':'negative'},
     {label:'Best Profit', val:bestP!==null?`+$${bestP.toFixed(2)}`:'—', sub:sub(bestR), cls:'positive'},
     {label:'Biggest Loss', val:bigL!==null?`-$${Math.abs(bigL).toFixed(2)}`:'—', sub:sub(bigLR), cls:'negative'},
     {label:'Largest Wager', val:`$${bigW.toFixed(2)}`, sub:`${lwWon?'✓ Won':'✗ Lost'} · ${sub(bigWR)}`, cls:lwWon?'positive':'negative'},
-    {label:'Most Bet Team', val:topTeam?topTeam[0]:'—', sub:topTeam?`${topTeam[1]} bets`:'', cls:''},
+    {label:'Most Bet Team', val:topTeam?topTeam[0]:'—', sub:topTeamSub, cls:''},
   ];
 
   const grid=document.getElementById('stats-grid');
@@ -686,6 +742,13 @@ function appendRow(tbody,r) {
     ?`${team} <span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${bLabel}</span>`
     :team;
 
+  // Payout cell: payout on first line, profit in parens wrapping to next line if needed
+  const payoutCell = `
+    <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:3px;">
+      <span>${payoutHTML}</span>
+      <span style="font-size:10px;color:var(--muted);white-space:nowrap">(${profitHTML})</span>
+    </div>`;
+
   const tr=document.createElement('tr');
   if(isLoss)tr.style.opacity='0.65';
   tr.innerHTML=`
@@ -693,7 +756,7 @@ function appendRow(tbody,r) {
     <td>${opp}</td>
     <td>$${wager!==null?wager.toFixed(2):'—'}</td>
     <td>${odds}</td>
-    <td>${payoutHTML} <span style="font-size:10px;color:var(--muted)">(${profitHTML})</span></td>
+    <td>${payoutCell}</td>
   `;
   tbody.appendChild(tr);
 }
