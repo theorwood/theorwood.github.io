@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BET LEDGER</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0c0e10;
+    --surface: #13161a;
+    --surface2: #1a1e24;
+    --border: #252a32;
+    --green: #00e676;
+    --red: #ff4444;
+    --gold: #b57bee;
+    --blue: #4fc3f7;
+    --muted: #5a6370;
+    --text: #e8eaed;
+    --text2: #9aa0ab;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.3;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 40px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, var(--gold), #fff 60%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  #load-status {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: pulse 1.5s infinite;
+  }
+  .dot.live { background: var(--green); animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  main { padding: 32px 40px; max-width: 1400px; margin: 0 auto; }
+
+  /* ─── SECTION TITLE ─── */
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  /* ─── PENDING STUBS ─── */
+  #pending-section { margin-bottom: 40px; }
+  #pending-cards {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .pending-card {
+    background: var(--surface);
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    padding: 18px 22px;
+    min-width: 220px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn .4s ease both;
+  }
+
+  .pending-card::before {
+    content: 'PENDING';
+    position: absolute;
+    bottom: 6px; right: 8px;
+    background: none;
+    color: var(--gold);
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 0;
+    transform: none;
+    opacity: 0.6;
+  }
+
+  .pending-card .matchup {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+
+  .pending-card .matchup span { color: var(--gold); }
+
+  .pending-card .meta {
+    display: flex;
+    gap: 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .pending-card .meta strong { color: var(--text); }
+
+  .pending-card .potential {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--green);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ─── BALANCE + CHART ─── */
+  #balance-section {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+
+  .balance-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .balance-card .label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .balance-card .amount {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    line-height: 1;
+    letter-spacing: 2px;
+  }
+
+  .balance-card .change {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  .positive { color: var(--green); }
+  .negative { color: var(--red); }
+  .neutral { color: var(--text2); }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+  }
+
+  .chart-card canvas { width: 100% !important; }
+
+  /* ─── VENN + STATS ─── */
+  #analytics-section {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+
+  .venn-card, .stats-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+  }
+
+  .venn-card h3 {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  #venn-svg { display: block; margin: 0 auto; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .stat-tile {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .stat-tile .st-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .stat-tile .st-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+
+  .stat-tile .st-sub {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 4px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ─── BET LOG ─── */
+  #log-section { margin-bottom: 60px; }
+
+  #log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+  }
+
+  #log-table thead tr {
+    border-bottom: 1px solid var(--border);
+  }
+
+  #log-table th {
+    text-align: left;
+    padding: 8px 14px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  #log-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+
+  #log-table tbody tr:hover { background: var(--surface2); }
+
+  #log-table td {
+    padding: 11px 14px;
+    color: var(--text2);
+  }
+
+  #log-table td.team { color: var(--text); font-weight: 500; }
+  #log-table td.won { color: var(--green); }
+  #log-table td.lost { color: var(--red); }
+  #log-table td.pending-cell { color: var(--gold); }
+
+  .expand-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 10px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text2);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all .2s;
+    text-transform: uppercase;
+  }
+
+  .expand-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--muted); }
+
+  .expand-btn svg { transition: transform .3s; }
+  .expand-btn.open svg { transform: rotate(180deg); }
+
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+  .hidden-rows { display: none; }
+  .hidden-rows.show { display: table-row; }
+
+  #no-pending {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 12px 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>BET LEDGER</h1>
+  <div id="load-status"><div class="dot" id="status-dot"></div><span id="status-text">Loading…</span></div>
+</header>
+
+<main>
+  <!-- PENDING BETS -->
+  <section id="pending-section">
+    <div class="section-label">⬤ Pending Bets</div>
+    <div id="pending-cards"><p id="no-pending" style="display:none">No pending bets.</p></div>
+  </section>
+
+  <!-- BALANCE + CHART -->
+  <section id="balance-section">
+    <div class="balance-card">
+      <div class="label">TOTAL BALANCE</div>
+      <div class="amount" id="balance-amount">—</div>
+      <div class="change" id="balance-change"></div>
+    </div>
+    <div class="chart-card">
+      <div class="section-label">Balance Over Time</div>
+      <canvas id="balance-chart" height="90"></canvas>
+    </div>
+  </section>
+
+  <!-- VENN + STATS -->
+  <section id="analytics-section">
+    <div class="venn-card">
+      <h3>Prediction Win Rate</h3>
+      <canvas id="donut-chart" width="260" height="260" style="display:block;margin:0 auto;"></canvas>
+      <div id="donut-legend" style="text-align:center;margin-top:10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)"></div>
+    </div>
+    <div class="stats-card">
+      <div class="section-label" style="margin-bottom:16px">Performance Stats</div>
+      <div class="stats-grid" id="stats-grid"></div>
+    </div>
+  </section>
+
+  <!-- BET LOG -->
+  <section id="log-section">
+    <div class="section-label">Bet Log</div>
+    <table id="log-table">
+      <thead>
+        <tr>
+          <th>Team (Bet)</th>
+          <th>vs</th>
+          <th>Bet</th>
+          <th>%</th>
+          <th>Payout</th>
+        </tr>
+      </thead>
+      <tbody id="log-body"></tbody>
+    </table>
+    <button class="expand-btn" id="expand-btn" onclick="toggleExpand()">
+      <span id="expand-label">Show All Bets</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRcqC9jKaHG8zOS_2-szgNmDE-RaPdrF6M_pfnLWudIe8fuauDeWfKza8DyEdgam_-V2kgrpGdn7R9T/pub?gid=0&single=true&output=csv";
+
+let allCompletedBets = [];
+let showAll = false;
+let balanceChart = null;
+
+function parseMoney(v) {
+  if (!v) return null;
+  return parseFloat(String(v).replace(/[$,\s]/g, ''));
+}
+
+function betType(team) {
+  if (!team) return 'unknown';
+  if (/ml/i.test(team)) return 'ML';
+  if (/[+-]\d/.test(team)) return 'Spread';
+  return 'Other';
+}
+
+function isPending(row) {
+  const h = String(row[7] || '').trim().toLowerCase();
+  return h === 'pending' || h === '';
+}
+
+function loadData() {
+  Papa.parse(CSV_URL, {
+    download: true,
+    skipEmptyLines: true,
+    complete: (results) => {
+      const rows = results.data;
+      // Skip header rows (find first row where col C looks like a team/bet)
+      const dataRows = rows.filter((r, i) => {
+        if (i === 0) return false; // skip header
+        return r[3] && r[3].trim() !== '' && r[5] && parseMoney(r[5]) !== null;
+      });
+
+      document.getElementById('status-dot').classList.add('live');
+      document.getElementById('status-text').textContent = `${dataRows.length} bets loaded`;
+
+      renderPending(dataRows);
+      renderBalance(dataRows);
+      renderAnalytics(dataRows);
+      renderLog(dataRows);
+    },
+    error: (err) => {
+      document.getElementById('status-text').textContent = 'Error loading data';
+      console.error(err);
+    }
+  });
+}
+
+// ─── PENDING ───
+function renderPending(rows) {
+  const container = document.getElementById('pending-cards');
+  const noPending = document.getElementById('no-pending');
+  const pending = rows.filter(isPending);
+
+  if (pending.length === 0) {
+    noPending.style.display = 'block';
+    return;
+  }
+
+  pending.forEach((r, idx) => {
+    const team = r[3] || '?';
+    const opp  = String(r[4] || '').trim();
+    const amt  = parseMoney(r[5]);
+    const odds = r[6] || '—';
+    const theoretical = parseMoney(r[8]);
+
+    const bet  = String(r[2] || '').trim();
+    const type = betType(bet);
+
+    // Championship bet: opponent cell is empty or contains "championship"
+    const isChampionship = !opp || /championship/i.test(opp);
+
+    const betLabel = /ml/i.test(bet) ? 'Win' : bet;
+
+    const betBadge = !isChampionship && betLabel
+      ? ` <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);font-weight:normal">${betLabel}</span>`
+      : '';
+
+    const matchupHTML = isChampionship
+      ? `<span>${team}</span> Championship 🏆`
+      : `<span>${team}</span> vs ${opp}${betBadge}`;
+
+    const card = document.createElement('div');
+    card.className = 'pending-card';
+    card.style.animationDelay = `${idx * 0.08}s`;
+    card.innerHTML = `
+      <div class="matchup">${matchupHTML}</div>
+      <div class="meta">
+        <div>Wager: <strong>$${amt ? amt.toFixed(2) : '—'}</strong></div>
+        <div>Odds: <strong>${odds}</strong></div>
+      </div>
+      ${theoretical ? `<div class="potential">Potential: <span style="color:var(--text)">$${theoretical.toFixed(2)}</span> <span style="color:var(--green)">(+$${(theoretical - (amt || 0)).toFixed(2)})</span></div>` : ''}
+    `;
+    container.appendChild(card);
+  });
+}
+
+// ─── BALANCE + CHART ───
+function renderBalance(rows) {
+  const STARTING_BALANCE = 25;
+  const completed = rows.filter(r => !isPending(r));
+
+  // Build running total balance starting from $25, using date from col B (r[1])
+  let running = STARTING_BALANCE;
+  const points = [STARTING_BALANCE];
+  const labels = ['Start'];
+
+  completed.forEach((r) => {
+    const wager  = parseMoney(r[5]) || 0;
+    const payout = parseMoney(r[7]) || 0;
+    const profit = payout - wager;
+    running = parseFloat((running + profit).toFixed(2));
+    points.push(running);
+    // Use col B as date label, fallback to row number
+    const rawDate = String(r[1] || '').trim();
+    labels.push(rawDate || `#${r[0] || ''}`);
+  });
+
+  const pendingWagered = rows.filter(isPending).reduce((sum, r) => sum + (parseMoney(r[5]) || 0), 0);
+  const totalBalance = parseFloat((running - pendingWagered).toFixed(2));
+  const isUp = totalBalance >= STARTING_BALANCE;
+  const el = document.getElementById('balance-amount');
+  el.textContent = `$${totalBalance.toFixed(2)}`;
+  el.className = 'amount ' + (isUp ? 'positive' : 'negative');
+
+  // % change from starting balance
+  const pctChange = (((totalBalance - STARTING_BALANCE) / STARTING_BALANCE) * 100);
+  const changeEl = document.getElementById('balance-change');
+  const lastBetChange = points.length >= 3 ? points[points.length-1] - points[points.length-2] : 0;
+  const lastLabel = lastBetChange >= 0 ? `▲ +$${lastBetChange.toFixed(2)} last bet` : `▼ -$${Math.abs(lastBetChange).toFixed(2)} last bet`;
+  changeEl.innerHTML = `<span class="${isUp ? 'positive' : 'negative'}">${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(1)}% from start</span><br><span style="color:var(--muted);font-size:11px">${lastLabel}</span>`;
+  changeEl.className = 'change';
+
+  // Chart
+  const ctx = document.getElementById('balance-chart').getContext('2d');
+  if (balanceChart) balanceChart.destroy();
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+  gradient.addColorStop(0, isUp ? 'rgba(0,230,118,0.25)' : 'rgba(255,68,68,0.25)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0)');
+
+  balanceChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: points,
+        borderColor: isUp ? '#00e676' : '#ff4444',
+        backgroundColor: gradient,
+        borderWidth: 2,
+        pointRadius: points.length > 22 ? 0 : 3,
+        pointBackgroundColor: isUp ? '#00e676' : '#ff4444',
+        fill: true,
+        tension: 0.35,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#1a1e24',
+        borderColor: '#252a32',
+        borderWidth: 1,
+        titleColor: '#9aa0ab',
+        bodyColor: '#e8eaed',
+        callbacks: { label: ctx => `$${ctx.parsed.y.toFixed(2)}` }
+      }},
+      scales: {
+        x: { grid: { color: '#1a1e24' }, ticks: { color: '#5a6370', font: { family: 'DM Mono', size: 10 }, maxRotation: 35, autoSkip: true, maxTicksLimit: 12 } },
+        y: {
+          grid: { color: '#1a1e24' },
+          ticks: { color: '#5a6370', font: { family: 'DM Mono', size: 10 }, callback: v => `$${v}` },
+          border: { dash: [4, 4] }
+        }
+      }
+    }
+  });
+}
+
+// ─── DONUT + STATS ───
+let donutChart = null;
+function renderAnalytics(rows) {
+  const completed = rows.filter(r => !isPending(r));
+
+  // Win = payout > 0, Loss = payout === 0
+  const wins   = completed.filter(r => (parseMoney(r[7]) || 0) > 0);
+  const losses = completed.filter(r => (parseMoney(r[7]) || 0) === 0);
+
+  const total    = completed.length;
+  const winCount = wins.length;
+  const lossCount = losses.length;
+  const winPct   = total > 0 ? ((winCount / total) * 100) : 0;
+
+  // Draw donut chart via Canvas API (no extra lib needed, Chart.js is loaded)
+  const ctx = document.getElementById('donut-chart').getContext('2d');
+  if (donutChart) donutChart.destroy();
+
+  donutChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Wins', 'Losses'],
+      datasets: [{
+        data: [winCount || 0, lossCount || 0],
+        backgroundColor: ['rgba(0,230,118,0.85)', 'rgba(255,68,68,0.5)'],
+        borderColor: ['#00e676', '#ff4444'],
+        borderWidth: 2,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      cutout: '72%',
+      responsive: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1e24',
+          borderColor: '#252a32',
+          borderWidth: 1,
+          bodyColor: '#e8eaed',
+          callbacks: { label: c => ` ${c.label}: ${c.parsed} (${total > 0 ? ((c.parsed/total)*100).toFixed(1) : 0}%)` }
+        }
+      }
+    },
+    plugins: [{
+      id: 'centerText',
+      afterDraw(chart) {
+        const { ctx, chartArea: { top, bottom, left, right } } = chart;
+        const cx = (left + right) / 2;
+        const cy = (top + bottom) / 2;
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold 36px "Bebas Neue", sans-serif';
+        ctx.fillStyle = winPct >= 50 ? '#00e676' : '#ff4444';
+        ctx.fillText(`${winPct.toFixed(1)}%`, cx, cy - 10);
+        ctx.font = '11px "DM Mono", monospace';
+        ctx.fillStyle = '#9aa0ab';
+        ctx.fillText('WIN RATE', cx, cy + 16);
+        ctx.restore();
+      }
+    }]
+  });
+
+  document.getElementById('donut-legend').textContent = `${winCount} wins · ${lossCount} losses · ${total} total`;
+
+  // Spreads
+  const spreads     = completed.filter(r => /[+-]\d/.test(String(r[2] || '')));
+  const spreadWins  = spreads.filter(r => (parseMoney(r[7]) || 0) > 0);
+  const spreadPct   = spreads.length > 0 ? ((spreadWins.length / spreads.length) * 100).toFixed(1) : 'N/A';
+
+  // Moneylines
+  const mls    = completed.filter(r => /ml/i.test(String(r[2] || '')));
+  const mlWins = mls.filter(r => (parseMoney(r[7]) || 0) > 0);
+  const mlPct  = mls.length > 0 ? ((mlWins.length / mls.length) * 100).toFixed(1) : 'N/A';
+
+  // Best profit & biggest loss — capture full row for detail
+  let bestProfit = null, bestBetRow = null;
+  let biggestLoss = null, biggestLossRow = null;
+  completed.forEach(r => {
+    const w = parseMoney(r[5]) || 0;
+    const p = parseMoney(r[7]) || 0;
+    const profit = p - w;
+    if (profit > 0 && (bestProfit === null || profit > bestProfit)) { bestProfit = profit; bestBetRow = r; }
+    if (profit < 0 && (biggestLoss === null || profit < biggestLoss)) { biggestLoss = profit; biggestLossRow = r; }
+  });
+
+  function betDetailSub(r) {
+    if (!r) return '';
+    const team = r[3] || '';
+    const odds = r[6] ? `${r[6]}%` : '';
+    const type = betType(r[2]);
+    const date = String(r[1] || '').trim();
+    return [team, odds, type, date].filter(Boolean).join(' · ');
+  }
+
+  let biggestWager = 0;
+  completed.forEach(r => { const w = parseMoney(r[5]) || 0; if (w > biggestWager) biggestWager = w; });
+
+  const grid = document.getElementById('stats-grid');
+  grid.innerHTML = '';
+
+  const tiles = [
+    { label: 'Win Rate',      val: `${winPct.toFixed(1)}%`,                                        sub: `${winCount}W / ${lossCount}L`,                cls: winPct >= 50 ? 'positive' : 'negative' },
+    { label: 'Total Bets',    val: total,                                                            sub: `${spreads.length} spreads · ${mls.length} ML`, cls: '' },
+    { label: 'Spread Win %',  val: spreadPct === 'N/A' ? '—' : `${spreadPct}%`,                     sub: `${spreadWins.length}/${spreads.length} bets`,   cls: parseFloat(spreadPct) >= 50 ? 'positive' : 'negative' },
+    { label: 'ML Win %',      val: mlPct === 'N/A' ? '—' : `${mlPct}%`,                            sub: `${mlWins.length}/${mls.length} bets`,            cls: parseFloat(mlPct) >= 50 ? 'positive' : 'negative' },
+    { label: 'Best Profit',   val: bestProfit !== null ? `+$${bestProfit.toFixed(2)}` : '—',        sub: betDetailSub(bestBetRow),                         cls: 'positive' },
+    { label: 'Biggest Loss',  val: biggestLoss !== null ? `-$${Math.abs(biggestLoss).toFixed(2)}` : '—', sub: betDetailSub(biggestLossRow),               cls: 'negative' },
+    { label: 'Largest Wager', val: `$${biggestWager.toFixed(2)}`,                                   sub: 'single bet',                                    cls: '' },
+    { label: 'Pending',       val: rows.filter(isPending).length,                                   sub: 'active bets',                                   cls: 'neutral' },
+  ];
+
+  tiles.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'stat-tile';
+    div.innerHTML = `
+      <div class="st-label">${t.label}</div>
+      <div class="st-val ${t.cls}">${t.val}</div>
+      <div class="st-sub">${t.sub}</div>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+// ─── LOG ───
+function renderLog(rows) {
+  // Only completed bets (no pending), sorted by col A descending numerically
+  allCompletedBets = rows
+    .filter(r => !isPending(r))
+    .slice()
+    .sort((a, b) => (parseFloat(b[0]) || 0) - (parseFloat(a[0]) || 0));
+  renderLogRows();
+}
+
+function renderLogRows() {
+  const tbody = document.getElementById('log-body');
+  tbody.innerHTML = '';
+
+  allCompletedBets.forEach((r, absIdx) => {
+    if (!showAll && absIdx >= 5) return;
+    appendRow(tbody, r);
+  });
+
+  const btn = document.getElementById('expand-btn');
+  const lbl = document.getElementById('expand-label');
+  if (allCompletedBets.length <= 5) {
+    btn.style.display = 'none';
+  } else {
+    btn.style.display = 'flex';
+    lbl.textContent = showAll ? 'Show Less' : `Show All ${allCompletedBets.length} Bets`;
+    btn.className = 'expand-btn' + (showAll ? ' open' : '');
+  }
+}
+
+function appendRow(tbody, r) {
+  const team   = r[3] || '—';
+  const opp    = r[4] || '—';
+  const bet    = r[2] || '—';
+  const wager  = parseMoney(r[5]);
+  const odds   = r[6] ? `${r[6]}%` : '—';
+  const payout = parseMoney(r[7]);
+
+  // Win = payout > 0, Loss = payout === 0
+  const isLoss  = payout !== null && payout === 0;
+  const profit  = (payout !== null && wager !== null) ? payout - wager : null;
+
+  const payoutDisplay = payout !== null
+    ? (isLoss
+        ? `<span style="color:var(--red)">$0.00</span>`
+        : `<span style="color:var(--green)">$${payout.toFixed(2)}</span>`)
+    : '—';
+
+  const profitDisplay = profit !== null
+    ? (profit > 0
+        ? `<span style="color:var(--green)">+$${profit.toFixed(2)}</span>`
+        : `<span style="color:var(--red)">-$${Math.abs(profit).toFixed(2)}</span>`)
+    : '—';
+
+  const tr = document.createElement('tr');
+  if (isLoss) tr.style.opacity = '0.7';
+
+  tr.innerHTML = `
+    <td class="team" style="${isLoss ? 'color:var(--red)' : ''}">${team}</td>
+    <td>${opp}</td>
+    <td>$${wager !== null ? wager.toFixed(2) : '—'} <span style="font-size:10px;color:var(--muted)">${bet}</span></td>
+    <td>${odds}</td>
+    <td>${payoutDisplay} <span style="font-size:10px;color:var(--muted)">(${profitDisplay})</span></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function toggleExpand() {
+  showAll = !showAll;
+  renderLogRows();
+}
+
+window.toggleExpand = toggleExpand;
+
+loadData();
+</script>
+</body>
+</html>
