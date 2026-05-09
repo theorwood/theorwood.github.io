@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -20,331 +21,396 @@
     --text2: #9aa0ab;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+- { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    min-height: 100vh;
-  }
+body {
+background: var(–bg);
+color: var(–text);
+font-family: ‘DM Sans’, sans-serif;
+font-size: 14px;
+min-height: 100vh;
+}
 
-  /* Grain overlay */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 999;
-    opacity: 0.3;
-  }
+/* Grain overlay */
+body::before {
+content: ‘’;
+position: fixed;
+inset: 0;
+background-image: url(“data:image/svg+xml,%3Csvg viewBox=‘0 0 256 256’ xmlns=‘http://www.w3.org/2000/svg’%3E%3Cfilter id=‘noise’%3E%3CfeTurbulence type=‘fractalNoise’ baseFrequency=‘0.9’ numOctaves=‘4’ stitchTiles=‘stitch’/%3E%3C/filter%3E%3Crect width=‘100%25’ height=‘100%25’ filter=‘url(%23noise)’ opacity=‘0.04’/%3E%3C/svg%3E”);
+pointer-events: none;
+z-index: 999;
+opacity: 0.3;
+}
 
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 24px 40px 16px;
-    border-bottom: 1px solid var(--border);
-  }
+header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 20px 32px 14px;
+border-bottom: 1px solid var(–border);
+}
 
-  header h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 42px;
-    letter-spacing: 4px;
-    background: linear-gradient(90deg, var(--gold), #fff 60%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
+header h1 {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: clamp(28px, 5vw, 42px);
+letter-spacing: 4px;
+background: linear-gradient(90deg, var(–gold), #fff 60%);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+}
 
-  #load-status {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+/* Pencil icon link replacing load-status */
+#edit-link {
+display: flex;
+align-items: center;
+justify-content: center;
+width: 38px;
+height: 38px;
+border-radius: 8px;
+border: 1px solid var(–border);
+background: var(–surface);
+color: var(–text2);
+text-decoration: none;
+transition: all .2s;
+flex-shrink: 0;
+}
+#edit-link:hover {
+border-color: var(–gold);
+color: var(–gold);
+background: var(–surface2);
+}
 
-  .dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--muted);
-    animation: pulse 1.5s infinite;
-  }
-  .dot.live { background: var(--green); animation: none; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+main {
+padding: 24px 32px;
+max-width: 1400px;
+margin: 0 auto;
+}
 
-  main { padding: 32px 40px; max-width: 1400px; margin: 0 auto; }
+/* ─── SECTION TITLE ─── */
+.section-label {
+font-family: ‘DM Mono’, monospace;
+font-size: 10px;
+letter-spacing: 3px;
+text-transform: uppercase;
+color: var(–muted);
+margin-bottom: 14px;
+}
 
-  /* ─── SECTION TITLE ─── */
-  .section-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 14px;
-  }
+/* ─── PENDING STUBS ─── */
+#pending-section { margin-bottom: 32px; }
+#pending-cards {
+display: flex;
+gap: 12px;
+flex-wrap: wrap;
+}
 
-  /* ─── PENDING STUBS ─── */
-  #pending-section { margin-bottom: 40px; }
-  #pending-cards {
-    display: flex;
-    gap: 14px;
-    flex-wrap: wrap;
-  }
+.pending-card {
+background: var(–surface);
+border: 1px solid var(–gold);
+border-radius: 10px;
+padding: 16px 20px;
+min-width: 200px;
+flex: 1 1 200px;
+max-width: 320px;
+position: relative;
+overflow: hidden;
+animation: fadeIn .4s ease both;
+}
 
-  .pending-card {
-    background: var(--surface);
-    border: 1px solid var(--gold);
-    border-radius: 10px;
-    padding: 18px 22px;
-    min-width: 220px;
-    position: relative;
-    overflow: hidden;
-    animation: fadeIn .4s ease both;
-  }
+.pending-card::before {
+content: ‘PENDING’;
+position: absolute;
+bottom: 6px; right: 8px;
+background: none;
+color: var(–gold);
+font-family: ‘DM Mono’, monospace;
+font-size: 9px;
+letter-spacing: 2px;
+padding: 0;
+transform: none;
+opacity: 0.6;
+}
 
-  .pending-card::before {
-    content: 'PENDING';
-    position: absolute;
-    bottom: 6px; right: 8px;
-    background: none;
-    color: var(--gold);
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 2px;
-    padding: 0;
-    transform: none;
-    opacity: 0.6;
-  }
+.pending-card .matchup {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 20px;
+letter-spacing: 1px;
+line-height: 1.1;
+margin-bottom: 8px;
+}
 
-  .pending-card .matchup {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    letter-spacing: 1px;
-    line-height: 1.1;
-    margin-bottom: 8px;
-  }
+.pending-card .matchup span { color: var(–gold); }
 
-  .pending-card .matchup span { color: var(--gold); }
+.pending-card .meta {
+display: flex;
+gap: 14px;
+font-family: ‘DM Mono’, monospace;
+font-size: 12px;
+color: var(–text2);
+flex-wrap: wrap;
+}
 
-  .pending-card .meta {
-    display: flex;
-    gap: 16px;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--text2);
-  }
+/* Wager label in red */
+.pending-card .meta .wager-label { color: var(–red); }
+.pending-card .meta strong { color: var(–text); }
 
-  .pending-card .meta strong { color: var(--text); }
+.pending-card .potential {
+margin-top: 10px;
+font-size: 12px;
+color: var(–green);
+font-family: ‘DM Mono’, monospace;
+}
 
-  .pending-card .potential {
-    margin-top: 10px;
-    font-size: 12px;
-    color: var(--green);
-    font-family: 'DM Mono', monospace;
-  }
+/* ─── BALANCE + CHART ─── */
+#balance-section {
+display: grid;
+grid-template-columns: 200px 1fr;
+gap: 16px;
+margin-bottom: 32px;
+}
 
-  /* ─── BALANCE + CHART ─── */
-  #balance-section {
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 20px;
-    margin-bottom: 40px;
-  }
+.balance-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 20px;
+display: flex;
+flex-direction: column;
+justify-content: center;
+}
 
-  .balance-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
+.balance-card .label {
+font-family: ‘DM Mono’, monospace;
+font-size: 10px;
+letter-spacing: 3px;
+color: var(–muted);
+margin-bottom: 8px;
+}
 
-  .balance-card .label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 3px;
-    color: var(--muted);
-    margin-bottom: 8px;
-  }
+.balance-card .amount {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: clamp(36px, 5vw, 48px);
+line-height: 1;
+letter-spacing: 2px;
+}
 
-  .balance-card .amount {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 48px;
-    line-height: 1;
-    letter-spacing: 2px;
-  }
+.balance-card .change {
+font-family: ‘DM Mono’, monospace;
+font-size: 12px;
+margin-top: 6px;
+}
 
-  .balance-card .change {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    margin-top: 6px;
-  }
+.positive { color: var(–green); }
+.negative { color: var(–red); }
+.neutral { color: var(–text2); }
 
-  .positive { color: var(--green); }
-  .negative { color: var(--red); }
-  .neutral { color: var(--text2); }
+.chart-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 18px 20px;
+min-width: 0;
+}
 
-  .chart-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px 24px;
-  }
+.chart-card canvas { width: 100% !important; }
 
-  .chart-card canvas { width: 100% !important; }
+/* ─── VENN + STATS ─── */
+#analytics-section {
+display: grid;
+grid-template-columns: 300px 1fr;
+gap: 16px;
+margin-bottom: 32px;
+}
 
-  /* ─── VENN + STATS ─── */
-  #analytics-section {
-    display: grid;
-    grid-template-columns: 340px 1fr;
-    gap: 20px;
-    margin-bottom: 40px;
-  }
+.venn-card, .stats-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 20px;
+min-width: 0;
+}
 
-  .venn-card, .stats-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 24px;
-  }
+.venn-card h3 {
+font-family: ‘DM Mono’, monospace;
+font-size: 10px;
+letter-spacing: 3px;
+color: var(–muted);
+margin-bottom: 16px;
+}
 
-  .venn-card h3 {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 3px;
-    color: var(--muted);
-    margin-bottom: 16px;
-  }
+#venn-svg { display: block; margin: 0 auto; }
 
-  #venn-svg { display: block; margin: 0 auto; }
+.stats-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 10px;
+}
 
-  .stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
+.stat-tile {
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: 8px;
+padding: 12px 14px;
+}
 
-  .stat-tile {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 14px 16px;
-  }
+.stat-tile .st-label {
+font-family: ‘DM Mono’, monospace;
+font-size: 10px;
+letter-spacing: 2px;
+color: var(–muted);
+margin-bottom: 6px;
+text-transform: uppercase;
+}
 
-  .stat-tile .st-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 2px;
-    color: var(--muted);
-    margin-bottom: 6px;
-    text-transform: uppercase;
-  }
+.stat-tile .st-val {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 24px;
+letter-spacing: 1px;
+line-height: 1;
+}
 
-  .stat-tile .st-val {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 26px;
-    letter-spacing: 1px;
-    line-height: 1;
-  }
+.stat-tile .st-sub {
+font-size: 11px;
+color: var(–text2);
+margin-top: 4px;
+font-family: ‘DM Mono’, monospace;
+}
 
-  .stat-tile .st-sub {
-    font-size: 11px;
-    color: var(--text2);
-    margin-top: 4px;
-    font-family: 'DM Mono', monospace;
-  }
+/* ─── BET LOG ─── */
+#log-section { margin-bottom: 60px; }
 
-  /* ─── BET LOG ─── */
-  #log-section { margin-bottom: 60px; }
+#log-table {
+width: 100%;
+border-collapse: collapse;
+font-family: ‘DM Mono’, monospace;
+font-size: 12px;
+}
 
-  #log-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-  }
+#log-table thead tr {
+border-bottom: 1px solid var(–border);
+}
 
-  #log-table thead tr {
-    border-bottom: 1px solid var(--border);
-  }
+#log-table th {
+text-align: left;
+padding: 8px 12px;
+font-size: 10px;
+letter-spacing: 2px;
+color: var(–muted);
+text-transform: uppercase;
+font-weight: 500;
+}
 
-  #log-table th {
-    text-align: left;
-    padding: 8px 14px;
-    font-size: 10px;
-    letter-spacing: 2px;
-    color: var(--muted);
-    text-transform: uppercase;
-    font-weight: 500;
-  }
+#log-table tbody tr {
+border-bottom: 1px solid var(–border);
+transition: background .15s;
+}
 
-  #log-table tbody tr {
-    border-bottom: 1px solid var(--border);
-    transition: background .15s;
-  }
+#log-table tbody tr:hover { background: var(–surface2); }
 
-  #log-table tbody tr:hover { background: var(--surface2); }
+#log-table td {
+padding: 10px 12px;
+color: var(–text2);
+}
 
-  #log-table td {
-    padding: 11px 14px;
-    color: var(--text2);
-  }
+#log-table td.team { color: var(–text); font-weight: 500; }
+#log-table td.won { color: var(–green); }
+#log-table td.lost { color: var(–red); }
+#log-table td.pending-cell { color: var(–gold); }
 
-  #log-table td.team { color: var(--text); font-weight: 500; }
-  #log-table td.won { color: var(--green); }
-  #log-table td.lost { color: var(--red); }
-  #log-table td.pending-cell { color: var(--gold); }
+.expand-btn {
+display: flex;
+align-items: center;
+justify-content: center;
+width: 100%;
+gap: 8px;
+margin-top: 16px;
+padding: 10px;
+background: none;
+border: 1px solid var(–border);
+border-radius: 8px;
+color: var(–text2);
+font-family: ‘DM Mono’, monospace;
+font-size: 11px;
+letter-spacing: 2px;
+cursor: pointer;
+transition: all .2s;
+text-transform: uppercase;
+}
 
-  .expand-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    gap: 8px;
-    margin-top: 16px;
-    padding: 10px;
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text2);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 2px;
-    cursor: pointer;
-    transition: all .2s;
-    text-transform: uppercase;
-  }
+.expand-btn:hover { background: var(–surface2); color: var(–text); border-color: var(–muted); }
 
-  .expand-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--muted); }
+.expand-btn svg { transition: transform .3s; }
+.expand-btn.open svg { transform: rotate(180deg); }
 
-  .expand-btn svg { transition: transform .3s; }
-  .expand-btn.open svg { transform: rotate(180deg); }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
 
-  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+#no-pending {
+font-family: ‘DM Mono’, monospace;
+font-size: 12px;
+color: var(–muted);
+padding: 12px 0;
+}
 
-  .hidden-rows { display: none; }
-  .hidden-rows.show { display: table-row; }
+/* ─── MOBILE / RESPONSIVE ─── */
+@media (max-width: 700px) {
+header { padding: 14px 16px 12px; }
+main { padding: 16px; }
 
-  #no-pending {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-    padding: 12px 0;
-  }
+```
+#balance-section {
+  grid-template-columns: 1fr;
+}
+
+#analytics-section {
+  grid-template-columns: 1fr;
+}
+
+.stats-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.venn-card canvas {
+  width: 200px !important;
+  height: 200px !important;
+}
+
+#pending-cards {
+  flex-direction: column;
+}
+.pending-card {
+  max-width: 100%;
+}
+
+#log-table th, #log-table td {
+  padding: 8px 8px;
+  font-size: 11px;
+}
+
+/* Hide VS column on very small screens */
+#log-table .col-vs { display: none; }
+```
+
+}
+
+@media (max-width: 420px) {
+.stats-grid {
+grid-template-columns: 1fr;
+}
+}
 </style>
+
 </head>
 <body>
 
 <header>
   <h1>BET LEDGER</h1>
-  <div id="load-status"><div class="dot" id="status-dot"></div><span id="status-text">Loading…</span></div>
+  <a id="edit-link" href="https://docs.google.com/spreadsheets/d/116R5t_XmOuYj5Z8cGr0fwcB9fYCpZzEBNZahPtEYMIQ/edit?usp=drive_link" target="_blank" title="Edit spreadsheet" aria-label="Edit spreadsheet">
+    <!-- Pencil icon -->
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+  </a>
 </header>
 
 <main>
@@ -355,6 +421,7 @@
   </section>
 
   <!-- BALANCE + CHART -->
+
   <section id="balance-section">
     <div class="balance-card">
       <div class="label">TOTAL BALANCE</div>
@@ -367,7 +434,8 @@
     </div>
   </section>
 
-  <!-- VENN + STATS -->
+  <!-- DONUT + STATS -->
+
   <section id="analytics-section">
     <div class="venn-card">
       <h3>Prediction Win Rate</h3>
@@ -381,14 +449,15 @@
   </section>
 
   <!-- BET LOG -->
+
   <section id="log-section">
     <div class="section-label">Bet Log</div>
     <table id="log-table">
       <thead>
         <tr>
-          <th>Team (Bet)</th>
-          <th>vs</th>
-          <th>Bet</th>
+          <th>Team</th>
+          <th class="col-vs">vs</th>
+          <th>Wager</th>
           <th>%</th>
           <th>Payout</th>
         </tr>
@@ -403,7 +472,9 @@
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
 <script>
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRcqC9jKaHG8zOS_2-szgNmDE-RaPdrF6M_pfnLWudIe8fuauDeWfKza8DyEdgam_-V2kgrpGdn7R9T/pub?gid=0&single=true&output=csv";
 
@@ -413,14 +484,16 @@ let balanceChart = null;
 
 function parseMoney(v) {
   if (!v) return null;
-  return parseFloat(String(v).replace(/[$,\s]/g, ''));
+  const s = String(v).replace(/[$,\s]/g, '');
+  if (s === '' || isNaN(parseFloat(s))) return null;
+  return parseFloat(s);
 }
 
-function betType(team) {
-  if (!team) return 'unknown';
-  if (/ml/i.test(team)) return 'ML';
-  if (/[+-]\d/.test(team)) return 'Spread';
-  return 'Other';
+function betType(bet) {
+  if (!bet) return '';
+  if (/ml/i.test(bet)) return 'ML';
+  if (/[+-]\d/.test(bet)) return 'Spread';
+  return '';
 }
 
 function isPending(row) {
@@ -434,14 +507,10 @@ function loadData() {
     skipEmptyLines: true,
     complete: (results) => {
       const rows = results.data;
-      // Skip header rows (find first row where col C looks like a team/bet)
       const dataRows = rows.filter((r, i) => {
-        if (i === 0) return false; // skip header
+        if (i === 0) return false;
         return r[3] && r[3].trim() !== '' && r[5] && parseMoney(r[5]) !== null;
       });
-
-      document.getElementById('status-dot').classList.add('live');
-      document.getElementById('status-text').textContent = `${dataRows.length} bets loaded`;
 
       renderPending(dataRows);
       renderBalance(dataRows);
@@ -449,7 +518,6 @@ function loadData() {
       renderLog(dataRows);
     },
     error: (err) => {
-      document.getElementById('status-text').textContent = 'Error loading data';
       console.error(err);
     }
   });
@@ -474,11 +542,7 @@ function renderPending(rows) {
     const theoretical = parseMoney(r[8]);
 
     const bet  = String(r[2] || '').trim();
-    const type = betType(bet);
-
-    // Championship bet: opponent cell is empty or contains "championship"
     const isChampionship = !opp || /championship/i.test(opp);
-
     const betLabel = /ml/i.test(bet) ? 'Win' : bet;
 
     const betBadge = !isChampionship && betLabel
@@ -495,7 +559,7 @@ function renderPending(rows) {
     card.innerHTML = `
       <div class="matchup">${matchupHTML}</div>
       <div class="meta">
-        <div>Wager: <strong>$${amt ? amt.toFixed(2) : '—'}</strong></div>
+        <div><span class="wager-label">Wager:</span> <strong>$${amt ? amt.toFixed(2) : '—'}</strong></div>
         <div>Odds: <strong>${odds}</strong></div>
       </div>
       ${theoretical ? `<div class="potential">Potential: <span style="color:var(--text)">$${theoretical.toFixed(2)}</span> <span style="color:var(--green)">(+$${(theoretical - (amt || 0)).toFixed(2)})</span></div>` : ''}
@@ -505,11 +569,11 @@ function renderPending(rows) {
 }
 
 // ─── BALANCE + CHART ───
+// Only completed bets are plotted — pending wagers are excluded from the line graph
 function renderBalance(rows) {
   const STARTING_BALANCE = 25;
   const completed = rows.filter(r => !isPending(r));
 
-  // Build running total balance starting from $25, using date from col B (r[1])
   let running = STARTING_BALANCE;
   const points = [STARTING_BALANCE];
   const labels = ['Start'];
@@ -520,19 +584,18 @@ function renderBalance(rows) {
     const profit = payout - wager;
     running = parseFloat((running + profit).toFixed(2));
     points.push(running);
-    // Use col B as date label, fallback to row number
     const rawDate = String(r[1] || '').trim();
     labels.push(rawDate || `#${r[0] || ''}`);
   });
 
-  const pendingWagered = rows.filter(isPending).reduce((sum, r) => sum + (parseMoney(r[5]) || 0), 0);
-  const totalBalance = parseFloat((running - pendingWagered).toFixed(2));
+  // Current balance = running total of completed bets only (no pending adjustment)
+  const totalBalance = running;
   const isUp = totalBalance >= STARTING_BALANCE;
+
   const el = document.getElementById('balance-amount');
   el.textContent = `$${totalBalance.toFixed(2)}`;
   el.className = 'amount ' + (isUp ? 'positive' : 'negative');
 
-  // % change from starting balance
   const pctChange = (((totalBalance - STARTING_BALANCE) / STARTING_BALANCE) * 100);
   const changeEl = document.getElementById('balance-change');
   const lastBetChange = points.length >= 3 ? points[points.length-1] - points[points.length-2] : 0;
@@ -540,7 +603,6 @@ function renderBalance(rows) {
   changeEl.innerHTML = `<span class="${isUp ? 'positive' : 'negative'}">${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(1)}% from start</span><br><span style="color:var(--muted);font-size:11px">${lastLabel}</span>`;
   changeEl.className = 'change';
 
-  // Chart
   const ctx = document.getElementById('balance-chart').getContext('2d');
   if (balanceChart) balanceChart.destroy();
 
@@ -590,16 +652,15 @@ let donutChart = null;
 function renderAnalytics(rows) {
   const completed = rows.filter(r => !isPending(r));
 
-  // Win = payout > 0, Loss = payout === 0
   const wins   = completed.filter(r => (parseMoney(r[7]) || 0) > 0);
   const losses = completed.filter(r => (parseMoney(r[7]) || 0) === 0);
 
-  const total    = completed.length;
-  const winCount = wins.length;
+  const total     = completed.length;
+  const winCount  = wins.length;
   const lossCount = losses.length;
-  const winPct   = total > 0 ? ((winCount / total) * 100) : 0;
+  const winPct    = total > 0 ? ((winCount / total) * 100) : 0;
 
-  // Draw donut chart via Canvas API (no extra lib needed, Chart.js is loaded)
+  // Donut chart
   const ctx = document.getElementById('donut-chart').getContext('2d');
   if (donutChart) donutChart.destroy();
 
@@ -652,16 +713,16 @@ function renderAnalytics(rows) {
   document.getElementById('donut-legend').textContent = `${winCount} wins · ${lossCount} losses · ${total} total`;
 
   // Spreads
-  const spreads     = completed.filter(r => /[+-]\d/.test(String(r[2] || '')));
-  const spreadWins  = spreads.filter(r => (parseMoney(r[7]) || 0) > 0);
-  const spreadPct   = spreads.length > 0 ? ((spreadWins.length / spreads.length) * 100).toFixed(1) : 'N/A';
+  const spreads    = completed.filter(r => /[+-]\d/.test(String(r[2] || '')));
+  const spreadWins = spreads.filter(r => (parseMoney(r[7]) || 0) > 0);
+  const spreadPct  = spreads.length > 0 ? ((spreadWins.length / spreads.length) * 100).toFixed(1) : 'N/A';
 
   // Moneylines
   const mls    = completed.filter(r => /ml/i.test(String(r[2] || '')));
   const mlWins = mls.filter(r => (parseMoney(r[7]) || 0) > 0);
   const mlPct  = mls.length > 0 ? ((mlWins.length / mls.length) * 100).toFixed(1) : 'N/A';
 
-  // Best profit & biggest loss — capture full row for detail
+  // Best profit & biggest loss
   let bestProfit = null, bestBetRow = null;
   let biggestLoss = null, biggestLossRow = null;
   completed.forEach(r => {
@@ -681,21 +742,54 @@ function renderAnalytics(rows) {
     return [team, odds, type, date].filter(Boolean).join(' · ');
   }
 
-  let biggestWager = 0;
-  completed.forEach(r => { const w = parseMoney(r[5]) || 0; if (w > biggestWager) biggestWager = w; });
+  // Largest wager — capture if it was won or lost
+  let biggestWager = 0, biggestWagerRow = null;
+  completed.forEach(r => {
+    const w = parseMoney(r[5]) || 0;
+    if (w > biggestWager) { biggestWager = w; biggestWagerRow = r; }
+  });
+  function wagerOutcome(r) {
+    if (!r) return '';
+    const p = parseMoney(r[7]);
+    if (p === null) return '';
+    return p > 0 ? 'won ✓' : 'lost ✗';
+  }
+
+  // Longest win streak
+  let longestStreak = 0, currentStreak = 0;
+  const sortedCompleted = completed.slice().sort((a, b) => (parseFloat(a[0]) || 0) - (parseFloat(b[0]) || 0));
+  sortedCompleted.forEach(r => {
+    const p = parseMoney(r[7]);
+    if (p !== null && p > 0) {
+      currentStreak++;
+      if (currentStreak > longestStreak) longestStreak = currentStreak;
+    } else {
+      currentStreak = 0;
+    }
+  });
+
+  // Team bet on most
+  const teamCounts = {};
+  completed.forEach(r => {
+    const t = String(r[3] || '').trim();
+    if (t) teamCounts[t] = (teamCounts[t] || 0) + 1;
+  });
+  let favTeam = '—', favCount = 0;
+  Object.entries(teamCounts).forEach(([t, c]) => {
+    if (c > favCount) { favTeam = t; favCount = c; }
+  });
 
   const grid = document.getElementById('stats-grid');
   grid.innerHTML = '';
 
   const tiles = [
-    { label: 'Win Rate',      val: `${winPct.toFixed(1)}%`,                                        sub: `${winCount}W / ${lossCount}L`,                cls: winPct >= 50 ? 'positive' : 'negative' },
-    { label: 'Total Bets',    val: total,                                                            sub: `${spreads.length} spreads · ${mls.length} ML`, cls: '' },
-    { label: 'Spread Win %',  val: spreadPct === 'N/A' ? '—' : `${spreadPct}%`,                     sub: `${spreadWins.length}/${spreads.length} bets`,   cls: parseFloat(spreadPct) >= 50 ? 'positive' : 'negative' },
-    { label: 'ML Win %',      val: mlPct === 'N/A' ? '—' : `${mlPct}%`,                            sub: `${mlWins.length}/${mls.length} bets`,            cls: parseFloat(mlPct) >= 50 ? 'positive' : 'negative' },
-    { label: 'Best Profit',   val: bestProfit !== null ? `+$${bestProfit.toFixed(2)}` : '—',        sub: betDetailSub(bestBetRow),                         cls: 'positive' },
-    { label: 'Biggest Loss',  val: biggestLoss !== null ? `-$${Math.abs(biggestLoss).toFixed(2)}` : '—', sub: betDetailSub(biggestLossRow),               cls: 'negative' },
-    { label: 'Largest Wager', val: `$${biggestWager.toFixed(2)}`,                                   sub: 'single bet',                                    cls: '' },
-    { label: 'Pending',       val: rows.filter(isPending).length,                                   sub: 'active bets',                                   cls: 'neutral' },
+    { label: 'Longest Win Streak 🔥', val: longestStreak > 0 ? longestStreak : '—',               sub: `${winCount}W / ${lossCount}L`,                cls: longestStreak > 2 ? 'positive' : '' },
+    { label: 'Most Bet Team',          val: favTeam,                                                sub: `${favCount} bet${favCount !== 1 ? 's' : ''}`,   cls: '' },
+    { label: 'Spread Win %',           val: spreadPct === 'N/A' ? '—' : `${spreadPct}%`,           sub: `${spreadWins.length}/${spreads.length} bets`,   cls: parseFloat(spreadPct) >= 50 ? 'positive' : 'negative' },
+    { label: 'ML Win %',               val: mlPct === 'N/A' ? '—' : `${mlPct}%`,                  sub: `${mlWins.length}/${mls.length} bets`,            cls: parseFloat(mlPct) >= 50 ? 'positive' : 'negative' },
+    { label: 'Best Profit',            val: bestProfit !== null ? `+$${bestProfit.toFixed(2)}` : '—',        sub: betDetailSub(bestBetRow),    cls: 'positive' },
+    { label: 'Biggest Loss',           val: biggestLoss !== null ? `-$${Math.abs(biggestLoss).toFixed(2)}` : '—', sub: betDetailSub(biggestLossRow), cls: 'negative' },
+    { label: 'Largest Wager',          val: `$${biggestWager.toFixed(2)}`,                          sub: wagerOutcome(biggestWagerRow),                   cls: '' },
   ];
 
   tiles.forEach(t => {
@@ -712,7 +806,6 @@ function renderAnalytics(rows) {
 
 // ─── LOG ───
 function renderLog(rows) {
-  // Only completed bets (no pending), sorted by col A descending numerically
   allCompletedBets = rows
     .filter(r => !isPending(r))
     .slice()
@@ -743,12 +836,13 @@ function renderLogRows() {
 function appendRow(tbody, r) {
   const team   = r[3] || '—';
   const opp    = r[4] || '—';
-  const bet    = r[2] || '—';
+  const bet    = r[2] || '';
   const wager  = parseMoney(r[5]);
-  const odds   = r[6] ? `${r[6]}%` : '—';
+  // Show odds as a plain number, not appended with %%
+  const rawOdds = String(r[6] || '').trim().replace(/%+/g, '');
+  const odds   = rawOdds ? `${rawOdds}%` : '—';
   const payout = parseMoney(r[7]);
 
-  // Win = payout > 0, Loss = payout === 0
   const isLoss  = payout !== null && payout === 0;
   const profit  = (payout !== null && wager !== null) ? payout - wager : null;
 
@@ -764,13 +858,19 @@ function appendRow(tbody, r) {
         : `<span style="color:var(--red)">-$${Math.abs(profit).toFixed(2)}</span>`)
     : '—';
 
+  // Bet type badge next to team name
+  const typeLabel = betType(bet);
+  const typeBadge = typeLabel
+    ? `<span style="font-size:10px;color:var(--muted);margin-left:5px;font-weight:normal">${typeLabel}</span>`
+    : '';
+
   const tr = document.createElement('tr');
   if (isLoss) tr.style.opacity = '0.7';
 
   tr.innerHTML = `
-    <td class="team" style="${isLoss ? 'color:var(--red)' : ''}">${team}</td>
-    <td>${opp}</td>
-    <td>$${wager !== null ? wager.toFixed(2) : '—'} <span style="font-size:10px;color:var(--muted)">${bet}</span></td>
+    <td class="team" style="${isLoss ? 'color:var(--red)' : ''}">${team}${typeBadge}</td>
+    <td class="col-vs">${opp}</td>
+    <td>$${wager !== null ? wager.toFixed(2) : '—'}</td>
     <td>${odds}</td>
     <td>${payoutDisplay} <span style="font-size:10px;color:var(--muted)">(${profitDisplay})</span></td>
   `;
@@ -786,5 +886,6 @@ window.toggleExpand = toggleExpand;
 
 loadData();
 </script>
+
 </body>
 </html>
