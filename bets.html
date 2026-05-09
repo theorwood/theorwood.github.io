@@ -326,7 +326,6 @@
     main { padding: 12px; }
 
     #balance-section { grid-template-columns: 1fr; }
-    .balance-card { padding: 16px; align-items: center; text-align: center; }
     .balance-card .amount { font-size: 48px; }
 
     #analytics-section { grid-template-columns: 1fr; }
@@ -499,33 +498,55 @@ function renderBalance(rows) {
   const completed = rows.filter(r => !isPending(r));
   const pending   = rows.filter(r => isPending(r));
 
-  // ── Group completed bets by date, accumulate profit per day ──
-  // Keep insertion order (sorted by col A already via sheet order)
-  const dayMap = new Map(); // date -> cumulative profit for that day
+  // Parse a date string like "5/9/25" or "5/9/2025" into a comparable number YYYYMMDD
+  function parseDate(s) {
+    if (!s) return null;
+    const parts = String(s).trim().split('/');
+    if (parts.length < 3) return null;
+    let [m, d, y] = parts.map(Number);
+    if (y < 100) y += 2000;
+    return y * 10000 + m * 100 + d;
+  }
+
+  // ── Group completed bets by date, sum net profit per day ──
+  const dayMap = new Map(); // date-string -> net profit
   completed.forEach(r => {
     const date = String(r[1]||'').trim() || `#${r[0]}`;
     const profit = (parseMoney(r[7])||0) - (parseMoney(r[5])||0);
     dayMap.set(date, (dayMap.get(date)||0) + profit);
   });
 
-  // Build pending deductions per date
-  const pendingByDate = new Map();
-  pending.forEach(r => {
-    const date = String(r[1]||'').trim();
-    if (date) pendingByDate.set(date, (pendingByDate.get(date)||0) + (parseMoney(r[5])||0));
-  });
-
-  // Build chart points: one per unique day, deducting pending wagers on their date
+  // ── Build running balance per day (no pending yet) ──
+  // Also store the running balance keyed by parsed date int for delta lookups
   let running = START;
   const points = [START], labels = ['Start'];
-  dayMap.forEach((profit, date) => {
+  const balanceByDateInt = new Map(); // YYYYMMDD -> running balance after that day
+
+  dayMap.forEach((profit, dateStr) => {
     running = parseFloat((running + profit).toFixed(2));
-    const pendingDeduct = pendingByDate.get(date) || 0;
-    points.push(parseFloat((running - pendingDeduct).toFixed(2)));
-    labels.push(date);
+    const di = parseDate(dateStr);
+    if (di) balanceByDateInt.set(di, running);
+    points.push(running);
+    labels.push(dateStr);
   });
 
-  // Displayed balance: running total minus all pending wagers
+  // ── Subtract pending wagers from all chart points on or after their date ──
+  // Pending wagers reduce liquid balance from their bet date onward
+  pending.forEach(r => {
+    const wager = parseMoney(r[5]) || 0;
+    if (!wager) return;
+    const betDateInt = parseDate(String(r[1]||'').trim());
+    // If bet date matches or is before a chart point's date, reduce that point
+    // points[0] = START (no date), points[i] corresponds to labels[i] for i>=1
+    for (let i = 1; i < points.length; i++) {
+      const ptDate = parseDate(labels[i]);
+      if (ptDate === null || betDateInt === null || ptDate >= betDateInt) {
+        points[i] = parseFloat((points[i] - wager).toFixed(2));
+      }
+    }
+  });
+
+  // ── Displayed balance: running after all completed bets, minus all pending wagers ──
   const pendingOut = pending.reduce((s,r) => s+(parseMoney(r[5])||0), 0);
   const balance = parseFloat((running - pendingOut).toFixed(2));
   const isUp = balance >= START;
@@ -537,37 +558,38 @@ function renderBalance(rows) {
   const pct = (((balance - START) / START) * 100);
   const pctStr = `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
 
-  // Yesterday
+  // ── Deltas: balance change since yesterday / last 7 days ──
+  // Find the balance at the closest date <= N days ago, compare to current balance
   const now = new Date();
-  const yest = new Date(now); yest.setDate(now.getDate() - 1);
-  const yStr = `${yest.getMonth()+1}/${yest.getDate()}/${String(yest.getFullYear()).slice(-2)}`;
-  let yProfit = 0;
-  completed.forEach(r => {
-    if (String(r[1]||'').trim() === yStr)
-      yProfit += (parseMoney(r[7])||0) - (parseMoney(r[5])||0);
-  });
-  yProfit = parseFloat(yProfit.toFixed(2));
-  const yLabel = yProfit > 0 ? `▲ +$${yProfit.toFixed(2)} yesterday`
-    : yProfit < 0 ? `▼ -$${Math.abs(yProfit).toFixed(2)} yesterday`
-    : `— $0.00 yesterday`;
 
-  // Last week (7 days ago)
-  const week = new Date(now); week.setDate(now.getDate() - 7);
-  const wStr = `${week.getMonth()+1}/${week.getDate()}/${String(week.getFullYear()).slice(-2)}`;
-  let wProfit = 0;
-  completed.forEach(r => {
-    if (String(r[1]||'').trim() === wStr)
-      wProfit += (parseMoney(r[7])||0) - (parseMoney(r[5])||0);
-  });
-  wProfit = parseFloat(wProfit.toFixed(2));
-  const wLabel = wProfit > 0 ? `▲ +$${wProfit.toFixed(2)} last week`
-    : wProfit < 0 ? `▼ -$${Math.abs(wProfit).toFixed(2)} last week`
-    : `— $0.00 last week`;
+  function balanceNDaysAgo(n) {
+    const target = new Date(now);
+    target.setDate(now.getDate() - n);
+    const targetInt = target.getFullYear() * 10000 + (target.getMonth()+1) * 100 + target.getDate();
+    // Find most recent date in balanceByDateInt that is <= targetInt
+    let best = null, bestDate = -1;
+    balanceByDateInt.forEach((bal, di) => {
+      if (di <= targetInt && di > bestDate) { bestDate = di; best = bal; }
+    });
+    // If no completed bets on or before that date, balance was START
+    return best !== null ? best : START;
+  }
+
+  const balYest   = balanceNDaysAgo(1);
+  const balWeek   = balanceNDaysAgo(7);
+  const deltaYest = parseFloat((balance - balYest).toFixed(2));
+  const deltaWeek = parseFloat((balance - balWeek).toFixed(2));
+
+  function deltaLabel(delta, period) {
+    if (delta > 0)  return `▲ +$${delta.toFixed(2)} ${period}`;
+    if (delta < 0)  return `▼ -$${Math.abs(delta).toFixed(2)} ${period}`;
+    return `— $0.00 ${period}`;
+  }
 
   document.getElementById('balance-change').innerHTML =
     `<span class="${isUp?'positive':'negative'}">${pctStr} from start</span><br>` +
-    `<span style="color:var(--muted);font-size:10px">${yLabel}</span><br>` +
-    `<span style="color:var(--muted);font-size:10px">${wLabel}</span>`;
+    `<span style="color:var(--muted);font-size:10px">${deltaLabel(deltaYest, 'yesterday')}</span><br>` +
+    `<span style="color:var(--muted);font-size:10px">${deltaLabel(deltaWeek, 'last week')}</span>`;
 
   // Chart
   const ctx = document.getElementById('balance-chart').getContext('2d');
