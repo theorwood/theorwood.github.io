@@ -498,57 +498,79 @@ function renderBalance(rows) {
   const completed = rows.filter(r => !isPending(r));
   const pending   = rows.filter(r => isPending(r));
 
-  // Parse a date string like "5/9/25" or "5/9/2025" into a comparable number YYYYMMDD
+  // Parse "M/D/YY" or "M/D/YYYY" → integer YYYYMMDD for sorting/comparing
   function parseDate(s) {
     if (!s) return null;
     const parts = String(s).trim().split('/');
     if (parts.length < 3) return null;
     let [m, d, y] = parts.map(Number);
     if (y < 100) y += 2000;
+    if (isNaN(m) || isNaN(d) || isNaN(y)) return null;
     return y * 10000 + m * 100 + d;
   }
 
-  // ── Group completed bets by date, sum net profit per day ──
-  const dayMap = new Map(); // date-string -> net profit
+  // ── Collect all unique dates (completed + pending) and sort them ──
+  const allDatesSet = new Set();
+  completed.forEach(r => { const d = String(r[1]||'').trim(); if (d) allDatesSet.add(d); });
+  pending.forEach(r   => { const d = String(r[1]||'').trim(); if (d) allDatesSet.add(d); });
+
+  const allDates = Array.from(allDatesSet).sort((a, b) => {
+    const da = parseDate(a), db = parseDate(b);
+    if (da === null && db === null) return 0;
+    if (da === null) return 1;
+    if (db === null) return -1;
+    return da - db;
+  });
+
+  // ── Net completed profit per date ──
+  const completedProfitByDate = new Map();
   completed.forEach(r => {
-    const date = String(r[1]||'').trim() || `#${r[0]}`;
+    const date = String(r[1]||'').trim();
+    if (!date) return;
     const profit = (parseMoney(r[7])||0) - (parseMoney(r[5])||0);
-    dayMap.set(date, (dayMap.get(date)||0) + profit);
+    completedProfitByDate.set(date, (completedProfitByDate.get(date)||0) + profit);
   });
 
-  // ── Build running balance per day (no pending yet) ──
-  // Also store the running balance keyed by parsed date int for delta lookups
-  let running = START;
-  const points = [START], labels = ['Start'];
-  const balanceByDateInt = new Map(); // YYYYMMDD -> running balance after that day
-
-  dayMap.forEach((profit, dateStr) => {
-    running = parseFloat((running + profit).toFixed(2));
-    const di = parseDate(dateStr);
-    if (di) balanceByDateInt.set(di, running);
-    points.push(running);
-    labels.push(dateStr);
-  });
-
-  // ── Subtract pending wagers from all chart points on or after their date ──
-  // Pending wagers reduce liquid balance from their bet date onward
+  // ── Total pending wager per date ──
+  const pendingWagerByDate = new Map();
   pending.forEach(r => {
-    const wager = parseMoney(r[5]) || 0;
-    if (!wager) return;
-    const betDateInt = parseDate(String(r[1]||'').trim());
-    // If bet date matches or is before a chart point's date, reduce that point
-    // points[0] = START (no date), points[i] corresponds to labels[i] for i>=1
-    for (let i = 1; i < points.length; i++) {
-      const ptDate = parseDate(labels[i]);
-      if (ptDate === null || betDateInt === null || ptDate >= betDateInt) {
-        points[i] = parseFloat((points[i] - wager).toFixed(2));
-      }
-    }
+    const date = String(r[1]||'').trim();
+    if (!date) return;
+    const w = parseMoney(r[5]) || 0;
+    pendingWagerByDate.set(date, (pendingWagerByDate.get(date)||0) + w);
   });
 
-  // ── Displayed balance: running after all completed bets, minus all pending wagers ──
-  const pendingOut = pending.reduce((s,r) => s+(parseMoney(r[5])||0), 0);
-  const balance = parseFloat((running - pendingOut).toFixed(2));
+  // ── Total pending wagers (for display balance) ──
+  const totalPendingOut = pending.reduce((s,r) => s+(parseMoney(r[5])||0), 0);
+
+  // ── Build chart: one point per date, running completed balance minus cumulative pending deductions ──
+  // Pending wagers placed on a date reduce the balance from that date onward (money is out of pocket)
+  let runningCompleted = START;
+  let cumulativePendingDeducted = 0; // pending wagers placed on/before this date
+  const points = [START];
+  const labels = ['Start'];
+  // Map dateStr -> index in points array (for delta lookups)
+  const pointIndexByDate = new Map();
+
+  allDates.forEach(dateStr => {
+    // Apply completed profit for this date
+    const profit = completedProfitByDate.get(dateStr) || 0;
+    runningCompleted = parseFloat((runningCompleted + profit).toFixed(2));
+
+    // Apply pending wagers placed on this date
+    const pendingOnDate = pendingWagerByDate.get(dateStr) || 0;
+    cumulativePendingDeducted = parseFloat((cumulativePendingDeducted + pendingOnDate).toFixed(2));
+
+    // Liquid balance = completed running - all pending wagers placed so far
+    const liquidBalance = parseFloat((runningCompleted - cumulativePendingDeducted).toFixed(2));
+
+    points.push(liquidBalance);
+    labels.push(dateStr);
+    pointIndexByDate.set(dateStr, points.length - 1);
+  });
+
+  // ── Displayed balance number = latest point value ──
+  const balance = points[points.length - 1];
   const isUp = balance >= START;
 
   const amtEl = document.getElementById('balance-amount');
@@ -558,25 +580,27 @@ function renderBalance(rows) {
   const pct = (((balance - START) / START) * 100);
   const pctStr = `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
 
-  // ── Deltas: balance change since yesterday / last 7 days ──
-  // Find the balance at the closest date <= N days ago, compare to current balance
+  // ── Deltas: read directly from the graph points array ──
   const now = new Date();
 
-  function balanceNDaysAgo(n) {
+  function graphBalanceNDaysAgo(n) {
     const target = new Date(now);
     target.setDate(now.getDate() - n);
     const targetInt = target.getFullYear() * 10000 + (target.getMonth()+1) * 100 + target.getDate();
-    // Find most recent date in balanceByDateInt that is <= targetInt
-    let best = null, bestDate = -1;
-    balanceByDateInt.forEach((bal, di) => {
-      if (di <= targetInt && di > bestDate) { bestDate = di; best = bal; }
-    });
-    // If no completed bets on or before that date, balance was START
+    // Walk labels (skip index 0 = 'Start'), find most recent point <= targetInt
+    let best = null, bestDi = -1;
+    for (let i = 1; i < labels.length; i++) {
+      const di = parseDate(labels[i]);
+      if (di !== null && di <= targetInt && di > bestDi) {
+        bestDi = di;
+        best = points[i];
+      }
+    }
     return best !== null ? best : START;
   }
 
-  const balYest   = balanceNDaysAgo(1);
-  const balWeek   = balanceNDaysAgo(7);
+  const balYest  = graphBalanceNDaysAgo(1);
+  const balWeek  = graphBalanceNDaysAgo(7);
   const deltaYest = parseFloat((balance - balYest).toFixed(2));
   const deltaWeek = parseFloat((balance - balWeek).toFixed(2));
 
@@ -591,7 +615,7 @@ function renderBalance(rows) {
     `<span style="color:var(--muted);font-size:10px">${deltaLabel(deltaYest, 'yesterday')}</span><br>` +
     `<span style="color:var(--muted);font-size:10px">${deltaLabel(deltaWeek, 'last week')}</span>`;
 
-  // Chart
+  // ── Draw chart ──
   const ctx = document.getElementById('balance-chart').getContext('2d');
   if (balanceChart) balanceChart.destroy();
   const grad = ctx.createLinearGradient(0,0,0,160);
