@@ -451,8 +451,9 @@ function loadData() {
       renderLog(dataRows);
     },
     error: (err) => {
-      document.getElementById('status-text').textContent = 'Error loading data';
-      console.error(err);
+      console.error('CSV load error:', err);
+      document.getElementById('pending-cards').innerHTML =
+        '<p style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--red);padding:12px 0">⚠ Could not load data. Open this file via a web server or check your connection.</p>';
     }
   });
 }
