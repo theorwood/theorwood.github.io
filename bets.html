@@ -924,12 +924,16 @@ function sortLog(col) {
   } else {
     _logSortCol = col; _logSortDir = 1;
   }
-  // Update header classes
+  // On reset, clear col tracking so next click on any col starts fresh
+  if (_logSortDir === 0) _logSortCol = null;
+  // Update header classes — clear all, then set only the active sorted col
   cols.forEach(c => {
     const th = document.getElementById('th-' + c);
     if (!th) return;
     th.classList.remove('asc', 'desc');
-    if (c === _logSortCol) th.classList.add(_logSortDir === 1 ? 'desc' : _logSortDir === -1 ? 'asc' : '');
+    if (c === _logSortCol && _logSortDir !== 0) {
+      th.classList.add(_logSortDir === 1 ? 'desc' : 'asc');
+    }
   });
   // Sort or reset
   if (_logSortDir === 0) {
