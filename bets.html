@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -19,330 +20,358 @@
     --text2: #9aa0ab;
   }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  html { background: #0c0e10; }
+html { background: #0c0e10; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    min-height: 100vh;
-    -webkit-text-size-adjust: 100%;
-  }
+body {
+background: var(–bg);
+color: var(–text);
+font-family: ‘DM Sans’, sans-serif;
+font-size: 14px;
+min-height: 100vh;
+-webkit-text-size-adjust: 100%;
+}
 
-  /* ─── HEADER ─── */
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg);
-  }
+/* ─── HEADER ─── */
+header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 14px 16px;
+border-bottom: 1px solid var(–border);
+background: var(–bg);
+}
 
-  header h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 32px;
-    letter-spacing: 4px;
-    background: linear-gradient(90deg, var(--purple), #fff 70%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+header h1 {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 32px;
+letter-spacing: 4px;
+background: linear-gradient(90deg, var(–purple), #fff 70%);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+}
 
-  #edit-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    text-decoration: none;
-    flex-shrink: 0;
-    transition: color .2s, border-color .2s, background .2s;
-  }
-  #edit-link:hover { color: var(--purple); border-color: var(--purple); background: var(--surface); }
+#edit-link {
+display: flex;
+align-items: center;
+justify-content: center;
+width: 36px;
+height: 36px;
+border-radius: 8px;
+border: 1px solid var(–border);
+color: var(–muted);
+text-decoration: none;
+flex-shrink: 0;
+transition: color .2s, border-color .2s, background .2s;
+}
+#edit-link:hover { color: var(–purple); border-color: var(–purple); background: var(–surface); }
 
-  /* ─── MAIN ─── */
-  main { padding: 16px; max-width: 1200px; margin: 0 auto; }
+/* ─── MAIN ─── */
+main { padding: 16px; max-width: 1200px; margin: 0 auto; }
 
-  .section-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 12px;
-  }
+.section-label {
+font-family: ‘DM Mono’, monospace;
+font-size: 10px;
+letter-spacing: 3px;
+text-transform: uppercase;
+color: var(–muted);
+margin-bottom: 12px;
+}
 
-  .positive { color: var(--green); }
-  .negative { color: var(--red); }
-  .neutral  { color: var(--text2); }
+.positive { color: var(–green); }
+.negative { color: var(–red); }
+.neutral  { color: var(–text2); }
 
-  /* ─── PENDING ─── */
-  #pending-section { margin-bottom: 20px; }
-  #pending-cards { display: flex; gap: 12px; flex-wrap: wrap; }
+/* ─── PENDING ─── */
+#pending-section { margin-bottom: 20px; }
+#pending-cards { display: flex; gap: 12px; flex-wrap: wrap; }
 
-  .pending-card {
-    background: var(--surface);
-    border: 1px solid var(--purple);
-    border-radius: 10px;
-    padding: 14px 16px 22px;
-    flex: 1 1 240px;
-    min-width: 200px;
-    max-width: 100%;
-    position: relative;
-    animation: fadeIn .4s ease both;
-  }
+.pending-card {
+background: var(–surface);
+border: 1px solid var(–purple);
+border-radius: 10px;
+padding: 14px 16px 22px;
+flex: 1 1 240px;
+min-width: 200px;
+max-width: 100%;
+position: relative;
+animation: fadeIn .4s ease both;
+}
 
-  .pending-card::after {
-    content: 'PENDING';
-    position: absolute;
-    bottom: 6px; right: 10px;
-    color: var(--purple);
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 2px;
-    opacity: 0.5;
-  }
+.pending-card::after {
+content: ‘PENDING’;
+position: absolute;
+bottom: 6px; right: 10px;
+color: var(–purple);
+font-family: ‘DM Mono’, monospace;
+font-size: 9px;
+letter-spacing: 2px;
+opacity: 0.5;
+}
 
-  .pending-card .matchup {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    letter-spacing: 1px;
-    line-height: 1.15;
-    margin-bottom: 8px;
-    color: var(--text);
-  }
-  .pending-card .matchup .hl { color: var(--purple); }
+.pending-card .matchup {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 22px;
+letter-spacing: 1px;
+line-height: 1.15;
+margin-bottom: 8px;
+color: var(–text);
+}
+.pending-card .matchup .hl { color: var(–purple); }
 
-  .pending-card .meta {
-    display: flex;
-    gap: 14px;
-    flex-wrap: wrap;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--text2);
-  }
-  .pending-card .meta strong { color: var(--text); }
-  .pending-card .wlabel { color: var(--red); }
+.pending-card .meta {
+display: flex;
+gap: 14px;
+flex-wrap: wrap;
+font-family: ‘DM Mono’, monospace;
+font-size: 11px;
+color: var(–text2);
+}
+.pending-card .meta strong { color: var(–text); }
+.pending-card .wlabel { color: var(–red); }
 
-  .pending-card .potential {
-    margin-top: 8px;
-    font-size: 11px;
-    font-family: 'DM Mono', monospace;
-  }
+.pending-card .potential {
+margin-top: 8px;
+font-size: 11px;
+font-family: ‘DM Mono’, monospace;
+}
 
-  #no-pending {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-    padding: 10px 0;
-  }
+#no-pending {
+font-family: ‘DM Mono’, monospace;
+font-size: 12px;
+color: var(–muted);
+padding: 10px 0;
+}
 
-  /* ─── BALANCE ─── */
-  #balance-section {
-    display: grid;
-    grid-template-columns: 180px 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
-    align-items: stretch;
-  }
+/* ─── BALANCE ─── */
+#balance-section {
+display: grid;
+grid-template-columns: 180px 1fr;
+gap: 12px;
+margin-bottom: 20px;
+align-items: stretch;
+}
 
-  .balance-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 18px 16px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
+.balance-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 18px 16px;
+display: flex;
+flex-direction: column;
+justify-content: center;
+}
 
-  .balance-card .lbl {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 3px;
-    color: var(--muted);
-    margin-bottom: 6px;
-    text-transform: uppercase;
-  }
+.balance-card .lbl {
+font-family: ‘DM Mono’, monospace;
+font-size: 9px;
+letter-spacing: 3px;
+color: var(–muted);
+margin-bottom: 6px;
+text-transform: uppercase;
+}
 
-  .balance-card .amount {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 44px;
-    line-height: 1;
-    letter-spacing: 2px;
-  }
+.balance-card .amount {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 44px;
+line-height: 1;
+letter-spacing: 2px;
+}
 
-  .balance-card .change {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    margin-top: 8px;
-    line-height: 1.7;
-  }
+.balance-card .change {
+font-family: ‘DM Mono’, monospace;
+font-size: 11px;
+margin-top: 8px;
+line-height: 1.7;
+}
 
-  .chart-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
-    min-width: 0;
-    overflow: hidden;
-  }
+.chart-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 14px;
+min-width: 0;
+overflow: hidden;
+}
 
-  .chart-card canvas { display: block; width: 100% !important; max-width: 100%; }
+.chart-card canvas { display: block; width: 100% !important; max-width: 100%; }
 
-  /* ─── ANALYTICS ─── */
-  #analytics-section {
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
-    align-items: start;
-  }
+/* ─── ANALYTICS ─── */
+#analytics-section {
+display: grid;
+grid-template-columns: 260px 1fr;
+gap: 12px;
+margin-bottom: 20px;
+align-items: start;
+}
 
-  .venn-card, .stats-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 18px 16px;
-  }
+.venn-card, .stats-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 18px 16px;
+}
 
-  .venn-card h3 {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 3px;
-    color: var(--muted);
-    margin-bottom: 14px;
-    text-transform: uppercase;
-  }
+.venn-card h3 {
+font-family: ‘DM Mono’, monospace;
+font-size: 10px;
+letter-spacing: 3px;
+color: var(–muted);
+margin-bottom: 14px;
+text-transform: uppercase;
+}
 
-  #donut-wrap { display: flex; justify-content: center; }
+#donut-wrap { display: flex; justify-content: center; }
 
-  .stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
+.stats-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 10px;
+}
 
-  .stat-tile {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-  }
+.stat-tile {
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: 8px;
+padding: 12px;
+}
 
-  .stat-tile .st-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: var(--muted);
-    margin-bottom: 5px;
-    text-transform: uppercase;
-  }
+.stat-tile .st-label {
+font-family: ‘DM Mono’, monospace;
+font-size: 9px;
+letter-spacing: 2px;
+color: var(–muted);
+margin-bottom: 5px;
+text-transform: uppercase;
+}
 
-  .stat-tile .st-val {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    letter-spacing: 1px;
-    line-height: 1;
-    word-break: break-word;
-  }
+.stat-tile .st-val {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 22px;
+letter-spacing: 1px;
+line-height: 1;
+word-break: break-word;
+}
 
-  .stat-tile .st-sub {
-    font-size: 10px;
-    color: var(--text2);
-    margin-top: 4px;
-    font-family: 'DM Mono', monospace;
-    line-height: 1.4;
-    word-break: break-word;
-  }
+.stat-tile .st-sub {
+font-size: 10px;
+color: var(–text2);
+margin-top: 4px;
+font-family: ‘DM Mono’, monospace;
+line-height: 1.4;
+word-break: break-word;
+}
 
-  /* ─── BET LOG ─── */
-  #log-section { margin-bottom: 40px; }
+/* ─── BET LOG ─── */
+#log-section { margin-bottom: 40px; }
 
-  .table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-  #log-table {
-    width: 100%;
-    min-width: 340px;
-    border-collapse: collapse;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-  }
+#log-table {
+width: 100%;
+border-collapse: collapse;
+table-layout: fixed;
+font-family: ‘DM Mono’, monospace;
+font-size: 12px;
+}
 
-  #log-table thead tr { border-bottom: 1px solid var(--border); }
+/* Column widths: Team 30%, vs 22%, Wager 15%, % 10%, Payout 23% */
+#log-table th:nth-child(1), #log-table td:nth-child(1) { width: 30%; }
+#log-table th:nth-child(2), #log-table td:nth-child(2) { width: 22%; }
+#log-table th:nth-child(3), #log-table td:nth-child(3) { width: 15%; }
+#log-table th:nth-child(4), #log-table td:nth-child(4) { width: 10%; }
+#log-table th:nth-child(5), #log-table td:nth-child(5) { width: 23%; }
 
-  #log-table th {
-    text-align: left;
-    padding: 8px 8px;
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: var(--muted);
-    text-transform: uppercase;
-    font-weight: 500;
-    white-space: nowrap;
-  }
+#log-table td { overflow: hidden; text-overflow: ellipsis; }
 
-  #log-table tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
-  #log-table tbody tr:hover { background: var(--surface2); }
-  #log-table td { padding: 10px 8px; color: var(--text2); vertical-align: middle; }
-  #log-table td.team-col { color: var(--text); font-weight: 500; }
+#log-table thead tr { border-bottom: 1px solid var(–border); }
 
-  .expand-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    gap: 8px;
-    margin-top: 12px;
-    padding: 10px;
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text2);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 2px;
-    cursor: pointer;
-    transition: all .2s;
-    text-transform: uppercase;
-  }
-  .expand-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--muted); }
-  .expand-btn svg { transition: transform .3s; }
-  .expand-btn.open svg { transform: rotate(180deg); }
+#log-table th {
+text-align: left;
+padding: 8px 8px;
+font-size: 9px;
+letter-spacing: 2px;
+color: var(–muted);
+text-transform: uppercase;
+font-weight: 500;
+white-space: nowrap;
+}
 
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+#log-table tbody tr { border-bottom: 1px solid var(–border); transition: background .15s; }
+#log-table tbody tr:hover { background: var(–surface2); }
+#log-table td { padding: 10px 8px; color: var(–text2); vertical-align: middle; }
+#log-table td.team-col { color: var(–text); font-weight: 500; }
 
-  /* ─── RESPONSIVE ─── */
-  @media (max-width: 600px) {
-    header { padding: 12px 14px; }
-    header h1 { font-size: 26px; }
-    main { padding: 12px; }
+.expand-btn {
+display: flex;
+align-items: center;
+justify-content: center;
+width: 100%;
+gap: 8px;
+margin-top: 12px;
+padding: 10px;
+background: none;
+border: 1px solid var(–border);
+border-radius: 8px;
+color: var(–text2);
+font-family: ‘DM Mono’, monospace;
+font-size: 11px;
+letter-spacing: 2px;
+cursor: pointer;
+transition: all .2s;
+text-transform: uppercase;
+}
+.expand-btn:hover { background: var(–surface2); color: var(–text); border-color: var(–muted); }
+.expand-btn svg { transition: transform .3s; }
+.expand-btn.open svg { transform: rotate(180deg); }
 
-    #balance-section { grid-template-columns: 1fr; }
-    .balance-card .amount { font-size: 48px; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-    #analytics-section { grid-template-columns: 1fr; }
-    #donut-wrap canvas { width: 200px !important; height: 200px !important; }
+/* ─── RESPONSIVE ─── */
+@media (max-width: 600px) {
+header { padding: 12px 14px; }
+header h1 { font-size: 26px; }
+main { padding: 12px; }
 
-    .pending-card { flex: 1 1 100%; }
+```
+#balance-section { grid-template-columns: 1fr; }
+.balance-card .amount { font-size: 48px; }
 
-    #log-table { font-size: 11px; }
-    #log-table th, #log-table td { padding: 7px 5px; }
-  }
+#analytics-section { grid-template-columns: 1fr; }
+#donut-wrap canvas { width: 200px !important; height: 200px !important; }
 
-  @media (min-width: 601px) and (max-width: 860px) {
-    #balance-section { grid-template-columns: 160px 1fr; }
-    #analytics-section { grid-template-columns: 220px 1fr; }
-    #donut-wrap canvas { width: 180px !important; height: 180px !important; }
-  }
+.pending-card { flex: 1 1 100%; }
+
+#log-table { font-size: 11px; }
+#log-table th, #log-table td { padding: 7px 5px; }
+```
+
+}
+
+@media (min-width: 601px) and (max-width: 860px) {
+#balance-section { grid-template-columns: 160px 1fr; }
+#analytics-section { grid-template-columns: 220px 1fr; }
+#donut-wrap canvas { width: 180px !important; height: 180px !important; }
+}
+/* ─── CHART RANGE BUTTONS ─── */
+.range-btn {
+background: none;
+border: 1px solid var(–border);
+border-radius: 5px;
+color: var(–muted);
+font-family: ‘DM Mono’, monospace;
+font-size: 10px;
+letter-spacing: 1px;
+padding: 3px 8px;
+cursor: pointer;
+transition: all .15s;
+}
+.range-btn:hover { color: var(–text); border-color: var(–muted); }
+.range-btn.active { background: var(–surface2); color: var(–purple); border-color: var(–purple); }
 </style>
+
 </head>
 <body>
 
@@ -369,7 +398,14 @@
       <div class="change" id="balance-change"></div>
     </div>
     <div class="chart-card">
-      <div class="section-label">Balance Over Time</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="section-label" style="margin-bottom:0">Balance Over Time</div>
+        <div id="chart-range-btns" style="display:flex;gap:4px;">
+          <button class="range-btn" data-range="1W" onclick="setChartRange('1W')">1W</button>
+          <button class="range-btn" data-range="1M" onclick="setChartRange('1M')">1M</button>
+          <button class="range-btn active" data-range="All" onclick="setChartRange('All')">All</button>
+        </div>
+      </div>
       <canvas id="balance-chart" height="100"></canvas>
     </div>
   </section>
@@ -412,7 +448,9 @@
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
 <script>
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRcqC9jKaHG8zOS_2-szgNmDE-RaPdrF6M_pfnLWudIe8fuauDeWfKza8DyEdgam_-V2kgrpGdn7R9T/pub?gid=0&single=true&output=csv";
 
@@ -420,8 +458,90 @@ let allCompletedBets = [];
 let showAll = false;
 let balanceChart = null;
 let donutChart = null;
+let chartRange = '1W'; // default
+let fullChartPoints = [];
+let fullChartLabels = [];
 
-function parseMoney(v) {
+// Parse "M/D/YY" or "M/D/YYYY" → integer YYYYMMDD
+function parseDate(s) {
+  if (!s) return null;
+  const parts = String(s).trim().split('/');
+  if (parts.length < 3) return null;
+  let [m, d, y] = parts.map(Number);
+  if (y < 100) y += 2000;
+  if (isNaN(m) || isNaN(d) || isNaN(y)) return null;
+  return y * 10000 + m * 100 + d;
+}
+
+function setChartRange(range) {
+  chartRange = range;
+  document.querySelectorAll('.range-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.range === range);
+  });
+  drawChart();
+}
+window.setChartRange = setChartRange;
+
+function drawChart() {
+  if (!fullChartLabels.length) return;
+
+  const now = new Date();
+  let cutoffInt = 0;
+  if (chartRange === '1W') {
+    const d = new Date(now); d.setDate(now.getDate() - 7);
+    cutoffInt = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+  } else if (chartRange === '1M') {
+    const d = new Date(now); d.setMonth(now.getMonth() - 1);
+    cutoffInt = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+  }
+
+  // Filter points — always keep 'Start' plus points within range
+  let labels = [], points = [];
+  for (let i = 0; i < fullChartLabels.length; i++) {
+    if (i === 0) { labels.push(fullChartLabels[i]); points.push(fullChartPoints[i]); continue; }
+    if (chartRange === 'All') { labels.push(fullChartLabels[i]); points.push(fullChartPoints[i]); continue; }
+    const di = parseDate(fullChartLabels[i]);
+    if (di !== null && di >= cutoffInt) { labels.push(fullChartLabels[i]); points.push(fullChartPoints[i]); }
+  }
+
+  // If no points in range, show at least the start
+  if (points.length <= 1) {
+    // show last known point as reference
+    labels = [fullChartLabels[fullChartLabels.length-1]];
+    points = [fullChartPoints[fullChartPoints.length-1]];
+  }
+
+  const lastVal = points[points.length - 1];
+  const isUp = lastVal >= 25;
+
+  const ctx = document.getElementById('balance-chart').getContext('2d');
+  if (balanceChart) balanceChart.destroy();
+  const grad = ctx.createLinearGradient(0,0,0,160);
+  grad.addColorStop(0, isUp ? 'rgba(0,230,118,0.22)' : 'rgba(255,68,68,0.22)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+
+  balanceChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ data: points,
+      borderColor: isUp?'#00e676':'#ff4444',
+      backgroundColor: grad, borderWidth: 2,
+      pointRadius: points.length > 20 ? 0 : 3,
+      pointBackgroundColor: isUp?'#00e676':'#ff4444',
+      fill: true, tension: 0.35 }] },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend:{display:false}, tooltip:{
+        backgroundColor:'#1a1e24', borderColor:'#252a32', borderWidth:1,
+        titleColor:'#9aa0ab', bodyColor:'#e8eaed',
+        callbacks:{ label: c => `$${c.parsed.y.toFixed(2)}` }
+      }},
+      scales: {
+        x: { grid:{color:'#1a1e24'}, ticks:{color:'#5a6370', font:{family:'DM Mono',size:9}, maxRotation:30, autoSkip:true, maxTicksLimit:8} },
+        y: { grid:{color:'#1a1e24'}, ticks:{color:'#5a6370', font:{family:'DM Mono',size:9}, callback:v=>`$${v}`}, border:{dash:[4,4]} }
+      }
+    }
+  });
+}
   if (!v) return null;
   const n = parseFloat(String(v).replace(/[$,\s]/g, ''));
   return isNaN(n) ? null : n;
@@ -497,17 +617,6 @@ function renderBalance(rows) {
   const START = 25;
   const completed = rows.filter(r => !isPending(r));
   const pending   = rows.filter(r => isPending(r));
-
-  // Parse "M/D/YY" or "M/D/YYYY" → integer YYYYMMDD for sorting/comparing
-  function parseDate(s) {
-    if (!s) return null;
-    const parts = String(s).trim().split('/');
-    if (parts.length < 3) return null;
-    let [m, d, y] = parts.map(Number);
-    if (y < 100) y += 2000;
-    if (isNaN(m) || isNaN(d) || isNaN(y)) return null;
-    return y * 10000 + m * 100 + d;
-  }
 
   // ── Collect all unique dates (completed + pending) and sort them ──
   const allDatesSet = new Set();
@@ -615,33 +724,16 @@ function renderBalance(rows) {
     `<span style="color:var(--muted);font-size:10px">${deltaLabel(deltaYest, 'yesterday')}</span><br>` +
     `<span style="color:var(--muted);font-size:10px">${deltaLabel(deltaWeek, 'last week')}</span>`;
 
-  // ── Draw chart ──
-  const ctx = document.getElementById('balance-chart').getContext('2d');
-  if (balanceChart) balanceChart.destroy();
-  const grad = ctx.createLinearGradient(0,0,0,160);
-  grad.addColorStop(0, isUp ? 'rgba(0,230,118,0.22)' : 'rgba(255,68,68,0.22)');
-  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  // ── Store full chart data globally for range filtering ──
+  fullChartLabels = labels.slice();
+  fullChartPoints = points.slice();
 
-  balanceChart = new Chart(ctx, {
-    type: 'line',
-    data: { labels, datasets: [{ data: points, borderColor: isUp?'#00e676':'#ff4444',
-      backgroundColor: grad, borderWidth: 2,
-      pointRadius: points.length > 20 ? 0 : 3,
-      pointBackgroundColor: isUp?'#00e676':'#ff4444',
-      fill: true, tension: 0.35 }] },
-    options: {
-      responsive: true, maintainAspectRatio: true,
-      plugins: { legend:{display:false}, tooltip:{
-        backgroundColor:'#1a1e24', borderColor:'#252a32', borderWidth:1,
-        titleColor:'#9aa0ab', bodyColor:'#e8eaed',
-        callbacks:{ label: c => `$${c.parsed.y.toFixed(2)}` }
-      }},
-      scales: {
-        x: { grid:{color:'#1a1e24'}, ticks:{color:'#5a6370', font:{family:'DM Mono',size:9}, maxRotation:30, autoSkip:true, maxTicksLimit:8} },
-        y: { grid:{color:'#1a1e24'}, ticks:{color:'#5a6370', font:{family:'DM Mono',size:9}, callback:v=>`$${v}`}, border:{dash:[4,4]} }
-      }
-    }
+  // Set 1W as default active on first load
+  chartRange = '1W';
+  document.querySelectorAll('.range-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.range === '1W');
   });
+  drawChart();
 }
 
 /* ─── DONUT + STATS ─── */
@@ -813,5 +905,6 @@ window.toggleExpand=toggleExpand;
 
 loadData();
 </script>
+
 </body>
 </html>
