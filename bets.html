@@ -368,6 +368,13 @@
   }
   .range-btn:hover { color: var(--text); border-color: var(--muted); }
   .range-btn.active { background: var(--surface2); color: var(--purple); border-color: var(--purple); }
+  /* ─── SORTABLE HEADERS ─── */
+  th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+  th.sortable:hover { color: var(--text2); }
+  th.sortable .sort-icon { margin-left: 3px; opacity: 0.4; font-size: 9px; }
+  th.sortable.asc .sort-icon::after { content: '▲'; opacity: 1; color: var(--purple); }
+  th.sortable.desc .sort-icon::after { content: '▼'; opacity: 1; color: var(--purple); }
+  th.sortable:not(.asc):not(.desc) .sort-icon::after { content: '⇅'; }
 </style>
 </head>
 <body>
@@ -429,9 +436,9 @@
           <tr>
             <th>Team</th>
             <th>vs</th>
-            <th>Wager</th>
-            <th>%</th>
-            <th>Payout</th>
+            <th class="sortable" id="th-wager" onclick="sortLog('wager')">Wager<span class="sort-icon"></span></th>
+            <th class="sortable" id="th-pct" onclick="sortLog('pct')">%<span class="sort-icon"></span></th>
+            <th class="sortable" id="th-payout" onclick="sortLog('payout')">Payout<span class="sort-icon"></span></th>
           </tr>
         </thead>
         <tbody id="log-body"></tbody>
@@ -451,6 +458,9 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRcqC9jKaHG8zOS
 
 let allCompletedBets = [];
 let showAll = false;
+let _logSortCol = null;   // 'wager' | 'pct' | 'payout' | null
+let _logSortDir = 0;      // 0=original, 1=desc, -1=asc
+let _logOriginal = [];    // original chronological order
 let balanceChart = null;
 let _allChartLabels = [];
 let _allChartPoints = [];
@@ -849,6 +859,8 @@ function renderAnalytics(rows) {
 function renderLog(rows) {
   allCompletedBets = rows.filter(r=>!isPending(r)).slice()
     .sort((a,b)=>(parseFloat(b[0])||0)-(parseFloat(a[0])||0));
+  _logOriginal = allCompletedBets.slice();
+  _logSortCol = null; _logSortDir = 0;
   renderLogRows();
 }
 
@@ -902,6 +914,37 @@ function appendRow(tbody,r) {
     <td>${payoutCell}</td>
   `;
   tbody.appendChild(tr);
+}
+
+function sortLog(col) {
+  const cols = ['wager', 'pct', 'payout'];
+  // Cycle: if same col -> advance dir (1 -> -1 -> 0); if new col -> start at 1
+  if (_logSortCol === col) {
+    _logSortDir = _logSortDir === 1 ? -1 : _logSortDir === -1 ? 0 : 1;
+  } else {
+    _logSortCol = col; _logSortDir = 1;
+  }
+  // Update header classes
+  cols.forEach(c => {
+    const th = document.getElementById('th-' + c);
+    if (!th) return;
+    th.classList.remove('asc', 'desc');
+    if (c === _logSortCol) th.classList.add(_logSortDir === 1 ? 'desc' : _logSortDir === -1 ? 'asc' : '');
+  });
+  // Sort or reset
+  if (_logSortDir === 0) {
+    allCompletedBets = _logOriginal.slice();
+  } else {
+    const getVal = (r) => {
+      if (col === 'wager')  return parseFloat(r[5]) || 0;
+      if (col === 'pct')    return parseFloat(String(r[6]||'').replace(/%/g,'')) || 0;
+      if (col === 'payout') return parseFloat(r[7]) || 0;
+      return 0;
+    };
+    allCompletedBets = _logOriginal.slice().sort((a, b) =>
+      _logSortDir === 1 ? getVal(b) - getVal(a) : getVal(a) - getVal(b));
+  }
+  renderLogRows();
 }
 
 function toggleExpand(){showAll=!showAll;renderLogRows();}
