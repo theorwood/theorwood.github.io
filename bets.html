@@ -522,8 +522,10 @@ function _drawChart(range) {
       backgroundColor:grad, borderWidth:2, pointRadius:fp.length>20?0:3,
       pointBackgroundColor:isUp?'#00e676':'#ff4444', fill:true, tension:0.35 }] },
     options:{ responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
       plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#1a1e24',
         borderColor:'#252a32', borderWidth:1, titleColor:'#9aa0ab', bodyColor:'#e8eaed',
+        padding:8, caretSize:5,
         callbacks:{ label:c=>`$${c.parsed.y.toFixed(2)}` } }},
       scales:{
         x:{ grid:{color:'#1a1e24'}, ticks:{color:'#5a6370', font:{family:'DM Mono',size:9}, maxRotation:30, autoSkip:true, maxTicksLimit:8} },
