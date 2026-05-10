@@ -499,7 +499,7 @@ function _drawChart(range) {
       lastBefore = { l: _allChartLabels[i], p: _allChartPoints[i] };
     }
   }
-  if (range !== 'All' && lastBefore) { fl.unshift(lastBefore.l); fp.unshift(lastBefore.p); }
+  if (range !== 'All' && lastBefore) { fl.unshift(''); fp.unshift(lastBefore.p); }
   if (!fl.length) { fl = _allChartLabels.slice(); fp = _allChartPoints.slice(); }
   const isUp = fp[fp.length-1] >= fp[0];
   const ctx = document.getElementById('balance-chart').getContext('2d');
