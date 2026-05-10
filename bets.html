@@ -276,13 +276,11 @@ table-layout: fixed;
 font-family: ‘DM Mono’, monospace;
 font-size: 12px;
 }
-
 #log-table th:nth-child(1), #log-table td:nth-child(1) { width: 29%; }
 #log-table th:nth-child(2), #log-table td:nth-child(2) { width: 22%; }
 #log-table th:nth-child(3), #log-table td:nth-child(3) { width: 16%; }
 #log-table th:nth-child(4), #log-table td:nth-child(4) { width: 9%; }
 #log-table th:nth-child(5), #log-table td:nth-child(5) { width: 24%; }
-
 #log-table td { overflow: hidden; }
 
 #log-table thead tr { border-bottom: 1px solid var(–border); }
@@ -354,6 +352,16 @@ main { padding: 12px; }
 #analytics-section { grid-template-columns: 220px 1fr; }
 #donut-wrap canvas { width: 180px !important; height: 180px !important; }
 }
+/* ─── CHART RANGE BUTTONS ─── */
+.chart-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 10px;
+gap: 8px;
+}
+.chart-header .section-label { margin-bottom: 0; white-space: nowrap; }
+.range-btns { display: flex; gap: 4px; flex-shrink: 0; }
 .range-btn {
 background: none;
 border: 1px solid var(–border);
@@ -369,6 +377,9 @@ line-height: 1;
 }
 .range-btn:hover { color: var(–text); border-color: var(–muted); }
 .range-btn.active { background: var(–surface2); color: var(–purple); border-color: var(–purple); }
+
+/* Fix donut overflow on mobile */
+#donut-wrap { display: flex; justify-content: center; overflow: hidden; }
 </style>
 
 </head>
@@ -397,9 +408,9 @@ line-height: 1;
       <div class="change" id="balance-change"></div>
     </div>
     <div class="chart-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div class="section-label" style="margin-bottom:0">Balance Over Time</div>
-        <div style="display:flex;gap:5px;">
+      <div class="chart-header">
+        <div class="section-label">Balance Over Time</div>
+        <div class="range-btns">
           <button class="range-btn active" data-range="1W">1W</button>
           <button class="range-btn" data-range="1M">1M</button>
           <button class="range-btn" data-range="All">All</button>
@@ -529,95 +540,72 @@ function renderPending(rows) {
   });
 }
 
-/* ─── BALANCE + CHART ─── */
-// Full dataset stored here so range buttons can filter without re-fetching
+/* ─── CHART RANGE ─── */
 let _chartAllLabels = [];
 let _chartAllPoints = [];
 
 function setChartRange(range) {
-  document.querySelectorAll('.range-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.range === range);
-  });
+  document.querySelectorAll('.range-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.range === range));
   drawChart(range);
+}
+
+function parseDateInt(s) {
+  if (!s || s === 'Start') return null;
+  const p = String(s).trim().split('/');
+  if (p.length < 3) return null;
+  let [m, d, y] = p.map(Number);
+  if (y < 100) y += 2000;
+  return isNaN(m)||isNaN(d)||isNaN(y) ? null : y*10000+m*100+d;
 }
 
 function drawChart(range) {
   if (!_chartAllLabels.length) return;
-
   const now = new Date();
-  let cutoffInt = 0;
+  let cutoff = 0;
   if (range === '1W') {
-    const d = new Date(now); d.setDate(now.getDate() - 7);
-    cutoffInt = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+    const d = new Date(now); d.setDate(now.getDate()-7);
+    cutoff = d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();
   } else if (range === '1M') {
-    const d = new Date(now); d.setMonth(now.getMonth() - 1);
-    cutoffInt = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+    const d = new Date(now); d.setMonth(now.getMonth()-1);
+    cutoff = d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();
   }
 
-  function parseDateLocal(s) {
-    if (!s || s === 'Start') return null;
-    const parts = String(s).trim().split('/');
-    if (parts.length < 3) return null;
-    let [m, d, y] = parts.map(Number);
-    if (y < 100) y += 2000;
-    if (isNaN(m)||isNaN(d)||isNaN(y)) return null;
-    return y*10000 + m*100 + d;
-  }
-
-  let filtL = [], filtP = [];
-  let lastBeforeCutoff = null;
-
+  let fl = [], fp = [], lastBefore = null;
   for (let i = 0; i < _chartAllLabels.length; i++) {
-    const di = parseDateLocal(_chartAllLabels[i]);
-    if (range === 'All' || di === null || di >= cutoffInt) {
-      filtL.push(_chartAllLabels[i]);
-      filtP.push(_chartAllPoints[i]);
+    const di = parseDateInt(_chartAllLabels[i]);
+    if (range === 'All' || di === null || di >= cutoff) {
+      fl.push(_chartAllLabels[i]); fp.push(_chartAllPoints[i]);
     } else {
-      lastBeforeCutoff = { l: _chartAllLabels[i], p: _chartAllPoints[i] };
+      lastBefore = { l: _chartAllLabels[i], p: _chartAllPoints[i] };
     }
   }
+  if (range !== 'All' && lastBefore) { fl.unshift(lastBefore.l); fp.unshift(lastBefore.p); }
+  if (!fl.length) { fl = _chartAllLabels.slice(); fp = _chartAllPoints.slice(); }
 
-  // Prepend the last point before the window so the line has a clean start
-  if (range !== 'All' && lastBeforeCutoff) {
-    filtL.unshift(lastBeforeCutoff.l);
-    filtP.unshift(lastBeforeCutoff.p);
-  }
-
-  if (!filtL.length) { filtL = _chartAllLabels.slice(); filtP = _chartAllPoints.slice(); }
-
-  const lastVal = filtP[filtP.length - 1];
-  const firstVal = filtP[0];
-  const isUp = lastVal >= firstVal;
-
+  const isUp = fp[fp.length-1] >= fp[0];
   const ctx = document.getElementById('balance-chart').getContext('2d');
   if (balanceChart) balanceChart.destroy();
   const grad = ctx.createLinearGradient(0,0,0,160);
-  grad.addColorStop(0, isUp ? 'rgba(0,230,118,0.22)' : 'rgba(255,68,68,0.22)');
-  grad.addColorStop(1, 'rgba(0,0,0,0)');
-
+  grad.addColorStop(0, isUp?'rgba(0,230,118,0.22)':'rgba(255,68,68,0.22)');
+  grad.addColorStop(1,'rgba(0,0,0,0)');
   balanceChart = new Chart(ctx, {
-    type: 'line',
-    data: { labels: filtL, datasets: [{ data: filtP,
-      borderColor: isUp?'#00e676':'#ff4444',
-      backgroundColor: grad, borderWidth: 2,
-      pointRadius: filtP.length > 20 ? 0 : 3,
-      pointBackgroundColor: isUp?'#00e676':'#ff4444',
-      fill: true, tension: 0.35 }] },
-    options: {
-      responsive: true, maintainAspectRatio: true,
-      plugins: { legend:{display:false}, tooltip:{
-        backgroundColor:'#1a1e24', borderColor:'#252a32', borderWidth:1,
-        titleColor:'#9aa0ab', bodyColor:'#e8eaed',
-        callbacks:{ label: c => `$${c.parsed.y.toFixed(2)}` }
-      }},
-      scales: {
-        x: { grid:{color:'#1a1e24'}, ticks:{color:'#5a6370', font:{family:'DM Mono',size:9}, maxRotation:30, autoSkip:true, maxTicksLimit:8} },
-        y: { grid:{color:'#1a1e24'}, ticks:{color:'#5a6370', font:{family:'DM Mono',size:9}, callback:v=>`$${v}`}, border:{dash:[4,4]} }
-      }
-    }
+    type:'line',
+    data:{ labels:fl, datasets:[{ data:fp, borderColor:isUp?'#00e676':'#ff4444',
+      backgroundColor:grad, borderWidth:2, pointRadius:fp.length>20?0:3,
+      pointBackgroundColor:isUp?'#00e676':'#ff4444', fill:true, tension:0.35 }] },
+    options:{ responsive:true, maintainAspectRatio:true,
+      plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#1a1e24',
+        borderColor:'#252a32', borderWidth:1, titleColor:'#9aa0ab', bodyColor:'#e8eaed',
+        callbacks:{ label:c=>`$${c.parsed.y.toFixed(2)}` } }},
+      scales:{
+        x:{ grid:{color:'#1a1e24'}, ticks:{color:'#5a6370', font:{family:'DM Mono',size:9}, maxRotation:30, autoSkip:true, maxTicksLimit:8} },
+        y:{ grid:{color:'#1a1e24'}, ticks:{color:'#5a6370', font:{family:'DM Mono',size:9}, callback:v=>`$${v}`}, border:{dash:[4,4]} }
+      }}
   });
 }
 
+/* ─── BALANCE + CHART ─── */
 function renderBalance(rows) {
   const START = 25;
   const completed = rows.filter(r => !isPending(r));
@@ -740,15 +728,11 @@ function renderBalance(rows) {
     `<span style="color:var(--muted);font-size:10px">${deltaLabel(deltaYest, 'yesterday')}</span><br>` +
     `<span style="color:var(--muted);font-size:10px">${deltaLabel(deltaWeek, 'last week')}</span>`;
 
-  // ── Store full dataset for range buttons, then draw default 1W ──
+  // ── Store full data for range buttons, wire buttons, draw default 1W ──
   _chartAllLabels = labels.slice();
   _chartAllPoints = points.slice();
-
-  // Wire up range buttons
-  document.querySelectorAll('.range-btn').forEach(btn => {
-    btn.onclick = () => setChartRange(btn.dataset.range);
-  });
-
+  document.querySelectorAll('.range-btn').forEach(btn =>
+    btn.addEventListener('click', () => setChartRange(btn.dataset.range)));
   drawChart('1W');
 }
 
