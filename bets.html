@@ -936,9 +936,14 @@ function sortLog(col) {
     allCompletedBets = _logOriginal.slice();
   } else {
     const getVal = (r) => {
-      if (col === 'wager')  return parseFloat(r[5]) || 0;
+      if (col === 'wager')  return parseMoney(r[5]) || 0;
       if (col === 'pct')    return parseFloat(String(r[6]||'').replace(/%/g,'')) || 0;
-      if (col === 'payout') return parseFloat(r[7]) || 0;
+      if (col === 'payout') {
+        const w = parseMoney(r[5]) || 0;
+        const p = parseMoney(r[7]) || 0;
+        // If payout is 0 (loss), sort by profit (negative) so losses sort among themselves
+        return p === 0 ? (p - w) : p;
+      }
       return 0;
     };
     allCompletedBets = _logOriginal.slice().sort((a, b) =>
