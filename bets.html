@@ -271,20 +271,11 @@ word-break: break-word;
 
 #log-table {
 width: 100%;
+min-width: 340px;
 border-collapse: collapse;
-table-layout: fixed;
 font-family: ‘DM Mono’, monospace;
 font-size: 12px;
 }
-
-/* Column widths: Team 30%, vs 22%, Wager 15%, % 10%, Payout 23% */
-#log-table th:nth-child(1), #log-table td:nth-child(1) { width: 30%; }
-#log-table th:nth-child(2), #log-table td:nth-child(2) { width: 22%; }
-#log-table th:nth-child(3), #log-table td:nth-child(3) { width: 15%; }
-#log-table th:nth-child(4), #log-table td:nth-child(4) { width: 10%; }
-#log-table th:nth-child(5), #log-table td:nth-child(5) { width: 23%; }
-
-#log-table td { overflow: hidden; text-overflow: ellipsis; }
 
 #log-table thead tr { border-bottom: 1px solid var(–border); }
 
@@ -355,7 +346,6 @@ main { padding: 12px; }
 #analytics-section { grid-template-columns: 220px 1fr; }
 #donut-wrap canvas { width: 180px !important; height: 180px !important; }
 }
-/* ─── CHART RANGE BUTTONS ─── */
 .range-btn {
 background: none;
 border: 1px solid var(–border);
@@ -400,10 +390,10 @@ transition: all .15s;
     <div class="chart-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <div class="section-label" style="margin-bottom:0">Balance Over Time</div>
-        <div id="chart-range-btns" style="display:flex;gap:4px;">
-          <button class="range-btn" data-range="1W" onclick="setChartRange('1W')">1W</button>
+        <div style="display:flex;gap:4px;">
+          <button class="range-btn active" data-range="1W" onclick="setChartRange('1W')">1W</button>
           <button class="range-btn" data-range="1M" onclick="setChartRange('1M')">1M</button>
-          <button class="range-btn active" data-range="All" onclick="setChartRange('All')">All</button>
+          <button class="range-btn" data-range="All" onclick="setChartRange('All')">All</button>
         </div>
       </div>
       <canvas id="balance-chart" height="100"></canvas>
@@ -458,11 +448,17 @@ let allCompletedBets = [];
 let showAll = false;
 let balanceChart = null;
 let donutChart = null;
-let chartRange = '1W'; // default
-let fullChartPoints = [];
+let chartRange = '1W';
 let fullChartLabels = [];
+let fullChartPoints = [];
 
-// Parse "M/D/YY" or "M/D/YYYY" → integer YYYYMMDD
+/* ─── HELPERS ─── */
+function parseMoney(v) {
+  if (!v) return null;
+  const n = parseFloat(String(v).replace(/[$,\s]/g, ''));
+  return isNaN(n) ? null : n;
+}
+
 function parseDate(s) {
   if (!s) return null;
   const parts = String(s).trim().split('/');
@@ -473,85 +469,12 @@ function parseDate(s) {
   return y * 10000 + m * 100 + d;
 }
 
-function setChartRange(range) {
-  chartRange = range;
-  document.querySelectorAll('.range-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.range === range);
-  });
-  drawChart();
-}
-window.setChartRange = setChartRange;
-
-function drawChart() {
-  if (!fullChartLabels.length) return;
-
-  const now = new Date();
-  let cutoffInt = 0;
-  if (chartRange === '1W') {
-    const d = new Date(now); d.setDate(now.getDate() - 7);
-    cutoffInt = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
-  } else if (chartRange === '1M') {
-    const d = new Date(now); d.setMonth(now.getMonth() - 1);
-    cutoffInt = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
-  }
-
-  // Filter points — always keep 'Start' plus points within range
-  let labels = [], points = [];
-  for (let i = 0; i < fullChartLabels.length; i++) {
-    if (i === 0) { labels.push(fullChartLabels[i]); points.push(fullChartPoints[i]); continue; }
-    if (chartRange === 'All') { labels.push(fullChartLabels[i]); points.push(fullChartPoints[i]); continue; }
-    const di = parseDate(fullChartLabels[i]);
-    if (di !== null && di >= cutoffInt) { labels.push(fullChartLabels[i]); points.push(fullChartPoints[i]); }
-  }
-
-  // If no points in range, show at least the start
-  if (points.length <= 1) {
-    // show last known point as reference
-    labels = [fullChartLabels[fullChartLabels.length-1]];
-    points = [fullChartPoints[fullChartPoints.length-1]];
-  }
-
-  const lastVal = points[points.length - 1];
-  const isUp = lastVal >= 25;
-
-  const ctx = document.getElementById('balance-chart').getContext('2d');
-  if (balanceChart) balanceChart.destroy();
-  const grad = ctx.createLinearGradient(0,0,0,160);
-  grad.addColorStop(0, isUp ? 'rgba(0,230,118,0.22)' : 'rgba(255,68,68,0.22)');
-  grad.addColorStop(1, 'rgba(0,0,0,0)');
-
-  balanceChart = new Chart(ctx, {
-    type: 'line',
-    data: { labels, datasets: [{ data: points,
-      borderColor: isUp?'#00e676':'#ff4444',
-      backgroundColor: grad, borderWidth: 2,
-      pointRadius: points.length > 20 ? 0 : 3,
-      pointBackgroundColor: isUp?'#00e676':'#ff4444',
-      fill: true, tension: 0.35 }] },
-    options: {
-      responsive: true, maintainAspectRatio: true,
-      plugins: { legend:{display:false}, tooltip:{
-        backgroundColor:'#1a1e24', borderColor:'#252a32', borderWidth:1,
-        titleColor:'#9aa0ab', bodyColor:'#e8eaed',
-        callbacks:{ label: c => `$${c.parsed.y.toFixed(2)}` }
-      }},
-      scales: {
-        x: { grid:{color:'#1a1e24'}, ticks:{color:'#5a6370', font:{family:'DM Mono',size:9}, maxRotation:30, autoSkip:true, maxTicksLimit:8} },
-        y: { grid:{color:'#1a1e24'}, ticks:{color:'#5a6370', font:{family:'DM Mono',size:9}, callback:v=>`$${v}`}, border:{dash:[4,4]} }
-      }
-    }
-  });
-}
-  if (!v) return null;
-  const n = parseFloat(String(v).replace(/[$,\s]/g, ''));
-  return isNaN(n) ? null : n;
-}
-
 function isPending(row) {
   const h = String(row[7] || '').trim().toLowerCase();
   return h === 'pending' || h === '';
 }
 
+/* ─── LOAD ─── */
 function loadData() {
   Papa.parse(CSV_URL, {
     download: true,
@@ -618,128 +541,169 @@ function renderBalance(rows) {
   const completed = rows.filter(r => !isPending(r));
   const pending   = rows.filter(r => isPending(r));
 
-  // ── Collect all unique dates (completed + pending) and sort them ──
+  // Collect all unique dates from completed + pending, sorted chronologically
   const allDatesSet = new Set();
   completed.forEach(r => { const d = String(r[1]||'').trim(); if (d) allDatesSet.add(d); });
   pending.forEach(r   => { const d = String(r[1]||'').trim(); if (d) allDatesSet.add(d); });
+  const allDates = Array.from(allDatesSet).sort((a, b) => (parseDate(a)||0) - (parseDate(b)||0));
 
-  const allDates = Array.from(allDatesSet).sort((a, b) => {
-    const da = parseDate(a), db = parseDate(b);
-    if (da === null && db === null) return 0;
-    if (da === null) return 1;
-    if (db === null) return -1;
-    return da - db;
-  });
-
-  // ── Net completed profit per date ──
-  const completedProfitByDate = new Map();
+  // Net completed profit per date
+  const profitByDate = new Map();
   completed.forEach(r => {
-    const date = String(r[1]||'').trim();
-    if (!date) return;
+    const date = String(r[1]||'').trim(); if (!date) return;
     const profit = (parseMoney(r[7])||0) - (parseMoney(r[5])||0);
-    completedProfitByDate.set(date, (completedProfitByDate.get(date)||0) + profit);
+    profitByDate.set(date, (profitByDate.get(date)||0) + profit);
   });
 
-  // ── Total pending wager per date ──
-  const pendingWagerByDate = new Map();
+  // Pending wager per date
+  const pendingByDate = new Map();
   pending.forEach(r => {
-    const date = String(r[1]||'').trim();
-    if (!date) return;
-    const w = parseMoney(r[5]) || 0;
-    pendingWagerByDate.set(date, (pendingWagerByDate.get(date)||0) + w);
+    const date = String(r[1]||'').trim(); if (!date) return;
+    pendingByDate.set(date, (pendingByDate.get(date)||0) + (parseMoney(r[5])||0));
   });
 
-  // ── Total pending wagers (for display balance) ──
-  const totalPendingOut = pending.reduce((s,r) => s+(parseMoney(r[5])||0), 0);
-
-  // ── Build chart: one point per date, running completed balance minus cumulative pending deductions ──
-  // Pending wagers placed on a date reduce the balance from that date onward (money is out of pocket)
+  // Build one point per date; pending wagers reduce balance from their date onward
   let runningCompleted = START;
-  let cumulativePendingDeducted = 0; // pending wagers placed on/before this date
-  const points = [START];
+  let cumulativePending = 0;
   const labels = ['Start'];
-  // Map dateStr -> index in points array (for delta lookups)
-  const pointIndexByDate = new Map();
+  const points = [START];
 
   allDates.forEach(dateStr => {
-    // Apply completed profit for this date
-    const profit = completedProfitByDate.get(dateStr) || 0;
-    runningCompleted = parseFloat((runningCompleted + profit).toFixed(2));
-
-    // Apply pending wagers placed on this date
-    const pendingOnDate = pendingWagerByDate.get(dateStr) || 0;
-    cumulativePendingDeducted = parseFloat((cumulativePendingDeducted + pendingOnDate).toFixed(2));
-
-    // Liquid balance = completed running - all pending wagers placed so far
-    const liquidBalance = parseFloat((runningCompleted - cumulativePendingDeducted).toFixed(2));
-
-    points.push(liquidBalance);
+    runningCompleted = parseFloat((runningCompleted + (profitByDate.get(dateStr)||0)).toFixed(2));
+    cumulativePending = parseFloat((cumulativePending + (pendingByDate.get(dateStr)||0)).toFixed(2));
     labels.push(dateStr);
-    pointIndexByDate.set(dateStr, points.length - 1);
+    points.push(parseFloat((runningCompleted - cumulativePending).toFixed(2)));
   });
 
-  // ── Displayed balance number = latest point value ──
+  // Store full dataset for range filtering
+  fullChartLabels = labels.slice();
+  fullChartPoints = points.slice();
+
+  // Displayed balance = last point
   const balance = points[points.length - 1];
   const isUp = balance >= START;
 
-  const amtEl = document.getElementById('balance-amount');
-  amtEl.textContent = `$${balance.toFixed(2)}`;
-  amtEl.className = 'amount ' + (isUp ? 'positive' : 'negative');
+  document.getElementById('balance-amount').textContent = `$${balance.toFixed(2)}`;
+  document.getElementById('balance-amount').className = 'amount ' + (isUp ? 'positive' : 'negative');
 
   const pct = (((balance - START) / START) * 100);
   const pctStr = `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
 
-  // ── Deltas: read directly from the graph points array ──
-  const now = new Date();
-
+  // Deltas — read from full graph points
   function graphBalanceNDaysAgo(n) {
-    const target = new Date(now);
-    target.setDate(now.getDate() - n);
-    const targetInt = target.getFullYear() * 10000 + (target.getMonth()+1) * 100 + target.getDate();
-    // Walk labels (skip index 0 = 'Start'), find most recent point <= targetInt
+    const target = new Date(); target.setDate(target.getDate() - n);
+    const targetInt = target.getFullYear()*10000 + (target.getMonth()+1)*100 + target.getDate();
     let best = null, bestDi = -1;
     for (let i = 1; i < labels.length; i++) {
       const di = parseDate(labels[i]);
-      if (di !== null && di <= targetInt && di > bestDi) {
-        bestDi = di;
-        best = points[i];
-      }
+      if (di !== null && di <= targetInt && di > bestDi) { bestDi = di; best = points[i]; }
     }
     return best !== null ? best : START;
   }
 
-  const balYest  = graphBalanceNDaysAgo(1);
-  const balWeek  = graphBalanceNDaysAgo(7);
-  const deltaYest = parseFloat((balance - balYest).toFixed(2));
-  const deltaWeek = parseFloat((balance - balWeek).toFixed(2));
+  const deltaYest = parseFloat((balance - graphBalanceNDaysAgo(1)).toFixed(2));
+  const deltaWeek = parseFloat((balance - graphBalanceNDaysAgo(7)).toFixed(2));
 
   function deltaLabel(delta, period) {
-    if (delta > 0)  return `▲ +$${delta.toFixed(2)} ${period}`;
-    if (delta < 0)  return `▼ -$${Math.abs(delta).toFixed(2)} ${period}`;
+    if (delta > 0) return `▲ +$${delta.toFixed(2)} ${period}`;
+    if (delta < 0) return `▼ -$${Math.abs(delta).toFixed(2)} ${period}`;
     return `— $0.00 ${period}`;
   }
 
   document.getElementById('balance-change').innerHTML =
     `<span class="${isUp?'positive':'negative'}">${pctStr} from start</span><br>` +
-    `<span style="color:var(--muted);font-size:10px">${deltaLabel(deltaYest, 'yesterday')}</span><br>` +
-    `<span style="color:var(--muted);font-size:10px">${deltaLabel(deltaWeek, 'last week')}</span>`;
+    `<span style="color:var(--muted);font-size:10px">${deltaLabel(deltaYest,'yesterday')}</span><br>` +
+    `<span style="color:var(--muted);font-size:10px">${deltaLabel(deltaWeek,'last week')}</span>`;
 
-  // ── Store full chart data globally for range filtering ──
-  fullChartLabels = labels.slice();
-  fullChartPoints = points.slice();
+  // Draw chart with default 1W range
+  drawChart();
+}
 
-  // Set 1W as default active on first load
-  chartRange = '1W';
+/* ─── CHART RANGE ─── */
+function setChartRange(range) {
+  chartRange = range;
   document.querySelectorAll('.range-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.range === '1W');
+    b.classList.toggle('active', b.dataset.range === range);
   });
   drawChart();
+}
+window.setChartRange = setChartRange;
+
+function drawChart() {
+  if (!fullChartLabels.length) return;
+
+  const now = new Date();
+  let cutoffInt = 0;
+  if (chartRange === '1W') {
+    const d = new Date(now); d.setDate(now.getDate() - 7);
+    cutoffInt = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+  } else if (chartRange === '1M') {
+    const d = new Date(now); d.setMonth(now.getMonth() - 1);
+    cutoffInt = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+  }
+
+  // Filter to range; always keep a reference point just before the cutoff so line starts clean
+  let filteredLabels = [], filteredPoints = [];
+  let preCutoffLabel = 'Start', preCutoffVal = fullChartPoints[0];
+
+  for (let i = 0; i < fullChartLabels.length; i++) {
+    if (i === 0) continue; // skip 'Start' placeholder — we add a reference point below
+    const di = parseDate(fullChartLabels[i]);
+    if (chartRange === 'All' || di === null || di >= cutoffInt) {
+      filteredLabels.push(fullChartLabels[i]);
+      filteredPoints.push(fullChartPoints[i]);
+    } else {
+      // Track the last point before the cutoff as our reference
+      preCutoffLabel = fullChartLabels[i];
+      preCutoffVal = fullChartPoints[i];
+    }
+  }
+
+  // Prepend the reference point so the line has context
+  filteredLabels.unshift(chartRange === 'All' ? 'Start' : preCutoffLabel);
+  filteredPoints.unshift(chartRange === 'All' ? fullChartPoints[0] : preCutoffVal);
+
+  if (filteredPoints.length === 0) {
+    filteredLabels = ['Start'];
+    filteredPoints = [fullChartPoints[0]];
+  }
+
+  const lastVal = filteredPoints[filteredPoints.length - 1];
+  const isUp = lastVal >= (chartRange === 'All' ? 25 : filteredPoints[0]);
+
+  const ctx = document.getElementById('balance-chart').getContext('2d');
+  if (balanceChart) balanceChart.destroy();
+  const grad = ctx.createLinearGradient(0,0,0,160);
+  grad.addColorStop(0, isUp ? 'rgba(0,230,118,0.22)' : 'rgba(255,68,68,0.22)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+
+  balanceChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: filteredLabels, datasets: [{ data: filteredPoints,
+      borderColor: isUp?'#00e676':'#ff4444',
+      backgroundColor: grad, borderWidth: 2,
+      pointRadius: filteredPoints.length > 20 ? 0 : 3,
+      pointBackgroundColor: isUp?'#00e676':'#ff4444',
+      fill: true, tension: 0.35 }] },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend:{display:false}, tooltip:{
+        backgroundColor:'#1a1e24', borderColor:'#252a32', borderWidth:1,
+        titleColor:'#9aa0ab', bodyColor:'#e8eaed',
+        callbacks:{ label: c => `$${c.parsed.y.toFixed(2)}` }
+      }},
+      scales: {
+        x: { grid:{color:'#1a1e24'}, ticks:{color:'#5a6370', font:{family:'DM Mono',size:9}, maxRotation:30, autoSkip:true, maxTicksLimit:8} },
+        y: { grid:{color:'#1a1e24'}, ticks:{color:'#5a6370', font:{family:'DM Mono',size:9}, callback:v=>`$${v}`}, border:{dash:[4,4]} }
+      }
+    }
+  });
 }
 
 /* ─── DONUT + STATS ─── */
 function renderAnalytics(rows) {
   const completed = rows.filter(r => !isPending(r));
-  const wins = completed.filter(r => (parseMoney(r[7])||0) > 0);
+  const wins   = completed.filter(r => (parseMoney(r[7])||0) > 0);
   const losses = completed.filter(r => (parseMoney(r[7])||0) === 0);
   const total = completed.length, winCount = wins.length, lossCount = losses.length;
   const winPct = total > 0 ? (winCount/total)*100 : 0;
@@ -784,7 +748,6 @@ function renderAnalytics(rows) {
     if(w>bigW){bigW=w;bigWR=r;}
   });
 
-  // Sub: date · team · bet type/spread · odds%
   function sub(r) {
     if(!r) return '';
     const date = String(r[1]||'').trim();
@@ -792,30 +755,27 @@ function renderAnalytics(rows) {
     const betRaw = String(r[2]||'').trim();
     const betLabel = /ml/i.test(betRaw) ? 'Win' : (/[+-]\d/.test(betRaw) ? betRaw : '');
     const oddsRaw = String(r[6]||'').replace(/%/g,'').trim();
-    const odds = oddsRaw ? oddsRaw+'%' : '';
-    return [date, team, betLabel, odds].filter(Boolean).join(' · ');
+    return [date, team, betLabel, oddsRaw?oddsRaw+'%':''].filter(Boolean).join(' · ');
   }
 
-  // Win streaks: longest and current
+  // Win streaks
   const ordered = completed.slice().sort((a,b)=>(parseFloat(a[0])||0)-(parseFloat(b[0])||0));
   let longest=0, curStreak=0;
   ordered.forEach(r=>{
     if((parseMoney(r[7])||0)>0){curStreak++;if(curStreak>longest)longest=curStreak;}else curStreak=0;
   });
-  // curStreak is now the current active streak at end of sorted list
 
-  // Most bet team — count bets and wins
+  // Most bet team with win count
   const tBets={}, tWins={};
   completed.forEach(r=>{
-    const t=(r[3]||'').trim();
-    if(t){
-      tBets[t]=(tBets[t]||0)+1;
-      if((parseMoney(r[7])||0)>0) tWins[t]=(tWins[t]||0)+1;
-    }
+    const t=(r[3]||'').trim(); if(!t) return;
+    tBets[t]=(tBets[t]||0)+1;
+    if((parseMoney(r[7])||0)>0) tWins[t]=(tWins[t]||0)+1;
   });
   const topTeam=Object.entries(tBets).sort((a,b)=>b[1]-a[1])[0];
-  const topTeamWins = topTeam ? (tWins[topTeam[0]]||0) : 0;
-  const topTeamSub = topTeam ? `${topTeam[1]} bets · ${topTeamWins}W / ${topTeam[1]-topTeamWins}L` : '';
+  const topTeamSub = topTeam
+    ? `${topTeam[1]} bets · ${tWins[topTeam[0]]||0}W / ${topTeam[1]-(tWins[topTeam[0]]||0)}L`
+    : '';
 
   const lwPayout=bigWR?(parseMoney(bigWR[7])||0):0;
   const lwWon=lwPayout>0;
@@ -881,12 +841,7 @@ function appendRow(tbody,r) {
     ?`${team} <span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${bLabel}</span>`
     :team;
 
-  // Payout cell: payout on first line, profit in parens wrapping to next line if needed
-  const payoutCell = `
-    <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:3px;">
-      <span>${payoutHTML}</span>
-      <span style="font-size:10px;color:var(--muted);white-space:nowrap">(${profitHTML})</span>
-    </div>`;
+  const payoutCell=`<div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:3px;"><span>${payoutHTML}</span><span style="font-size:10px;color:var(--muted);white-space:nowrap">(${profitHTML})</span></div>`;
 
   const tr=document.createElement('tr');
   if(isLoss)tr.style.opacity='0.65';
