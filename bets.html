@@ -463,6 +463,7 @@ let _logSortDir = 0;      // 0=original, 1=desc, -1=asc
 let _logOriginal = [];    // original chronological order
 let balanceChart = null;
 let _allChartLabels = [];
+let _pendingDateInts = new Set();
 let _allChartPoints = [];
 
 function _parseDateInt(s) {
@@ -527,11 +528,31 @@ function _drawChart(range) {
   const grad = ctx.createLinearGradient(0,0,0,160);
   grad.addColorStop(0, isUp?'rgba(0,230,118,0.22)':'rgba(255,68,68,0.22)');
   grad.addColorStop(1,'rgba(0,0,0,0)');
+  // Dismiss tooltip when clicking outside the chart
+  document.addEventListener('click', function _dismissTooltip(e) {
+    if (!ctx.canvas.contains(e.target) && balanceChart) {
+      balanceChart.tooltip.setActiveElements([], {x:0,y:0});
+      balanceChart.update();
+    }
+  }, { capture: false });
+
   balanceChart = new Chart(ctx, {
     type:'line',
     data:{ labels:fl, datasets:[{ data:fp, borderColor:isUp?'#00e676':'#ff4444',
-      backgroundColor:grad, borderWidth:2, pointRadius:fp.length>20?0:3,
-      pointBackgroundColor:isUp?'#00e676':'#ff4444', fill:true, tension:0.35 }] },
+      backgroundColor:grad, borderWidth:2,
+      pointRadius: fl.map(l => {
+        const di = _parseDateInt(l);
+        return (di && _pendingDateInts.has(di)) ? 5 : (fp.length > 20 ? 0 : 3);
+      }),
+      pointBackgroundColor: fl.map(l => {
+        const di = _parseDateInt(l);
+        return (di && _pendingDateInts.has(di)) ? '#b57bee' : (isUp ? '#00e676' : '#ff4444');
+      }),
+      pointBorderColor: fl.map(l => {
+        const di = _parseDateInt(l);
+        return (di && _pendingDateInts.has(di)) ? '#b57bee' : (isUp ? '#00e676' : '#ff4444');
+      }),
+      fill:true, tension:0.35 }] },
     options:{ responsive:true, maintainAspectRatio:false,
       interaction:{ mode:'index', intersect:false },
       plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#1a1e24',
@@ -742,9 +763,14 @@ function renderBalance(rows) {
     `<span class="${dY.cls}" style="font-size:10px">${dY.text}</span><br>` +
     `<span class="${dW.cls}" style="font-size:10px">${dW.text}</span>`;
 
-  // ── Store full data, wire buttons, draw default 1W ──
+  // ── Store full data + pending dates, wire buttons, draw default 1W ──
   _allChartLabels = labels.slice();
   _allChartPoints = points.slice();
+  _pendingDateInts = new Set();
+  pending.forEach(r => {
+    const di = parseDate(String(r[1]||'').trim());
+    if (di) _pendingDateInts.add(di);
+  });
   document.querySelectorAll('.range-btn').forEach(btn =>
     btn.addEventListener('click', () => setChartRange(btn.dataset.range)));
   _drawChart('1W');
