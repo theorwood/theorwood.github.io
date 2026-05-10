@@ -490,16 +490,20 @@ function _drawChart(range) {
     const d = new Date(latestDate); d.setMonth(latestDate.getMonth()-1);
     cutoff = d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();
   }
-  let fl = [], fp = [], lastBefore = null;
+  let fl = [], fp = [];
   for (let i = 0; i < _allChartLabels.length; i++) {
     const di = _parseDateInt(_allChartLabels[i]);
-    if (range === 'All' || di === null || di >= cutoff) {
+    // For filtered ranges: skip null-date entries (e.g. 'Start') and out-of-range points
+    if (range === 'All') {
       fl.push(_allChartLabels[i]); fp.push(_allChartPoints[i]);
-    } else {
-      lastBefore = { l: _allChartLabels[i], p: _allChartPoints[i] };
+    } else if (di !== null && di >= cutoff) {
+      fl.push(_allChartLabels[i]); fp.push(_allChartPoints[i]);
     }
   }
-  if (range !== 'All' && lastBefore) { fl.unshift(''); fp.unshift(lastBefore.p); }
+  // Sort chronologically by parsed date
+  const paired = fl.map((l, i) => ({ l, p: fp[i], di: _parseDateInt(l) || 0 }));
+  paired.sort((a, b) => a.di - b.di);
+  fl = paired.map(x => x.l); fp = paired.map(x => x.p);
   if (!fl.length) { fl = _allChartLabels.slice(); fp = _allChartPoints.slice(); }
   const isUp = fp[fp.length-1] >= fp[0];
   const ctx = document.getElementById('balance-chart').getContext('2d');
