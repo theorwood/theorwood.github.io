@@ -490,19 +490,24 @@ function _drawChart(range) {
     const d = new Date(latestDate); d.setMonth(latestDate.getMonth()-1);
     cutoff = d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();
   }
+  // Find the earliest real date in the dataset to use for 'Start' comparisons
+  let firstRealDateInt = Infinity;
+  for (let i = 0; i < _allChartLabels.length; i++) {
+    const di = _parseDateInt(_allChartLabels[i]);
+    if (di !== null && di < firstRealDateInt) firstRealDateInt = di;
+  }
   let fl = [], fp = [];
   for (let i = 0; i < _allChartLabels.length; i++) {
     const di = _parseDateInt(_allChartLabels[i]);
-    // For filtered ranges: skip null-date entries (e.g. 'Start') and out-of-range points
-    if (range === 'All') {
-      fl.push(_allChartLabels[i]); fp.push(_allChartPoints[i]);
-    } else if (di !== null && di >= cutoff) {
+    // 'Start' uses the earliest real date for range comparison
+    const effectiveDi = (di === null) ? firstRealDateInt : di;
+    if (range === 'All' || effectiveDi >= cutoff) {
       fl.push(_allChartLabels[i]); fp.push(_allChartPoints[i]);
     }
   }
-  // Sort chronologically by parsed date
-  const paired = fl.map((l, i) => ({ l, p: fp[i], di: _parseDateInt(l) || 0 }));
-  paired.sort((a, b) => a.di - b.di);
+  // Sort chronologically; 'Start' (di=null) always sorts first
+  const paired = fl.map((l, i) => ({ l, p: fp[i], di: _parseDateInt(l) }));
+  paired.sort((a, b) => (a.di === null ? -1 : b.di === null ? 1 : a.di - b.di));
   fl = paired.map(x => x.l); fp = paired.map(x => x.p);
   if (!fl.length) { fl = _allChartLabels.slice(); fp = _allChartPoints.slice(); }
   const isUp = fp[fp.length-1] >= fp[0];
