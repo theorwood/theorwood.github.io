@@ -79,15 +79,29 @@
             scrollbar-width: none;
         }
 
-        .shimmer {
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
+        /* Loading Spinner */
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+            pointer-events: none;
         }
-
-        @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
+        .btn-loading::after {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            margin: auto;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: btn-spin 0.6s linear infinite;
+        }
+        @keyframes btn-spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -146,7 +160,7 @@
         </div>
     </div>
 
-    <!-- Sync Spinner (Initial Sync Only) -->
+    <!-- Global Sync Overlay -->
     <div id="sync-overlay" class="hidden fixed inset-0 z-[110] bg-slate-950/80 backdrop-blur-md flex items-center justify-center">
         <div class="text-center space-y-4">
             <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
@@ -208,7 +222,7 @@
                 <div class="flex justify-between items-center mb-6">
                     <div class="flex items-center gap-3">
                         <h2 class="text-xl font-bold text-white">Available Betting Lines</h2>
-                        <span id="sync-status" class="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-[8px] font-bold uppercase rounded border border-blue-500/30">Load Sync</span>
+                        <span id="sync-status" class="px-2 py-0.5 bg-green-500/20 text-green-400 text-[8px] font-bold uppercase rounded border border-green-500/30">Manual Load Sync</span>
                     </div>
                     <div class="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase bg-slate-800 px-2 py-1 rounded" id="last-updated-time">Updating...</div>
                 </div>
@@ -227,7 +241,7 @@
         <section id="section-leaderboard" class="tab-content hidden space-y-6">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-bold text-white">Playoff Leaderboard</h2>
-                <button onclick="switchTab('leaderboard')" class="text-[10px] font-bold text-blue-400 uppercase tracking-widest hover:text-blue-300">Update Standings</button>
+                <button onclick="fetchLeaderboard()" class="text-[10px] font-bold text-blue-400 uppercase tracking-widest hover:text-blue-300">Update Standings</button>
             </div>
             <div class="glass-card rounded-2xl overflow-hidden border border-slate-800">
                 <div class="grid grid-cols-12 bg-slate-900/50 p-4 border-b border-slate-800 text-[10px] font-black uppercase text-slate-500 tracking-widest">
@@ -241,10 +255,10 @@
     </main>
 
     <script>
-        // --- DATABASE CONFIGURATION ---
+        // --- API CONFIGURATION ---
         const USER_API_URL = "https://sheetdb.io";
 
-        // --- Global State ---
+        // --- GLOBAL STATE ---
         let balance = 25.00;
         let bets = [];
         let betHistory = []; 
@@ -255,11 +269,12 @@
         let leaderboardData = [];
         let profileExists = false;
 
+        // --- INITIALIZATION ---
         async function init() {
             renderPastGames();
             updateUserNameUI();
             
-            // Sync on load/refresh
+            // Sync on load/refresh if a name is set
             if (userName !== 'Guest') {
                 await syncProfileFromServer(userName);
                 document.getElementById('delete-profile-btn').classList.remove('hidden');
@@ -270,148 +285,97 @@
             await fetchGameData();
         }
 
-        // --- Data Fetching ---
-        async function fetchGameData() {
-            try {
-                // Official 2026 Odds
-                liveScheduleData = [
-                    { 
-                        id: 201, home: 'Pistons', away: 'Cavaliers', date: 'Sunday, May 17', time: '8:00 PM ET',
-                        odds: { homeML: -180, awayML: 150, homeSpread: -4.5, awaySpread: 4.5, total: 206.5, overOdds: -110, underOdds: -110, spreadOdds: -110 } 
-                    },
-                    { 
-                        id: 202, home: 'Thunder', away: 'Spurs', date: 'Monday, May 18', time: '8:30 PM ET',
-                        odds: { homeML: -265, awayML: 215, homeSpread: -6.5, awaySpread: 6.5, total: 218.5, overOdds: -110, underOdds: -110, spreadOdds: -110 } 
-                    }
-                ];
-                renderSchedule();
-                renderBettingLines();
-                renderActiveBets();
-                renderBetHistory();
-                renderBalanceChart();
-                document.getElementById('last-updated-time').innerText = `LAST SYNC: ${new Date().toLocaleTimeString()}`;
-            } catch (e) { console.error(e); }
-        }
-
+        // --- DATABASE SYNC LOGIC ---
         async function syncProfileFromServer(name) {
             showOverlay(`Syncing Profile: ${name}...`);
             try {
+                // Fetch all profiles from SheetDB
                 const response = await fetch(USER_API_URL);
                 const data = await response.json();
-                const profile = data.find(p => p.name === name);
+                
+                // Find matching user
+                const profile = data.find(p => p.name.trim().toLowerCase() === name.trim().toLowerCase());
                 
                 if (profile) {
                     profileExists = true;
-                    balance = parseFloat(profile.balance);
+                    balance = parseFloat(profile.balance) || 25.00;
                     bets = JSON.parse(profile.bets || "[]");
                     betHistory = JSON.parse(profile.betHistory || "[]");
                     balanceHistory = JSON.parse(profile.history || "[25,25,25,25,25,25,25]");
+                    console.log("Profile Found and Synced:", profile);
                 } else {
                     profileExists = false;
-                    await saveProfileToServer(name);
+                    console.log("No profile found. Will create new entry on first save.");
                 }
                 userName = name;
                 updateBalanceUI();
                 updateUserNameUI();
-            } catch (e) { console.error("Sync Failure", e); }
+            } catch (e) { 
+                console.error("Critical Sync Failure:", e);
+                alert("Database connection failed. Please check your internet or API status.");
+            }
             hideOverlay();
         }
 
-        async function saveProfileToServer(name = userName) {
+        async function saveProfileToServer(btnElement = null) {
+            if (userName === 'Guest') return;
+            
+            if (btnElement) btnElement.classList.add('btn-loading');
+            
             try {
                 const payload = {
-                    name, balance, bets: JSON.stringify(bets),
-                    betHistory: JSON.stringify(betHistory), history: JSON.stringify(balanceHistory)
+                    name: userName,
+                    balance: balance.toFixed(2),
+                    bets: JSON.stringify(bets),
+                    betHistory: JSON.stringify(betHistory),
+                    history: JSON.stringify(balanceHistory),
+                    milestones: "[]"
                 };
 
+                // SheetDB Write Logic
                 if (profileExists) {
-                    await fetch(`${USER_API_URL}/name/${name}`, {
+                    // Update existing row
+                    const res = await fetch(`${USER_API_URL}/name/${encodeURIComponent(userName)}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data: payload })
+                        body: JSON.stringify({ data: payload }) // Wrapped in data object for SheetDB
                     });
+                    console.log("PATCH Status:", res.status);
                 } else {
+                    // Create new row
                     const res = await fetch(USER_API_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data: [payload] })
+                        body: JSON.stringify({ data: [payload] }) // Wrapped in array inside data for SheetDB
                     });
-                    if (res.ok) profileExists = true;
+                    if (res.ok) {
+                        profileExists = true;
+                        console.log("New Profile Created in Cloud");
+                    }
                 }
-            } catch (e) { console.error("Cloud Write Failure", e); }
+            } catch (e) { 
+                console.error("Cloud Write Failure:", e);
+            } finally {
+                if (btnElement) btnElement.classList.remove('btn-loading');
+            }
         }
 
         async function deleteProfileFromServer() {
-            showOverlay("Purging Data...");
+            if (userName === 'Guest') return;
+            showOverlay("Purging Profile from Cloud...");
             try {
-                await fetch(`${USER_API_URL}/name/${userName}`, { method: 'DELETE' });
+                await fetch(`${USER_API_URL}/name/${encodeURIComponent(userName)}`, { method: 'DELETE' });
                 localStorage.removeItem('nba_user_name');
                 location.reload();
-            } catch (e) { console.error(e); hideOverlay(); }
-        }
-
-        // --- UI Rendering ---
-        function renderBettingLines() {
-            const list = document.getElementById('betting-odds-list');
-            list.innerHTML = liveScheduleData.map(game => {
-                const s = selections[game.id] || {};
-                const fmtO = (o) => (o > 0 ? '+' : '') + o;
-                const fmtL = (l) => (l > 0 ? '+' : '') + l.toFixed(1);
-                
-                const awayColor = game.away === 'Cavaliers' ? 'color-cavaliers' : (game.away === 'Thunder' ? 'color-thunder' : 'color-pistons');
-                const homeColor = game.home === 'Pistons' ? 'color-pistons' : (game.home === 'Spurs' ? 'color-spurs' : 'color-cavaliers');
-
-                return `
-                <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
-                    <div class="font-black text-sm uppercase text-white"><span class="${awayColor}">${game.away}</span> @ <span class="${homeColor}">${game.home}</span></div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setBet(${game.id}, 'ML', '${game.away}', ${game.odds.awayML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.away ? 'selected' : ''} text-white">${game.away.split(' ').pop()} ${fmtO(game.odds.awayML)}</button>
-                        <button onclick="setBet(${game.id}, 'Spread', '${game.away}', -110, ${game.odds.awaySpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.away ? 'selected' : ''} text-white">${game.away.split(' ').pop()} ${fmtL(game.odds.awaySpread)}</button>
-                        <button onclick="setBet(${game.id}, 'Total', 'Over', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Over' ? 'selected' : ''} text-white">OVER ${game.odds.total.toFixed(1)}</button>
-                        <button onclick="setBet(${game.id}, 'ML', '${game.home}', ${game.odds.homeML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.home ? 'selected' : ''} text-white">${game.home.split(' ').pop()} ${fmtO(game.odds.homeML)}</button>
-                        <button onclick="setBet(${game.id}, 'Spread', '${game.home}', -110, ${game.odds.homeSpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.home ? 'selected' : ''} text-white">${game.home.split(' ').pop()} ${fmtL(game.odds.homeSpread)}</button>
-                        <button onclick="setBet(${game.id}, 'Total', 'Under', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Under' ? 'selected' : ''} text-white">UNDER ${game.odds.total.toFixed(1)}</button>
-                    </div>
-                    <div class="flex gap-2">
-                        <input type="number" id="wager-${game.id}" placeholder="Wager $" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs w-full text-white">
-                        <button onclick="confirmPlaceBet(${game.id})" class="px-6 py-1 bg-green-600 rounded-lg text-[10px] font-black uppercase text-white">Bet</button>
-                    </div>
-                </div>`;
-            }).join('');
-        }
-
-        function renderPastGames() {
-            const list = document.getElementById('past-games-list');
-            // Expanded results
-            const results = [
-                { date: 'May 15', game: 'Cavaliers @ Pistons', score: '94-115', status: 'Final', winner: 'Pistons' },
-                { date: 'May 15', game: 'Spurs @ Timberwolves', score: '139-109', status: 'Final', winner: 'Spurs' },
-                { date: 'May 13', game: 'Pistons @ Cavaliers', score: '113-117 (OT)', status: 'Final', winner: 'Cavaliers' },
-                { date: 'May 12', game: 'Timberwolves @ Spurs', score: '97-126', status: 'Final', winner: 'Spurs' },
-                { date: 'May 11', game: 'Lakers @ Thunder', score: '110-115', status: 'Final', winner: 'Thunder' },
-                { date: 'May 11', game: 'Pistons @ Cavaliers', score: '103-112', status: 'Final', winner: 'Cavaliers' },
-                { date: 'May 10', game: 'Spurs @ Timberwolves', score: '109-114', status: 'Final', winner: 'Timberwolves' },
-                { date: 'May 09', game: 'Oklahoma City @ Lakers', score: '131-108', status: 'Final', winner: 'Thunder' }
-            ];
-
-            list.innerHTML = results.map(r => {
-                const winnerColor = r.winner === 'Pistons' ? 'color-pistons' : (r.winner === 'Spurs' ? 'color-spurs' : (r.winner === 'Thunder' ? 'color-thunder' : (r.winner === 'Timberwolves' ? 'color-timberwolves' : 'color-cavaliers')));
-                return `
-                <div class="glass-card rounded-xl p-3 flex justify-between items-center text-xs font-bold text-white">
-                    <div class="flex items-center gap-3">
-                        <span class="text-[9px] text-slate-500 uppercase">${r.date}</span>
-                        <span>${r.game}</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="${winnerColor}">${r.score}</span>
-                        <span class="bg-slate-800 px-2 py-0.5 rounded text-[8px] uppercase text-slate-500">${r.status}</span>
-                    </div>
-                </div>`;
-            }).join('');
+            } catch (e) { 
+                console.error(e); 
+                hideOverlay(); 
+            }
         }
 
         async function fetchLeaderboard() {
             const list = document.getElementById('leaderboard-list');
+            list.innerHTML = `<div class="p-8 text-center"><div class="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div></div>`;
             try {
                 const response = await fetch(USER_API_URL);
                 leaderboardData = await response.json();
@@ -426,45 +390,80 @@
                         </div>
                         <div class="col-span-4 text-right font-black text-xs text-green-400">$${parseFloat(user.balance).toFixed(2)}</div>
                     </div>`).join('');
-            } catch (e) { list.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs">Error loading rankings.</div>`; }
+            } catch (e) { 
+                list.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs">Error loading standings.</div>`; 
+            }
         }
 
-        function showUserDetail(name) {
-            const user = leaderboardData.find(u => u.name === name);
-            if (!user) return;
-            const hist = JSON.parse(user.history || "[25,25,25,25,25,25,25]");
-            const bHistory = JSON.parse(user.betHistory || "[]");
-            const modal = document.getElementById('custom-modal');
-            const content = document.getElementById('modal-content');
-            const actions = document.getElementById('modal-actions');
+        // --- ODDS & SCHEDULE ---
+        async function fetchGameData() {
+            try {
+                // Official 2026 Odds
+                liveScheduleData = [
+                    { 
+                        id: 201, home: 'Pistons', away: 'Cavaliers', date: 'Sunday, May 17', time: '8:00 PM ET',
+                        odds: { homeML: -180, awayML: 150, homeSpread: -4.5, awaySpread: 4.5, total: 206.5 } 
+                    },
+                    { 
+                        id: 202, home: 'Thunder', away: 'Spurs', date: 'Monday, May 18', time: '8:30 PM ET',
+                        odds: { homeML: -265, awayML: 215, homeSpread: -6.5, awaySpread: 6.5, total: 218.5 } 
+                    }
+                ];
+                renderSchedule();
+                renderBettingLines();
+                renderActiveBets();
+                renderBetHistory();
+                renderBalanceChart();
+                document.getElementById('last-updated-time').innerText = `SYNCED: ${new Date().toLocaleTimeString()}`;
+            } catch (e) { console.error(e); }
+        }
+
+        // --- BETTING LOGIC ---
+        window.setBet = function(gameId, type, team, odds, line) { 
+            selections[gameId] = { type, team, odds, line }; 
+            renderBettingLines(); 
+        };
+        
+        window.confirmPlaceBet = async function(gameId, btn) {
+            const sel = selections[gameId];
+            if (!sel) return;
+            const amt = parseFloat(document.getElementById(`wager-${gameId}`).value);
+            if (isNaN(amt) || amt <= 0 || amt > balance) {
+                alert("Invalid wager amount or insufficient balance.");
+                return;
+            }
             
-            content.innerHTML = `
-                <div class="space-y-6">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-lg font-black text-white">${user.name.charAt(0).toUpperCase()}</div>
-                        <div><h3 class="text-xl font-bold text-white">${user.name}</h3><p class="text-green-400 font-black text-sm">$${parseFloat(user.balance).toFixed(2)}</p></div>
-                    </div>
-                    <div id="modal-chart-wrapper" class="h-32 w-full glass-card rounded-xl p-2 relative"></div>
-                    <div class="max-h-48 overflow-y-auto no-scrollbar space-y-2">
-                        ${bHistory.length === 0 ? '<p class="text-slate-600 text-[10px] italic">No history</p>' : bHistory.map(b => `<div class="glass-card p-3 rounded-lg border-l-2 border-slate-700 flex justify-between items-center text-[10px]"><span class="font-bold text-white">${b.team} (${b.type})</span><span class="text-green-400 font-black">+$${b.payout.toFixed(2)}</span></div>`).join('')}
-                    </div>
-                </div>`;
-            actions.innerHTML = `<button onclick="closeModal()" class="w-full py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-white">Close</button>`;
-            modal.classList.remove('hidden');
-            setTimeout(() => renderMiniChart('modal-chart-wrapper', hist), 50);
-        }
-
-        // --- Navigation ---
-        window.switchTab = function(id) {
-            document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
-            document.getElementById('section-' + id).classList.remove('hidden');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + id).classList.add('active');
-            if (id === 'bets') { renderActiveBets(); renderBetHistory(); setTimeout(renderBalanceChart, 50); }
-            if (id === 'leaderboard') fetchLeaderboard();
+            balance -= amt;
+            bets.push({ 
+                gameId, 
+                type: sel.type, 
+                team: sel.team, 
+                line: sel.line, 
+                amount: amt, 
+                originalOdds: sel.odds, 
+                time: new Date().toISOString() 
+            });
+            
+            updateBalanceUI();
+            await saveProfileToServer(btn); // Save to SheetDB
+            delete selections[gameId]; 
+            renderActiveBets(); 
+            renderBettingLines();
         };
 
-        // --- Helper Logic ---
+        window.cashOutBet = async function(idx, value, btn) {
+            if (!confirm(`Confirm Cash Out for $${value.toFixed(2)}?`)) return;
+            balance += value;
+            betHistory.unshift({ ...bets[idx], payout: value, closed: new Date().toISOString() });
+            bets.splice(idx, 1);
+            updateBalanceUI();
+            await saveProfileToServer(btn); // Save to SheetDB
+            renderActiveBets(); 
+            renderBetHistory(); 
+            renderBettingLines();
+        };
+
+        // --- UI RENDERING HELPERS ---
         function updateBalanceUI() {
             document.getElementById('user-balance').innerText = `$${balance.toFixed(2)}`;
             balanceHistory[6] = balance;
@@ -476,64 +475,100 @@
             localStorage.setItem('nba_user_name', userName);
         }
 
-        window.setBet = function(gameId, type, team, odds, line) { selections[gameId] = { type, team, odds, line }; renderBettingLines(); };
-        
-        window.confirmPlaceBet = async function(gameId) {
-            const sel = selections[gameId];
-            if (!sel) return;
-            const amt = parseFloat(document.getElementById(`wager-${gameId}`).value);
-            if (isNaN(amt) || amt <= 0 || amt > balance) return;
-            balance -= amt;
-            bets.push({ gameId, type: sel.type, team: sel.team, line: sel.line, amount: amt, originalOdds: sel.odds, time: new Date().toISOString() });
-            updateBalanceUI();
-            await saveProfileToServer();
-            delete selections[gameId]; renderActiveBets(); renderBettingLines();
-        };
-
-        window.cashOutBet = async function(idx, value) {
-            if (!confirm(`Cash out for $${value.toFixed(2)}?`)) return;
-            balance += value;
-            betHistory.unshift({ ...bets[idx], payout: value, closed: new Date().toISOString() });
-            bets.splice(idx, 1);
-            updateBalanceUI();
-            await saveProfileToServer();
-            renderActiveBets(); renderBetHistory(); renderBettingLines();
-        };
+        function renderBettingLines() {
+            const list = document.getElementById('betting-odds-list');
+            list.innerHTML = liveScheduleData.map(game => {
+                const s = selections[game.id] || {};
+                const fmtO = (o) => (o > 0 ? '+' : '') + o;
+                const fmtL = (l) => (l > 0 ? '+' : '') + l.toFixed(1);
+                
+                return `
+                <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
+                    <div class="font-black text-sm uppercase text-white">
+                        <span class="color-cavaliers">${game.away}</span> @ <span class="color-pistons">${game.home}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setBet(${game.id}, 'ML', '${game.away}', ${game.odds.awayML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.away ? 'selected' : ''} text-white">${game.away.split(' ').pop()} ${fmtO(game.odds.awayML)}</button>
+                        <button onclick="setBet(${game.id}, 'Spread', '${game.away}', -110, ${game.odds.awaySpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.away ? 'selected' : ''} text-white">${game.away.split(' ').pop()} ${fmtL(game.odds.awaySpread)}</button>
+                        <button onclick="setBet(${game.id}, 'Total', 'Over', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Over' ? 'selected' : ''} text-white">OVER ${game.odds.total.toFixed(1)}</button>
+                        <button onclick="setBet(${game.id}, 'ML', '${game.home}', ${game.odds.homeML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.home ? 'selected' : ''} text-white">${game.home.split(' ').pop()} ${fmtO(game.odds.homeML)}</button>
+                        <button onclick="setBet(${game.id}, 'Spread', '${game.home}', -110, ${game.odds.homeSpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.home ? 'selected' : ''} text-white">${game.home.split(' ').pop()} ${fmtL(game.odds.homeSpread)}</button>
+                        <button onclick="setBet(${game.id}, 'Total', 'Under', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Under' ? 'selected' : ''} text-white">UNDER ${game.odds.total.toFixed(1)}</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="number" id="wager-${game.id}" placeholder="Wager $" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs w-full text-white">
+                        <button onclick="confirmPlaceBet(${game.id}, this)" class="px-6 py-1 bg-green-600 rounded-lg text-[10px] font-black uppercase text-white">Bet</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
 
         function renderActiveBets() {
             const container = document.getElementById('active-bets-container');
             if (bets.length === 0) { container.innerHTML = `<div class="text-slate-600 text-[10px] italic p-6 glass-card rounded-xl text-center uppercase">No active wagers</div>`; return; }
             container.innerHTML = bets.map((bet, index) => {
                 const dec = (ml) => (ml > 0 ? (ml/100)+1 : (100/Math.abs(ml))+1);
-                const cashOut = (dec(bet.originalOdds) / dec(bet.originalOdds)) * bet.amount * 0.95;
-                return `<div class="glass-card p-4 rounded-xl border-l-4 border-blue-500 mb-2"><div class="flex justify-between font-bold text-xs text-white"><span>${bet.team} ${bet.line !== undefined ? (bet.line > 0 ? '+' : '') + bet.line.toFixed(1) : ''}</span><span>$${bet.amount.toFixed(2)}</span></div><button onclick="cashOutBet(${index}, ${cashOut})" class="w-full mt-3 py-2 bg-slate-800 rounded-lg flex justify-between px-3 text-[10px] font-bold"><span class="text-slate-400">Cash Out</span><span class="text-green-500">$${cashOut.toFixed(2)}</span></button></div>`;
+                const cashOutValue = (dec(bet.originalOdds) / dec(bet.originalOdds)) * bet.amount * 0.95;
+                return `
+                <div class="glass-card p-4 rounded-xl border-l-4 border-blue-500 mb-2">
+                    <div class="flex justify-between font-bold text-xs text-white">
+                        <span>${bet.team} ${bet.line !== undefined ? (bet.line > 0 ? '+' : '') + bet.line.toFixed(1) : ''}</span>
+                        <span>$${bet.amount.toFixed(2)}</span>
+                    </div>
+                    <button onclick="cashOutBet(${index}, ${cashOutValue}, this)" class="w-full mt-3 py-2 bg-slate-800 rounded-lg flex justify-between px-3 text-[10px] font-bold">
+                        <span class="text-slate-400">Cash Out</span>
+                        <span class="text-green-500">$${cashOutValue.toFixed(2)}</span>
+                    </button>
+                </div>`;
             }).join('');
         }
 
         function renderBetHistory() {
             const container = document.getElementById('bet-history-container');
             if (!betHistory || betHistory.length === 0) { container.innerHTML = `<div class="text-slate-600 text-[10px] italic p-6 glass-card rounded-xl text-center uppercase">History Empty</div>`; return; }
-            container.innerHTML = betHistory.map(bet => `<div class="glass-card p-3 rounded-xl border-l-4 border-slate-700 opacity-60 flex justify-between items-center text-xs font-bold text-white mb-2"><span>${bet.team} (${bet.type})</span><span class="text-green-400">+$${bet.payout.toFixed(2)}</span></div>`).join('');
+            container.innerHTML = betHistory.map(bet => `
+                <div class="glass-card p-3 rounded-xl border-l-4 border-slate-700 opacity-60 flex justify-between items-center text-xs font-bold text-white mb-2">
+                    <span>${bet.team} (${bet.type})</span>
+                    <span class="text-green-400">+$${bet.payout.toFixed(2)}</span>
+                </div>`).join('');
         }
 
-        function renderBalanceChart() {
-            const wrapper = document.getElementById('chart-wrapper'); if (!wrapper) return;
-            const w = wrapper.clientWidth; const h = 220; const pad = 30;
-            const points = balanceHistory.map((val, i) => `${i * (w/6)},${h - pad - ((val/Math.max(...balanceHistory, 40)) * (h - 2*pad))}`).join(' ');
-            wrapper.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="#3b82f6" stroke-width="3" points="${points}" /><path d="M 0,${h} L ${points} L ${w},${h} Z" fill="#3b82f6" opacity="0.1" /></svg>`;
-        }
-
-        function renderMiniChart(id, hist) {
-            const wrapper = document.getElementById(id); if (!wrapper) return;
-            const w = wrapper.clientWidth; const h = wrapper.clientHeight;
-            const points = hist.map((v, i) => `${i*(w/6)},${h-10-((v/Math.max(...hist, 40))*(h-20))}`).join(' ');
-            wrapper.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="#3b82f6" stroke-width="2" points="${points}" /></svg>`;
+        function renderPastGames() {
+            const list = document.getElementById('past-games-list');
+            const results = [
+                { date: 'May 15', game: 'Cavaliers @ Pistons', score: '94-115', winner: 'Pistons' },
+                { date: 'May 15', game: 'Spurs @ Timberwolves', score: '139-109', winner: 'Spurs' },
+                { date: 'May 13', game: 'Pistons @ Cavaliers', score: '113-117 (OT)', winner: 'Cavaliers' },
+                { date: 'May 12', game: 'Timberwolves @ Spurs', score: '97-126', winner: 'Spurs' }
+            ];
+            list.innerHTML = results.map(r => `
+                <div class="glass-card rounded-xl p-3 flex justify-between items-center text-xs font-bold text-white">
+                    <div class="flex items-center gap-3">
+                        <span class="text-[9px] text-slate-500 uppercase">${r.date}</span>
+                        <span>${r.game}</span>
+                    </div>
+                    <span class="${r.winner === 'Pistons' ? 'color-pistons' : 'color-cavaliers'}">${r.score}</span>
+                </div>`).join('');
         }
 
         function renderSchedule() {
             const list = document.getElementById('schedule-list');
-            list.innerHTML = liveScheduleData.map(g => `<div class="glass-card rounded-xl p-4"><div class="font-black text-xs text-white">${g.away} @ ${g.home}</div><div class="text-[9px] text-slate-500">${g.date}</div></div>`).join('');
+            list.innerHTML = liveScheduleData.map(g => `
+                <div class="glass-card rounded-xl p-4">
+                    <div class="font-black text-xs text-white">${g.away} @ ${g.home}</div>
+                    <div class="text-[9px] text-slate-500">${g.date} at ${g.time}</div>
+                </div>`).join('');
         }
+
+        // --- NAVIGATION & MODALS ---
+        window.switchTab = function(id) {
+            document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
+            document.getElementById('section-' + id).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + id).classList.add('active');
+            if (id === 'bets') { setTimeout(renderBalanceChart, 50); }
+            if (id === 'leaderboard') fetchLeaderboard();
+        };
 
         window.showProfileModal = function() {
             const modal = document.getElementById('custom-modal');
@@ -561,6 +596,20 @@
         window.closeModal = () => document.getElementById('custom-modal').classList.add('hidden');
         function showOverlay(m) { document.getElementById('sync-overlay').classList.remove('hidden'); document.getElementById('sync-message').innerText = m; }
         function hideOverlay() { document.getElementById('sync-overlay').classList.add('hidden'); }
+
+        // --- CHARTS ---
+        function renderBalanceChart() {
+            const wrapper = document.getElementById('chart-wrapper'); if (!wrapper) return;
+            const w = wrapper.clientWidth; const h = 220; const pad = 30;
+            const points = balanceHistory.map((val, i) => `${i * (w/6)},${h - pad - ((val/Math.max(...balanceHistory, 40)) * (h - 2*pad))}`).join(' ');
+            wrapper.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="#3b82f6" stroke-width="3" points="${points}" /><path d="M 0,${h} L ${points} L ${w},${h} Z" fill="#3b82f6" opacity="0.1" /></svg>`;
+        }
+        function renderMiniChart(id, hist) {
+            const wrapper = document.getElementById(id); if (!wrapper) return;
+            const w = wrapper.clientWidth; const h = wrapper.clientHeight;
+            const points = hist.map((v, i) => `${i*(w/6)},${h-10-((v/Math.max(...hist, 40))*(h-20))}`).join(' ');
+            wrapper.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="#3b82f6" stroke-width="2" points="${points}" /></svg>`;
+        }
 
         window.onload = init;
     </script>
