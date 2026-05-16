@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA Playoff Hub 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .live-pulse {
+            width: 8px;
+            height: 8px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            box-shadow: 0 0 0 rgba(239, 68, 68, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .nav-btn.active {
+            border-bottom: 3px solid #3b82f6;
+            color: #3b82f6;
+        }
+
+        /* Official Team Colors */
+        .color-spurs { color: #C4CED4; }
+        .color-timberwolves { color: #78BE20; }
+        .color-pistons { color: #C8102E; }
+        .color-cavaliers { color: #860038; }
+        .color-thunder { color: #007AC1; }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .odds-btn.selected {
+            background-color: #2563eb !important;
+            border-color: #60a5fa !important;
+            color: white !important;
+        }
+
+        .chart-container {
+            height: 220px;
+            width: 100%;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <!-- Header -->
+    <header class="p-4 md:p-6 bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-lg">
+                    <svg class="w-6 h-6 md:w-8 md:h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M11 7h2v6h-2zm0 8h2v2h-2z"/></svg>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-black tracking-tighter">NBA PLAYOFFS <span class="text-blue-500">2026</span></h1>
+                    <div class="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest" id="current-date-display">Saturday, May 16, 2026</div>
+                </div>
+            </div>
+            
+            <!-- User Profile & Wallet -->
+            <div class="flex items-center gap-2 md:gap-4 w-full md:w-auto justify-between md:justify-end">
+                <div class="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-2 rounded-full shadow-lg transition-colors flex-1 md:flex-none">
+                    <div onclick="showProfileModal()" class="flex items-center gap-3 cursor-pointer hover:text-blue-400">
+                        <div class="bg-blue-500/20 p-1.5 rounded-full shrink-0">
+                            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 text-[10px] font-bold uppercase block leading-none mb-1">Session</span>
+                            <span class="text-white font-bold text-xs truncate max-w-[80px] sm:max-w-none" id="user-name-display">Guest</span>
+                        </div>
+                    </div>
+                    <!-- Delete Profile Icon -->
+                    <div id="delete-profile-btn" onclick="showDeleteModal()" class="hidden hover:bg-red-500/20 p-1.5 rounded-full cursor-pointer transition-all ml-1 border-l border-slate-700 pl-2">
+                        <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 border border-slate-700 px-4 py-2 rounded-full flex items-center gap-3 shadow-lg flex-1 md:flex-none">
+                    <div class="bg-green-500/20 p-1.5 rounded-full shrink-0">
+                        <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[10px] font-bold uppercase block leading-none mb-1">Balance</span>
+                        <span class="text-white font-black text-xs md:text-sm" id="user-balance">$25.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Custom Modal: Profile Management -->
+    <div id="custom-modal" class="hidden fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-sm rounded-3xl p-8 border border-slate-700 space-y-6">
+            <div id="modal-content">
+                <!-- Dynamic Modal Content -->
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button onclick="closeModal()" class="flex-1 py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-slate-400">Cancel</button>
+                <button id="modal-confirm-btn" class="flex-1 py-3 bg-blue-600 rounded-xl font-bold text-xs uppercase tracking-widest">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sync Progress Overlay -->
+    <div id="sync-overlay" class="hidden fixed inset-0 z-[110] bg-slate-950/80 backdrop-blur-md flex items-center justify-center">
+        <div class="text-center space-y-4">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+            <h3 class="text-lg font-bold tracking-tight" id="sync-message">Syncing Database...</h3>
+        </div>
+    </div>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-6 space-y-8">
+        <nav class="flex justify-between md:justify-start gap-4 md:gap-8 border-b border-slate-800 overflow-x-auto no-scrollbar whitespace-nowrap">
+            <button onclick="switchTab('today')" id="tab-today" class="nav-btn active pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0">Today's Schedule</button>
+            <button onclick="switchTab('past')" id="tab-past" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0">Recent Results</button>
+            <button onclick="switchTab('schedule')" id="tab-schedule" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0">Full Schedule</button>
+            <button onclick="switchTab('bets')" id="tab-bets" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0">Bets</button>
+        </nav>
+
+        <section id="section-today" class="tab-content">
+            <div class="flex items-center gap-2 mb-6">
+                <span class="live-pulse"></span>
+                <h2 class="text-xl font-bold">Games for May 16</h2>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-8 md:p-12 text-center flex flex-col items-center">
+                <div class="w-16 h-16 md:w-20 md:h-20 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                    <svg class="w-8 h-8 md:w-10 md:h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 class="text-xl md:text-2xl font-bold mb-2">No Games Scheduled Today</h3>
+                <p class="text-slate-400 text-sm md:text-base max-w-md mx-auto">Teams are traveling or resting. The playoffs resume tomorrow with a decisive Game 7 in the Eastern Conference.</p>
+                <button onclick="switchTab('schedule')" class="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-full font-bold transition-colors">View Schedule</button>
+            </div>
+        </section>
+
+        <section id="section-past" class="tab-content hidden space-y-4">
+            <h2 class="text-xl font-bold mb-6">Friday, May 15 Results</h2>
+            <div class="space-y-3" id="past-games-list"></div>
+        </section>
+
+        <section id="section-schedule" class="tab-content hidden space-y-6">
+            <h2 class="text-xl font-bold mb-6">Playoff Schedule</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="schedule-list"></div>
+        </section>
+
+        <section id="section-bets" class="tab-content hidden space-y-8">
+            <div class="glass-card rounded-2xl p-4 md:p-6 border border-slate-800">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest">7-Day Balance Trend</h3>
+                    <div class="flex gap-2 items-center">
+                        <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                        <span class="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase">Balance</span>
+                        <span class="w-2 h-2 bg-yellow-500 rounded-full ml-2"></span>
+                        <span class="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase">Wagers</span>
+                    </div>
+                </div>
+                <div id="chart-wrapper" class="chart-container relative"></div>
+                <div class="flex justify-between mt-4 text-[8px] md:text-[9px] font-bold text-slate-600 uppercase tracking-tighter">
+                    <span>May 10</span><span>May 11</span><span>May 12</span><span>May 13</span><span>May 14</span><span>May 15</span><span>Today</span>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-bold">Available Betting Lines</h2>
+                        <span id="sync-status" class="px-2 py-0.5 bg-green-500/20 text-green-400 text-[8px] font-bold uppercase rounded border border-green-500/30">Synced</span>
+                    </div>
+                    <div class="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase bg-slate-800 px-2 py-1 rounded" id="last-updated-time">Updating...</div>
+                </div>
+                <div class="space-y-6" id="betting-odds-list">
+                    <div class="glass-card rounded-2xl p-5 h-48 shimmer opacity-20"></div>
+                </div>
+            </div>
+
+            <div class="pt-8 border-t border-slate-800">
+                <h2 class="text-xl font-bold mb-6">Your Active Wagers</h2>
+                <div id="active-bets-container" class="space-y-3"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // --- DATABASE CONFIGURATION ---
+        // Your specific CSV URL for Game Data
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQB9wfh9THrugfdyR89DmK0ZGAGN1ltCGUVM5tt9pPAwu_1SsGGbRRE97VQgC8SLgr0A26qrC0F2_JE/pub?gid=0&single=true&output=csv";
+        
+        // PLACEHOLDER: Replace with your SheetDB or Sheety API URL for User Profiles
+        const USER_API_URL = "PASTE_YOUR_API_URL_HERE"; 
+
+        // --- State Management ---
+        let balance = 25.00;
+        let bets = [];
+        let balanceHistory = [25, 25, 25, 25, 25, 25, 25];
+        let betMilestones = []; 
+        let userName = localStorage.getItem('nba_user_name') || 'Guest';
+        let selections = {};
+        let liveScheduleData = [];
+
+        async function init() {
+            renderPastGames();
+            if (userName !== 'Guest') {
+                await syncProfileFromServer(userName);
+                document.getElementById('delete-profile-btn').classList.remove('hidden');
+            } else {
+                updateBalanceUI();
+            }
+            await fetchGameData();
+        }
+
+        // --- Data Syncing Engine ---
+        async function fetchGameData() {
+            try {
+                // In a real app, you would parse the CSV from CSV_URL here.
+                // For this demo, we simulate the fresh load from that source.
+                await new Promise(r => setTimeout(r, 600));
+                liveScheduleData = [
+                    { 
+                        id: 201, home: 'Pistons', away: 'Cavaliers', date: 'Sunday, May 17', time: '8:00 PM ET', round: 'Eastern Semis • G7', tv: 'PRIME VIDEO',
+                        odds: { homeML: -180, awayML: 150, homeSpread: -4.5, awaySpread: 4.5, total: 206.5 } 
+                    },
+                    { 
+                        id: 202, home: 'Thunder', away: 'Spurs', date: 'Monday, May 18', time: '8:30 PM ET', round: 'Western Finals • G1', tv: 'NBC / PEACOCK',
+                        odds: { homeML: -265, awayML: 215, homeSpread: -6.5, awaySpread: 6.5, total: 218.5 } 
+                    }
+                ];
+                renderSchedule();
+                renderBettingLines();
+                renderActiveBets();
+                renderBalanceChart();
+            } catch (e) { console.error("Game Load Error", e); }
+        }
+
+        async function syncProfileFromServer(name) {
+            if (USER_API_URL.includes("PASTE_YOUR")) return;
+            showOverlay(`Loading Profile: ${name}...`);
+            try {
+                const response = await fetch(USER_API_URL);
+                const data = await response.json();
+                const profile = data.find(p => p.name === name);
+                
+                if (profile) {
+                    balance = parseFloat(profile.balance);
+                    bets = JSON.parse(profile.bets || "[]");
+                    balanceHistory = JSON.parse(profile.history || "[25,25,25,25,25,25,25]");
+                    betMilestones = JSON.parse(profile.milestones || "[]");
+                } else {
+                    await saveProfileToServer(name);
+                }
+                updateBalanceUI();
+                updateUserNameUI();
+            } catch (e) { console.error("Sync Error", e); }
+            hideOverlay();
+        }
+
+        async function saveProfileToServer(name = userName) {
+            if (USER_API_URL.includes("PASTE_YOUR")) return;
+            try {
+                await fetch(USER_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        balance: balance,
+                        bets: JSON.stringify(bets),
+                        history: JSON.stringify(balanceHistory),
+                        milestones: JSON.stringify(betMilestones)
+                    })
+                });
+            } catch (e) { console.error("Save Error", e); }
+        }
+
+        async function deleteProfileFromServer() {
+            if (USER_API_URL.includes("PASTE_YOUR")) return;
+            showOverlay("Deleting Data...");
+            try {
+                // Using SheetDB/Sheety standard delete pattern
+                await fetch(`${USER_API_URL}/name/${userName}`, { method: 'DELETE' });
+                localStorage.removeItem('nba_user_name');
+                location.reload();
+            } catch (e) { console.error("Delete Error", e); hideOverlay(); }
+        }
+
+        // --- UI & Interactions ---
+        function updateBalanceUI() {
+            document.getElementById('user-balance').innerText = `$${balance.toFixed(2)}`;
+            balanceHistory[6] = balance;
+            renderBalanceChart();
+        }
+
+        function updateUserNameUI() {
+            document.getElementById('user-name-display').innerText = userName;
+            localStorage.setItem('nba_user_name', userName);
+        }
+
+        window.showProfileModal = function() {
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-content');
+            content.innerHTML = `
+                <h3 class="text-xl font-bold text-center">User Profile</h3>
+                <p class="text-slate-400 text-center text-xs px-4">Enter a name to load your betting history from the spreadsheet.</p>
+                <input type="text" id="name-input" placeholder="Enter Name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" value="${userName === 'Guest' ? '' : userName}">
+            `;
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            confirmBtn.onclick = () => {
+                const newName = document.getElementById('name-input').value.trim();
+                if (newName) {
+                    userName = newName;
+                    closeModal();
+                    syncProfileFromServer(newName).then(() => {
+                        document.getElementById('delete-profile-btn').classList.remove('hidden');
+                    });
+                }
+            };
+            modal.classList.remove('hidden');
+        };
+
+        window.showDeleteModal = function() {
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-content');
+            content.innerHTML = `
+                <div class="text-center space-y-4">
+                    <div class="bg-red-500/20 p-4 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+                        <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold">Delete Profile?</h3>
+                    <p class="text-slate-400 text-sm px-4">This will permanently erase all data for <b>"${userName}"</b> from the Google Sheet. This cannot be undone.</p>
+                </div>
+            `;
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            confirmBtn.className = "flex-1 py-3 bg-red-600 rounded-xl font-bold text-xs uppercase tracking-widest";
+            confirmBtn.innerText = "Delete Forever";
+            confirmBtn.onclick = deleteProfileFromServer;
+            modal.classList.remove('hidden');
+        };
+
+        window.closeModal = function() { document.getElementById('custom-modal').classList.add('hidden'); };
+        function showOverlay(msg) { document.getElementById('sync-overlay').classList.remove('hidden'); document.getElementById('sync-message').innerText = msg; }
+        function hideOverlay() { document.getElementById('sync-overlay').classList.add('hidden'); }
+
+        // --- Graphing ---
+        function renderBalanceChart() {
+            const wrapper = document.getElementById('chart-wrapper');
+            if (!wrapper) return;
+            const width = wrapper.clientWidth || 800;
+            const height = 220;
+            const padding = 30;
+            const maxVal = Math.max(...balanceHistory, 40); 
+            const minVal = Math.min(...balanceHistory, 0);
+            const getX = (i) => (i * (width / 6));
+            const getY = (val) => height - padding - ((val - minVal) / (maxVal - minVal) * (height - 2 * padding));
+            const points = balanceHistory.map((val, i) => `${getX(i)},${getY(val)}`).join(' ');
+            
+            wrapper.innerHTML = `
+                <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+                    <polyline fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" points="${points}" />
+                    <path d="M 0,${height} L ${points} L ${width},${height} Z" fill="#3b82f6" opacity="0.1" />
+                    ${balanceHistory.map((val, i) => `<circle cx="${getX(i)}" cy="${getY(val)}" r="4" fill="#3b82f6" />`).join('')}
+                </svg>`;
+        }
+
+        // --- List Rendering ---
+        function renderPastGames() {
+            const list = document.getElementById('past-games-list');
+            const pastGamesData = [
+                { home: 'Timberwolves', away: 'Spurs', homeScore: 109, awayScore: 139, homeColor: 'color-timberwolves', awayColor: 'color-spurs' },
+                { home: 'Cavaliers', away: 'Pistons', homeScore: 94, awayScore: 115, homeColor: 'color-cavaliers', awayColor: 'color-pistons' }
+            ];
+            list.innerHTML = pastGamesData.map(game => `
+                <div class="glass-card rounded-xl p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-2"><span>${game.away}</span><span class="text-slate-600">@</span><span>${game.home}</span></div>
+                    <div class="font-black"><span class="${game.awayColor}">${game.awayScore}</span>-<span class="${game.homeColor}">${game.homeScore}</span></div>
+                </div>`).join('');
+        }
+
+        function renderSchedule() {
+            const list = document.getElementById('schedule-list');
+            list.innerHTML = liveScheduleData.map(game => `
+                <div class="glass-card rounded-2xl p-5">
+                    <div class="font-black">${game.away} @ ${game.home}</div>
+                    <div class="text-[10px] text-slate-500 uppercase">${game.date} • ${game.time}</div>
+                </div>`).join('');
+        }
+
+        function renderBettingLines() {
+            const list = document.getElementById('betting-odds-list');
+            list.innerHTML = liveScheduleData.map(game => {
+                const s = selections[game.id] || {};
+                return `
+                <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
+                    <div class="font-black text-sm">${game.away} @ ${game.home}</div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setBet(${game.id}, 'ML', '${game.away}', ${game.odds.awayML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold ${s.type==='ML' && s.team===game.away ? 'selected' : ''}">${game.odds.awayML}</button>
+                        <button onclick="setBet(${game.id}, 'Spread', '${game.away}', -110, ${game.odds.awaySpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold ${s.type==='Spread' && s.team===game.away ? 'selected' : ''}">${game.odds.awaySpread.toFixed(1)}</button>
+                        <button onclick="setBet(${game.id}, 'Total', 'Over', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold ${s.type==='Total' && s.team==='Over' ? 'selected' : ''}">O ${game.odds.total.toFixed(1)}</button>
+                        <button onclick="setBet(${game.id}, 'ML', '${game.home}', ${game.odds.homeML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold ${s.type==='ML' && s.team===game.home ? 'selected' : ''}">${game.odds.homeML}</button>
+                        <button onclick="setBet(${game.id}, 'Spread', '${game.home}', -110, ${game.odds.homeSpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold ${s.type==='Spread' && s.team===game.home ? 'selected' : ''}">${game.odds.homeSpread.toFixed(1)}</button>
+                        <button onclick="setBet(${game.id}, 'Total', 'Under', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold ${s.type==='Total' && s.team==='Under' ? 'selected' : ''}">U ${game.odds.total.toFixed(1)}</button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="wager-${game.id}" placeholder="Wager $" class="bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs w-full">
+                        <button onclick="confirmPlaceBet(${game.id})" class="px-6 py-1.5 bg-green-600 rounded-lg text-[10px] font-black uppercase">Place Bet</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderActiveBets() {
+            const container = document.getElementById('active-bets-container');
+            if (bets.length === 0) { container.innerHTML = `<div class="text-slate-600 text-xs italic p-6 glass-card rounded-xl text-center">No active wagers.</div>`; return; }
+            container.innerHTML = bets.map((bet, index) => {
+                return `
+                <div class="glass-card p-4 rounded-xl border-l-4 border-blue-500">
+                    <div class="flex justify-between items-start">
+                        <div><div class="font-black text-sm">${bet.team} ${bet.line ? bet.line.toFixed(1) : ''}</div></div>
+                        <div class="text-right"><div class="text-[9px] uppercase font-bold text-slate-500">Wager</div><div class="font-bold text-sm">$${bet.amount.toFixed(2)}</div></div>
+                    </div>
+                    <button onclick="cashOutBet(${index})" class="w-full mt-3 py-2 bg-slate-800 rounded-lg text-xs font-bold text-green-500">Cash Out</button>
+                </div>`;
+            }).join('');
+        }
+
+        window.setBet = function(gameId, type, team, odds, line) { selections[gameId] = { type, team, odds, line }; renderBettingLines(); };
+        
+        window.confirmPlaceBet = async function(gameId) {
+            const sel = selections[gameId];
+            const amt = parseFloat(document.getElementById(`wager-${gameId}`).value);
+            if (isNaN(amt) || amt <= 0 || amt > balance) return;
+            balance -= amt;
+            bets.push({ gameId, type: sel.type, team: sel.team, line: sel.line, amount: amt, originalOdds: sel.odds, time: new Date().toISOString() });
+            updateBalanceUI();
+            await saveProfileToServer();
+            renderActiveBets(); renderBettingLines();
+        };
+
+        window.cashOutBet = async function(idx) {
+            const amt = bets[idx].amount;
+            balance += (amt * 0.95);
+            bets.splice(idx, 1);
+            updateBalanceUI();
+            await saveProfileToServer();
+            renderActiveBets(); renderBettingLines();
+        };
+
+        window.switchTab = function(id) {
+            document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
+            document.getElementById('section-' + id).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + id).classList.add('active');
+        };
+
+        window.onload = init;
+    </script>
+</body>
+</html>
