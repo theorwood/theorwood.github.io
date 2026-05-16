@@ -160,7 +160,7 @@
         </div>
     </div>
 
-    <!-- Sync Spinner (Load Only) -->
+    <!-- Sync Spinner -->
     <div id="sync-overlay" class="hidden fixed inset-0 z-[110] bg-slate-950/80 backdrop-blur-md flex items-center justify-center">
         <div class="text-center space-y-4">
             <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
@@ -222,7 +222,7 @@
                 <div class="flex justify-between items-center mb-6">
                     <div class="flex items-center gap-3">
                         <h2 class="text-xl font-bold text-white">Available Betting Lines</h2>
-                        <span id="sync-status" class="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-[8px] font-bold uppercase rounded border border-blue-500/30">Manual Sync Mode</span>
+                        <span id="sync-status" class="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[8px] font-bold uppercase rounded border border-orange-500/30">Firebase Realtime Sync</span>
                     </div>
                     <div class="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase bg-slate-800 px-2 py-1 rounded" id="last-updated-time">Updating...</div>
                 </div>
@@ -255,8 +255,8 @@
     </main>
 
     <script>
-        // --- API CONFIGURATION ---
-        const USER_API_URL = "https://sheetdb.io";
+        // --- FIREBASE CONFIGURATION ---
+        const FIREBASE_DB_URL = "https://real-16bde-default-rtdb.firebaseio.com/";
 
         // --- GLOBAL STATE ---
         let balance = 25.00;
@@ -274,7 +274,6 @@
             renderPastGames();
             updateUserNameUI();
             
-            // Sync on load/refresh if a name is set
             if (userName !== 'Guest') {
                 await syncProfileFromServer(userName);
                 document.getElementById('delete-profile-btn').classList.remove('hidden');
@@ -285,18 +284,14 @@
             await fetchGameData();
         }
 
-        // --- DATABASE SYNC LOGIC ---
+        // --- DATABASE SYNC LOGIC (FIREBASE REST API) ---
         async function syncProfileFromServer(name) {
-            showOverlay(`Searching Cloud: ${name}...`);
+            if (!FIREBASE_DB_URL || FIREBASE_DB_URL.includes("PASTE_YOUR")) return;
+            
+            showOverlay(`Syncing Profile: ${name}...`);
             try {
-                // Fetch all profiles
-                const response = await fetch(USER_API_URL);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
-                const data = await response.json();
-                
-                // Find matching user (case-insensitive)
-                const profile = data.find(p => p.name && p.name.toString().trim().toLowerCase() === name.trim().toLowerCase());
+                const response = await fetch(`${FIREBASE_DB_URL}/users/${encodeURIComponent(name)}.json`);
+                const profile = await response.json();
                 
                 if (profile) {
                     profileExists = true;
@@ -306,21 +301,20 @@
                     balanceHistory = JSON.parse(profile.history || "[25,25,25,25,25,25,25]");
                 } else {
                     profileExists = false;
-                    // Create new entry silently if it doesn't exist
                     await saveProfileToServer();
                 }
                 userName = name;
                 updateBalanceUI();
                 updateUserNameUI();
             } catch (e) { 
-                console.error("Critical Sync Failure:", e);
-                alert("Cloud Connection Failed. Ensure your Spreadsheet has headers: name, balance, bets, betHistory, history, milestones.");
+                console.error("Firebase Sync Failure:", e);
+                alert("Database connection failed. Please check your Firebase URL and Security Rules.");
             }
             hideOverlay();
         }
 
         async function saveProfileToServer(btnElement = null) {
-            if (userName === 'Guest') return;
+            if (userName === 'Guest' || !FIREBASE_DB_URL || FIREBASE_DB_URL.includes("PASTE_YOUR")) return;
             if (btnElement) btnElement.classList.add('btn-loading');
             
             try {
@@ -329,29 +323,17 @@
                     balance: balance.toFixed(2),
                     bets: JSON.stringify(bets),
                     betHistory: JSON.stringify(betHistory),
-                    history: JSON.stringify(balanceHistory),
-                    milestones: "[]"
+                    history: JSON.stringify(balanceHistory)
                 };
 
-                // SheetDB Write Formatting
-                if (profileExists) {
-                    // PATCH requires { "data": { "col": "val" } }
-                    await fetch(`${USER_API_URL}/name/${encodeURIComponent(userName)}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data: payload })
-                    });
-                } else {
-                    // POST requires { "data": [{ "col": "val" }] }
-                    const res = await fetch(USER_API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data: [payload] })
-                    });
-                    if (res.ok) profileExists = true;
-                }
+                await fetch(`${FIREBASE_DB_URL}/users/${encodeURIComponent(userName)}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                profileExists = true;
             } catch (e) { 
-                console.error("Cloud Write Failure:", e);
+                console.error("Firebase Write Failure:", e);
             } finally {
                 if (btnElement) btnElement.classList.remove('btn-loading');
             }
@@ -359,9 +341,9 @@
 
         async function deleteProfileFromServer() {
             if (userName === 'Guest') return;
-            showOverlay("Purging Profile Data...");
+            showOverlay("Purging Profile...");
             try {
-                await fetch(`${USER_API_URL}/name/${encodeURIComponent(userName)}`, { method: 'DELETE' });
+                await fetch(`${FIREBASE_DB_URL}/users/${encodeURIComponent(userName)}.json`, { method: 'DELETE' });
                 localStorage.removeItem('nba_user_name');
                 location.reload();
             } catch (e) { 
@@ -374,8 +356,10 @@
             const list = document.getElementById('leaderboard-list');
             list.innerHTML = `<div class="p-8 text-center"><div class="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div></div>`;
             try {
-                const response = await fetch(USER_API_URL);
-                leaderboardData = await response.json();
+                const response = await fetch(`${FIREBASE_DB_URL}/users.json`);
+                const data = await response.json();
+                
+                leaderboardData = data ? Object.values(data) : [];
                 leaderboardData.sort((a, b) => parseFloat(b.balance) - parseFloat(a.balance));
                 
                 list.innerHTML = leaderboardData.map((user, idx) => `
@@ -388,7 +372,7 @@
                         <div class="col-span-4 text-right font-black text-xs text-green-400">$${parseFloat(user.balance).toFixed(2)}</div>
                     </div>`).join('');
             } catch (e) { 
-                list.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs">Error loading rankings.</div>`; 
+                list.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs">Error loading standings.</div>`; 
             }
         }
 
@@ -409,10 +393,10 @@
                     </div>
                     <div id="modal-chart-wrapper" class="h-32 w-full glass-card rounded-xl p-2 relative"></div>
                     <div class="max-h-48 overflow-y-auto no-scrollbar space-y-2">
-                        ${bHistory.length === 0 ? '<p class="text-slate-600 text-[10px] italic">No history available</p>' : bHistory.map(b => `<div class="glass-card p-3 rounded-lg border-l-2 border-slate-700 flex justify-between items-center text-[10px]"><span class="font-bold text-white">${b.team} (${b.type})</span><span class="text-green-400 font-black">+$${b.payout.toFixed(2)}</span></div>`).join('')}
+                        ${bHistory.length === 0 ? '<p class="text-slate-600 text-[10px] italic">No history</p>' : bHistory.map(b => `<div class="glass-card p-3 rounded-lg border-l-2 border-slate-700 flex justify-between items-center text-[10px]"><span class="font-bold text-white">${b.team} (${b.type})</span><span class="text-green-400 font-black">+$${b.payout.toFixed(2)}</span></div>`).join('')}
                     </div>
                 </div>`;
-            actions.innerHTML = `<button onclick="closeModal()" class="w-full py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-white">Close View</button>`;
+            actions.innerHTML = `<button onclick="closeModal()" class="w-full py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-white">Close</button>`;
             modal.classList.remove('hidden');
             setTimeout(() => renderMiniChart('modal-chart-wrapper', hist), 50);
         }
@@ -420,7 +404,7 @@
         // --- ODDS & SCHEDULE ---
         async function fetchGameData() {
             try {
-                // Verified 2026 Odds
+                // Official 2026 Odds
                 liveScheduleData = [
                     { 
                         id: 201, home: 'Pistons', away: 'Cavaliers', date: 'Sunday, May 17', time: '8:00 PM ET',
@@ -431,11 +415,7 @@
                         odds: { homeML: -265, awayML: 215, homeSpread: -6.5, awaySpread: 6.5, total: 218.5 } 
                     }
                 ];
-                renderSchedule();
-                renderBettingLines();
-                renderActiveBets();
-                renderBetHistory();
-                renderBalanceChart();
+                renderSchedule(); renderBettingLines(); renderActiveBets(); renderBetHistory(); renderBalanceChart();
                 document.getElementById('last-updated-time').innerText = `SYNCED: ${new Date().toLocaleTimeString()}`;
             } catch (e) { console.error(e); }
         }
@@ -454,9 +434,7 @@
             
             updateBalanceUI();
             await saveProfileToServer(btn);
-            delete selections[gameId]; 
-            renderActiveBets(); 
-            renderBettingLines();
+            delete selections[gameId]; renderActiveBets(); renderBettingLines();
         };
 
         window.cashOutBet = async function(idx, value, btn) {
@@ -466,9 +444,7 @@
             bets.splice(idx, 1);
             updateBalanceUI();
             await saveProfileToServer(btn);
-            renderActiveBets(); 
-            renderBetHistory(); 
-            renderBettingLines();
+            renderActiveBets(); renderBetHistory(); renderBettingLines();
         };
 
         // --- UI HELPERS ---
@@ -489,7 +465,6 @@
                 const s = selections[game.id] || {};
                 const fmtO = (o) => (o > 0 ? '+' : '') + o;
                 const fmtL = (l) => (l > 0 ? '+' : '') + l.toFixed(1);
-                
                 return `
                 <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
                     <div class="font-black text-sm uppercase text-white">
@@ -514,30 +489,39 @@
         function renderActiveBets() {
             const container = document.getElementById('active-bets-container');
             if (bets.length === 0) { container.innerHTML = `<div class="text-slate-600 text-[10px] italic p-6 glass-card rounded-xl text-center uppercase">No active wagers</div>`; return; }
-            container.innerHTML = bets.map((bet, index) => {
-                const dec = (ml) => (ml > 0 ? (ml/100)+1 : (100/Math.abs(ml))+1);
-                const cashOutValue = (dec(bet.originalOdds) / dec(bet.originalOdds)) * bet.amount * 0.95;
-                return `
-                <div class="glass-card p-4 rounded-xl border-l-4 border-blue-500 mb-2">
-                    <div class="flex justify-between font-bold text-xs text-white">
-                        <span>${bet.team} ${bet.line !== undefined ? (bet.line > 0 ? '+' : '') + bet.line.toFixed(1) : ''}</span>
-                        <span>$${bet.amount.toFixed(2)}</span>
-                    </div>
-                    <button onclick="cashOutBet(${index}, ${cashOutValue}, this)" class="w-full mt-3 py-2 bg-slate-800 rounded-lg flex justify-between px-3 text-[10px] font-bold">
-                        <span class="text-slate-400">Cash Out</span>
-                        <span class="text-green-500">$${cashOutValue.toFixed(2)}</span>
-                    </button>
-                </div>`;
-            }).join('');
+            container.innerHTML = `
+                <div class="grid grid-cols-4 bg-slate-900/50 p-2 text-[8px] font-black uppercase text-slate-500 tracking-widest rounded-t-lg">
+                    <div>Team/Line</div><div>Type</div><div>Odds</div><div>Wager</div>
+                </div>
+                ${bets.map((bet, index) => {
+                    const dec = (ml) => (ml > 0 ? (ml/100)+1 : (100/Math.abs(ml))+1);
+                    const cashOutValue = bet.amount * 0.95;
+                    return `
+                    <div class="glass-card p-4 rounded-b-xl border-l-4 border-blue-500 mb-2">
+                        <div class="grid grid-cols-4 items-center font-bold text-[10px] text-white">
+                            <div class="truncate">${bet.team} ${bet.line !== undefined ? (bet.line > 0 ? '+' : '') + bet.line.toFixed(1) : ''}</div>
+                            <div>${bet.type}</div>
+                            <div>${bet.originalOdds > 0 ? '+' : ''}${bet.originalOdds}</div>
+                            <div>$${bet.amount.toFixed(2)}</div>
+                        </div>
+                        <button onclick="cashOutBet(${index}, ${cashOutValue}, this)" class="w-full mt-3 py-2 bg-slate-800 rounded-lg flex justify-between px-3 text-[10px] font-bold">
+                            <span class="text-slate-400">Cash Out</span>
+                            <span class="text-green-500">$${cashOutValue.toFixed(2)}</span>
+                        </button>
+                    </div>`;
+                }).join('')}`;
         }
 
         function renderBetHistory() {
             const container = document.getElementById('bet-history-container');
             if (!betHistory || betHistory.length === 0) { container.innerHTML = `<div class="text-slate-600 text-[10px] italic p-6 glass-card rounded-xl text-center uppercase">History Empty</div>`; return; }
             container.innerHTML = betHistory.map(bet => `
-                <div class="glass-card p-3 rounded-xl border-l-4 border-slate-700 opacity-60 flex justify-between items-center text-xs font-bold text-white mb-2">
-                    <span>${bet.team} (${bet.type})</span>
-                    <span class="text-green-400">+$${bet.payout.toFixed(2)}</span>
+                <div class="glass-card p-3 rounded-xl border-l-4 border-slate-700 opacity-60 flex justify-between items-center text-[10px] font-bold text-white mb-2">
+                    <div class="flex flex-col">
+                        <span>${bet.team} ${bet.line !== undefined ? (bet.line > 0 ? '+' : '') + bet.line.toFixed(1) : ''} (${bet.type})</span>
+                        <span class="text-slate-500 text-[8px]">Wager: $${bet.amount.toFixed(2)} @ ${bet.originalOdds > 0 ? '+' : ''}${bet.originalOdds}</span>
+                    </div>
+                    <span class="text-green-400 font-black">+$${bet.payout.toFixed(2)}</span>
                 </div>`).join('');
         }
 
@@ -551,10 +535,7 @@
             ];
             list.innerHTML = results.map(r => `
                 <div class="glass-card rounded-xl p-3 flex justify-between items-center text-xs font-bold text-white">
-                    <div class="flex items-center gap-3">
-                        <span class="text-[9px] text-slate-500 uppercase">${r.date}</span>
-                        <span>${r.game}</span>
-                    </div>
+                    <div class="flex items-center gap-3"><span class="text-[9px] text-slate-500 uppercase">${r.date}</span><span>${r.game}</span></div>
                     <span class="${r.winner === 'Pistons' ? 'color-pistons' : 'color-cavaliers'}">${r.score}</span>
                 </div>`).join('');
         }
@@ -564,7 +545,6 @@
             list.innerHTML = liveScheduleData.map(g => `<div class="glass-card rounded-xl p-4"><div class="font-black text-xs text-white">${g.away} @ ${g.home}</div><div class="text-[9px] text-slate-500">${g.date}</div></div>`).join('');
         }
 
-        // --- NAVIGATION & MODALS ---
         window.switchTab = function(id) {
             document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
             document.getElementById('section-' + id).classList.remove('hidden');
@@ -601,7 +581,6 @@
         function showOverlay(m) { document.getElementById('sync-overlay').classList.remove('hidden'); document.getElementById('sync-message').innerText = m; }
         function hideOverlay() { document.getElementById('sync-overlay').classList.add('hidden'); }
 
-        // --- CHARTS ---
         function renderBalanceChart() {
             const wrapper = document.getElementById('chart-wrapper'); if (!wrapper) return;
             const w = wrapper.clientWidth; const h = 220; const pad = 30;
