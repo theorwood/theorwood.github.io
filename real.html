@@ -236,7 +236,7 @@
         // --- State Management ---
         let balance = 25.00;
         let bets = [];
-        let betHistory = []; // Tracks completed/cashed out bets
+        let betHistory = []; 
         let balanceHistory = [25, 25, 25, 25, 25, 25, 25];
         let betMilestones = []; 
         let userName = localStorage.getItem('nba_user_name') || 'Guest';
@@ -273,6 +273,7 @@
                 renderActiveBets();
                 renderBetHistory();
                 renderBalanceChart();
+                document.getElementById('last-updated-time').innerText = `LAST SYNC: ${new Date().toLocaleTimeString()}`;
             } catch (e) { console.error("Game Load Error", e); }
         }
 
@@ -432,16 +433,26 @@
             const list = document.getElementById('betting-odds-list');
             list.innerHTML = liveScheduleData.map(game => {
                 const s = selections[game.id] || {};
+                const formatOdds = (o) => (o > 0 ? '+' : '') + o;
+                const formatLine = (l) => (l > 0 ? '+' : '') + l.toFixed(1);
+                
                 return `
                 <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
                     <div class="font-black text-sm">${game.away} @ ${game.home}</div>
                     <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setBet(${game.id}, 'ML', '${game.away}', ${game.odds.awayML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold ${s.type==='ML' && s.team===game.away ? 'selected' : ''}">${game.odds.awayML}</button>
-                        <button onclick="setBet(${game.id}, 'Spread', '${game.away}', -110, ${game.odds.awaySpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold ${s.type==='Spread' && s.team===game.away ? 'selected' : ''}">${game.odds.awaySpread.toFixed(1)}</button>
-                        <button onclick="setBet(${game.id}, 'Total', 'Over', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold ${s.type==='Total' && s.team==='Over' ? 'selected' : ''}">O ${game.odds.total.toFixed(1)}</button>
-                        <button onclick="setBet(${game.id}, 'ML', '${game.home}', ${game.odds.homeML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold ${s.type==='ML' && s.team===game.home ? 'selected' : ''}">${game.odds.homeML}</button>
-                        <button onclick="setBet(${game.id}, 'Spread', '${game.home}', -110, ${game.odds.homeSpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold ${s.type==='Spread' && s.team===game.home ? 'selected' : ''}">${game.odds.homeSpread.toFixed(1)}</button>
-                        <button onclick="setBet(${game.id}, 'Total', 'Under', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold ${s.type==='Total' && s.team==='Under' ? 'selected' : ''}">U ${game.odds.total.toFixed(1)}</button>
+                        <!-- Moneyline -->
+                        <button onclick="setBet(${game.id}, 'ML', '${game.away}', ${game.odds.awayML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.away ? 'selected' : ''}">${game.away.split(' ').pop()} ${formatOdds(game.odds.awayML)}</button>
+                        <!-- Spread -->
+                        <button onclick="setBet(${game.id}, 'Spread', '${game.away}', -110, ${game.odds.awaySpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.away ? 'selected' : ''}">${game.away.split(' ').pop()} ${formatLine(game.odds.awaySpread)}</button>
+                        <!-- Total Over -->
+                        <button onclick="setBet(${game.id}, 'Total', 'Over', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Over' ? 'selected' : ''}">Over ${game.odds.total.toFixed(1)}</button>
+                        
+                        <!-- Moneyline -->
+                        <button onclick="setBet(${game.id}, 'ML', '${game.home}', ${game.odds.homeML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.home ? 'selected' : ''}">${game.home.split(' ').pop()} ${formatOdds(game.odds.homeML)}</button>
+                        <!-- Spread -->
+                        <button onclick="setBet(${game.id}, 'Spread', '${game.home}', -110, ${game.odds.homeSpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.home ? 'selected' : ''}">${game.home.split(' ').pop()} ${formatLine(game.odds.homeSpread)}</button>
+                        <!-- Total Under -->
+                        <button onclick="setBet(${game.id}, 'Total', 'Under', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Under' ? 'selected' : ''}">Under ${game.odds.total.toFixed(1)}</button>
                     </div>
                     <div class="flex items-center gap-2">
                         <input type="number" id="wager-${game.id}" placeholder="Wager $" class="bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs w-full">
@@ -511,7 +522,7 @@
 
         function renderBetHistory() {
             const container = document.getElementById('bet-history-container');
-            if (betHistory.length === 0) { container.innerHTML = `<div class="text-slate-600 text-xs italic p-6 glass-card rounded-xl text-center">No completed wagers.</div>`; return; }
+            if (!betHistory || betHistory.length === 0) { container.innerHTML = `<div class="text-slate-600 text-xs italic p-6 glass-card rounded-xl text-center">No completed wagers.</div>`; return; }
             
             container.innerHTML = betHistory.map((bet) => {
                 return `
@@ -554,7 +565,8 @@
             if (!confirm(`Cash out this wager for $${value.toFixed(2)}?`)) return;
             balance += value;
             const completedBet = { ...bets[idx], payout: value, result: 'Cashed Out', closedTime: new Date().toISOString() };
-            betHistory.unshift(completedBet); // Add to start of history
+            if (!betHistory) betHistory = [];
+            betHistory.unshift(completedBet); 
             bets.splice(idx, 1);
             updateBalanceUI();
             await saveProfileToServer();
