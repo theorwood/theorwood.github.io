@@ -96,7 +96,7 @@
                     <svg class="w-6 h-6 md:w-8 md:h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M11 7h2v6h-2zm0 8h2v2h-2z"/></svg>
                 </div>
                 <div>
-                    <h1 class="text-xl md:text-2xl font-black tracking-tighter">NBA PLAYOFFS <span class="text-blue-500">2026</span></h1>
+                    <h1 class="text-xl md:text-2xl font-black tracking-tighter text-white">NBA PLAYOFFS <span class="text-blue-500">2026</span></h1>
                     <div class="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest" id="current-date-display">Saturday, May 16, 2026</div>
                 </div>
             </div>
@@ -113,7 +113,6 @@
                             <span class="text-white font-bold text-xs truncate max-w-[80px] sm:max-w-none" id="user-name-display">Guest</span>
                         </div>
                     </div>
-                    <!-- Delete Profile Icon -->
                     <div id="delete-profile-btn" onclick="showDeleteModal()" class="hidden hover:bg-red-500/20 p-1.5 rounded-full cursor-pointer transition-all ml-1 border-l border-slate-700 pl-2">
                         <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </div>
@@ -132,58 +131,57 @@
         </div>
     </header>
 
-    <!-- Custom Modal: Profile Management -->
+    <!-- Modals -->
     <div id="custom-modal" class="hidden fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="glass-card w-full max-w-sm rounded-3xl p-8 border border-slate-700 space-y-6">
-            <div id="modal-content">
-                <!-- Dynamic Modal Content -->
-            </div>
-            <div class="flex gap-3 pt-2">
+        <div class="glass-card w-full max-w-sm md:max-w-md rounded-3xl p-6 md:p-8 border border-slate-700 space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar">
+            <div id="modal-content"></div>
+            <div class="flex gap-3 pt-2" id="modal-actions">
                 <button onclick="closeModal()" class="flex-1 py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-slate-400">Cancel</button>
-                <button id="modal-confirm-btn" class="flex-1 py-3 bg-blue-600 rounded-xl font-bold text-xs uppercase tracking-widest">Confirm</button>
+                <button id="modal-confirm-btn" class="flex-1 py-3 bg-blue-600 rounded-xl font-bold text-xs uppercase tracking-widest text-white">Confirm</button>
             </div>
         </div>
     </div>
 
-    <!-- Sync Progress Overlay -->
+    <!-- Sync Spinner -->
     <div id="sync-overlay" class="hidden fixed inset-0 z-[110] bg-slate-950/80 backdrop-blur-md flex items-center justify-center">
         <div class="text-center space-y-4">
             <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-            <h3 class="text-lg font-bold tracking-tight" id="sync-message">Syncing Database...</h3>
+            <h3 class="text-lg font-bold tracking-tight text-white" id="sync-message">Syncing Database...</h3>
         </div>
     </div>
 
     <main class="max-w-6xl mx-auto p-4 md:p-6 space-y-8">
         <nav class="flex justify-between md:justify-start gap-4 md:gap-8 border-b border-slate-800 overflow-x-auto no-scrollbar whitespace-nowrap">
-            <button onclick="switchTab('today')" id="tab-today" class="nav-btn active pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0">Today's Schedule</button>
-            <button onclick="switchTab('past')" id="tab-past" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0">Recent Results</button>
-            <button onclick="switchTab('schedule')" id="tab-schedule" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0">Full Schedule</button>
-            <button onclick="switchTab('bets')" id="tab-bets" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0">Bets</button>
+            <button onclick="switchTab('today')" id="tab-today" class="nav-btn active pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0 text-slate-400">Today's Schedule</button>
+            <button onclick="switchTab('past')" id="tab-past" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0 text-slate-400">Recent Results</button>
+            <button onclick="switchTab('schedule')" id="tab-schedule" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0 text-slate-400">Full Schedule</button>
+            <button onclick="switchTab('bets')" id="tab-bets" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0 text-slate-400">Bets</button>
+            <button onclick="switchTab('leaderboard')" id="tab-leaderboard" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0 text-slate-400">Leaderboard</button>
         </nav>
 
+        <!-- Tab Contents -->
         <section id="section-today" class="tab-content">
             <div class="flex items-center gap-2 mb-6">
                 <span class="live-pulse"></span>
-                <h2 class="text-xl font-bold">Games for May 16</h2>
+                <h2 class="text-xl font-bold text-white">Games for May 16</h2>
             </div>
-            
             <div class="glass-card rounded-2xl p-8 md:p-12 text-center flex flex-col items-center">
                 <div class="w-16 h-16 md:w-20 md:h-20 bg-slate-800 rounded-full flex items-center justify-center mb-4">
                     <svg class="w-8 h-8 md:w-10 md:h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
-                <h3 class="text-xl md:text-2xl font-bold mb-2">No Games Scheduled Today</h3>
-                <p class="text-slate-400 text-sm md:text-base max-w-md mx-auto">Teams are traveling or resting. The playoffs resume tomorrow with a decisive Game 7 in the Eastern Conference.</p>
-                <button onclick="switchTab('schedule')" class="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-full font-bold transition-colors">View Schedule</button>
+                <h3 class="text-xl md:text-2xl font-bold mb-2 text-white">No Games Scheduled Today</h3>
+                <p class="text-slate-400 text-sm md:text-base max-w-md mx-auto">The playoffs resume tomorrow with Game 7 of the Eastern Conference Semifinals.</p>
+                <button onclick="switchTab('schedule')" class="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-full font-bold transition-colors text-white">View Schedule</button>
             </div>
         </section>
 
         <section id="section-past" class="tab-content hidden space-y-4">
-            <h2 class="text-xl font-bold mb-6">Friday, May 15 Results</h2>
+            <h2 class="text-xl font-bold mb-6 text-white">Recent Playoff Results</h2>
             <div class="space-y-3" id="past-games-list"></div>
         </section>
 
         <section id="section-schedule" class="tab-content hidden space-y-6">
-            <h2 class="text-xl font-bold mb-6">Playoff Schedule</h2>
+            <h2 class="text-xl font-bold mb-6 text-white">Playoff Schedule</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="schedule-list"></div>
         </section>
 
@@ -194,8 +192,6 @@
                     <div class="flex gap-2 items-center">
                         <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
                         <span class="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase">Balance</span>
-                        <span class="w-2 h-2 bg-yellow-500 rounded-full ml-2"></span>
-                        <span class="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase">Wagers</span>
                     </div>
                 </div>
                 <div id="chart-wrapper" class="chart-container relative"></div>
@@ -203,37 +199,49 @@
                     <span>May 10</span><span>May 11</span><span>May 12</span><span>May 13</span><span>May 14</span><span>May 15</span><span>Today</span>
                 </div>
             </div>
-
             <div>
                 <div class="flex justify-between items-center mb-6">
                     <div class="flex items-center gap-3">
-                        <h2 class="text-xl font-bold">Available Betting Lines</h2>
-                        <span id="sync-status" class="px-2 py-0.5 bg-green-500/20 text-green-400 text-[8px] font-bold uppercase rounded border border-green-500/30">Synced</span>
+                        <h2 class="text-xl font-bold text-white">Available Betting Lines</h2>
+                        <span id="sync-status" class="px-2 py-0.5 bg-green-500/20 text-green-400 text-[8px] font-bold uppercase rounded border border-green-500/30">Live Sync</span>
                     </div>
                     <div class="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase bg-slate-800 px-2 py-1 rounded" id="last-updated-time">Updating...</div>
                 </div>
-                <div class="space-y-6" id="betting-odds-list">
-                    <div class="glass-card rounded-2xl p-5 h-48 shimmer opacity-20"></div>
-                </div>
+                <div class="space-y-6" id="betting-odds-list"></div>
             </div>
-
             <div class="pt-8 border-t border-slate-800">
-                <h2 class="text-xl font-bold mb-6">Your Active Wagers</h2>
+                <h2 class="text-xl font-bold mb-6 text-white">Your Active Wagers</h2>
                 <div id="active-bets-container" class="space-y-3"></div>
             </div>
-
             <div class="pt-8 border-t border-slate-800">
-                <h2 class="text-xl font-bold mb-6">Win/Loss History</h2>
+                <h2 class="text-xl font-bold mb-6 text-white">Win/Loss History</h2>
                 <div id="bet-history-container" class="space-y-3"></div>
+            </div>
+        </section>
+
+        <section id="section-leaderboard" class="tab-content hidden space-y-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white">Playoff Leaderboard</h2>
+                <button onclick="switchTab('leaderboard')" class="text-[10px] font-bold text-blue-400 uppercase tracking-widest hover:text-blue-300">Refresh Rankings</button>
+            </div>
+            <div class="glass-card rounded-2xl overflow-hidden border border-slate-800">
+                <div class="grid grid-cols-12 bg-slate-900/50 p-4 border-b border-slate-800 text-[10px] font-black uppercase text-slate-500 tracking-widest">
+                    <div class="col-span-1">#</div>
+                    <div class="col-span-7">User</div>
+                    <div class="col-span-4 text-right">Balance</div>
+                </div>
+                <div id="leaderboard-list" class="divide-y divide-slate-800">
+                    <div class="p-8 text-center text-slate-500 text-xs italic">Syncing global standings...</div>
+                </div>
             </div>
         </section>
     </main>
 
     <script>
         // --- DATABASE CONFIGURATION ---
-        const USER_API_URL = "https://sheetdb.io"; 
+        const USER_API_URL = "https://sheetdb.io";
 
-        // --- State Management ---
+        // --- State ---
         let balance = 25.00;
         let bets = [];
         let betHistory = []; 
@@ -242,10 +250,11 @@
         let userName = localStorage.getItem('nba_user_name') || 'Guest';
         let selections = {};
         let liveScheduleData = [];
+        let leaderboardData = [];
 
         async function init() {
             renderPastGames();
-            updateUserNameUI(); // Initial UI update
+            updateUserNameUI();
             if (userName !== 'Guest') {
                 await syncProfileFromServer(userName);
                 document.getElementById('delete-profile-btn').classList.remove('hidden');
@@ -255,17 +264,16 @@
             await fetchGameData();
         }
 
-        // --- Data Syncing Engine ---
+        // --- API Sync ---
         async function fetchGameData() {
             try {
-                await new Promise(r => setTimeout(r, 600));
                 liveScheduleData = [
                     { 
-                        id: 201, home: 'Pistons', away: 'Cavaliers', date: 'Sunday, May 17', time: '8:00 PM ET', round: 'Eastern Semis • G7', tv: 'PRIME VIDEO',
+                        id: 201, home: 'Pistons', away: 'Cavaliers', date: 'Sunday, May 17', time: '8:00 PM ET', round: 'Eastern Semis • G7',
                         odds: { homeML: -180, awayML: 150, homeSpread: -4.5, awaySpread: 4.5, total: 206.5, overOdds: -110, underOdds: -110, spreadOdds: -110 } 
                     },
                     { 
-                        id: 202, home: 'Thunder', away: 'Spurs', date: 'Monday, May 18', time: '8:30 PM ET', round: 'Western Finals • G1', tv: 'NBC / PEACOCK',
+                        id: 202, home: 'Thunder', away: 'Spurs', date: 'Monday, May 18', time: '8:30 PM ET', round: 'Western Finals • G1',
                         odds: { homeML: -265, awayML: 215, homeSpread: -6.5, awaySpread: 6.5, total: 218.5, overOdds: -110, underOdds: -110, spreadOdds: -110 } 
                     }
                 ];
@@ -274,18 +282,16 @@
                 renderActiveBets();
                 renderBetHistory();
                 renderBalanceChart();
-                document.getElementById('last-updated-time').innerText = `LAST SYNC: ${new Date().toLocaleTimeString()}`;
-            } catch (e) { console.error("Game Load Error", e); }
+                document.getElementById('last-updated-time').innerText = `SYNCED: ${new Date().toLocaleTimeString()}`;
+            } catch (e) { console.error(e); }
         }
 
         async function syncProfileFromServer(name) {
-            if (USER_API_URL.includes("PASTE_YOUR")) return;
-            showOverlay(`Loading Profile: ${name}...`);
+            showOverlay(`Syncing Profile: ${name}...`);
             try {
                 const response = await fetch(USER_API_URL);
                 const data = await response.json();
                 const profile = data.find(p => p.name === name);
-                
                 if (profile) {
                     balance = parseFloat(profile.balance);
                     bets = JSON.parse(profile.bets || "[]");
@@ -295,15 +301,14 @@
                 } else {
                     await saveProfileToServer(name);
                 }
-                userName = name; // Update state
+                userName = name;
                 updateBalanceUI();
                 updateUserNameUI();
-            } catch (e) { console.error("Sync Error", e); }
+            } catch (e) { console.error(e); }
             hideOverlay();
         }
 
         async function saveProfileToServer(name = userName) {
-            if (USER_API_URL.includes("PASTE_YOUR")) return;
             try {
                 await fetch(USER_API_URL, {
                     method: 'POST',
@@ -317,20 +322,98 @@
                         milestones: JSON.stringify(betMilestones)
                     })
                 });
-            } catch (e) { console.error("Save Error", e); }
+            } catch (e) { console.error(e); }
         }
 
         async function deleteProfileFromServer() {
-            if (USER_API_URL.includes("PASTE_YOUR")) return;
-            showOverlay("Deleting Data...");
+            showOverlay("Deleting Cloud Data...");
             try {
                 await fetch(`${USER_API_URL}/name/${userName}`, { method: 'DELETE' });
                 localStorage.removeItem('nba_user_name');
                 location.reload();
-            } catch (e) { console.error("Delete Error", e); hideOverlay(); }
+            } catch (e) { console.error(e); hideOverlay(); }
         }
 
-        // --- UI & Interactions ---
+        // --- Leaderboard Logic ---
+        async function fetchLeaderboard() {
+            const list = document.getElementById('leaderboard-list');
+            try {
+                const response = await fetch(USER_API_URL);
+                leaderboardData = await response.json();
+                leaderboardData.sort((a, b) => parseFloat(b.balance) - parseFloat(a.balance));
+                
+                list.innerHTML = leaderboardData.map((user, idx) => `
+                    <div onclick="showUserDetail('${user.name}')" class="grid grid-cols-12 p-4 items-center hover:bg-slate-800/50 cursor-pointer transition-colors">
+                        <div class="col-span-1 text-[10px] font-black text-slate-500">${idx + 1}</div>
+                        <div class="col-span-7 flex items-center gap-3">
+                            <div class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white">
+                                ${user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <span class="font-bold text-sm ${user.name === userName ? 'text-blue-400' : 'text-white'}">${user.name}</span>
+                        </div>
+                        <div class="col-span-4 text-right font-black text-xs text-green-400">$${parseFloat(user.balance).toFixed(2)}</div>
+                    </div>
+                `).join('');
+            } catch (e) { 
+                list.innerHTML = `<div class="p-8 text-center text-red-500 text-xs italic">Error loading leaderboard. Ensure API is active.</div>`;
+            }
+        }
+
+        function showUserDetail(name) {
+            const user = leaderboardData.find(u => u.name === name);
+            if (!user) return;
+            
+            const hist = JSON.parse(user.history || "[25,25,25,25,25,25,25]");
+            const bHistory = JSON.parse(user.betHistory || "[]");
+            
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-content');
+            const actions = document.getElementById('modal-actions');
+            
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-lg font-black text-white">${user.name.charAt(0).toUpperCase()}</div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white">${user.name}</h3>
+                            <p class="text-green-400 font-black text-sm">$${parseFloat(user.balance).toFixed(2)} Total Balance</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">7-Day Trend</h4>
+                        <div id="modal-chart-wrapper" class="h-32 w-full glass-card rounded-xl p-2 relative"></div>
+                    </div>
+                    <div class="space-y-3">
+                        <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Full History</h4>
+                        <div class="max-h-48 overflow-y-auto no-scrollbar space-y-2">
+                            ${bHistory.length === 0 ? '<p class="text-slate-600 text-[10px] italic">No completed bets.</p>' : bHistory.map(b => `
+                                <div class="glass-card p-3 rounded-lg border-l-2 border-slate-700 flex justify-between items-center text-[10px]">
+                                    <span class="font-bold text-white">${b.team} (${b.type})</span>
+                                    <span class="text-green-400 font-black">+$${b.payout.toFixed(2)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modal-confirm-btn').classList.add('hidden');
+            actions.innerHTML = `<button onclick="closeModal()" class="w-full py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-slate-400 text-white">Close Detail</button>`;
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => renderMiniChart('modal-chart-wrapper', hist), 50);
+        }
+
+        // --- Render Helpers ---
+        function renderMiniChart(id, hist) {
+            const wrapper = document.getElementById(id);
+            if (!wrapper) return;
+            const w = wrapper.clientWidth; const h = wrapper.clientHeight; const pad = 10;
+            const maxVal = Math.max(...hist, 40);
+            const points = hist.map((val, i) => `${i * (w/6)},${h - pad - ((val/maxVal) * (h - 2*pad))}`).join(' ');
+            wrapper.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="#3b82f6" stroke-width="2" points="${points}" /><path d="M 0,${h} L ${points} L ${w},${h} Z" fill="#3b82f6" opacity="0.05" /></svg>`;
+        }
+
         function updateBalanceUI() {
             document.getElementById('user-balance').innerText = `$${balance.toFixed(2)}`;
             balanceHistory[6] = balance;
@@ -342,115 +425,26 @@
             localStorage.setItem('nba_user_name', userName);
         }
 
-        window.showProfileModal = function() {
-            const modal = document.getElementById('custom-modal');
-            const content = document.getElementById('modal-content');
-            content.innerHTML = `
-                <h3 class="text-xl font-bold text-center">User Profile</h3>
-                <p class="text-slate-400 text-center text-xs px-4">Enter a name to load your betting history from the spreadsheet.</p>
-                <input type="text" id="name-input" placeholder="Enter Name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" value="${userName === 'Guest' ? '' : userName}">
-            `;
-            const confirmBtn = document.getElementById('modal-confirm-btn');
-            confirmBtn.onclick = () => {
-                const newName = document.getElementById('name-input').value.trim();
-                if (newName) {
-                    closeModal();
-                    syncProfileFromServer(newName).then(() => {
-                        document.getElementById('delete-profile-btn').classList.remove('hidden');
-                    });
-                }
-            };
-            modal.classList.remove('hidden');
-        };
-
-        window.showDeleteModal = function() {
-            const modal = document.getElementById('custom-modal');
-            const content = document.getElementById('modal-content');
-            content.innerHTML = `
-                <div class="text-center space-y-4">
-                    <div class="bg-red-500/20 p-4 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
-                        <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    </div>
-                    <h3 class="text-xl font-bold">Delete Profile?</h3>
-                    <p class="text-slate-400 text-sm px-4">This will permanently erase all data for <b>"${userName}"</b> from the Google Sheet. This cannot be undone.</p>
-                </div>
-            `;
-            const confirmBtn = document.getElementById('modal-confirm-btn');
-            confirmBtn.className = "flex-1 py-3 bg-red-600 rounded-xl font-bold text-xs uppercase tracking-widest";
-            confirmBtn.innerText = "Delete Forever";
-            confirmBtn.onclick = deleteProfileFromServer;
-            modal.classList.remove('hidden');
-        };
-
-        window.closeModal = function() { document.getElementById('custom-modal').classList.add('hidden'); };
-        function showOverlay(msg) { document.getElementById('sync-overlay').classList.remove('hidden'); document.getElementById('sync-message').innerText = msg; }
-        function hideOverlay() { document.getElementById('sync-overlay').classList.add('hidden'); }
-
-        // --- Graphing ---
-        function renderBalanceChart() {
-            const wrapper = document.getElementById('chart-wrapper');
-            if (!wrapper) return;
-            const width = wrapper.clientWidth || 800;
-            const height = 220;
-            const padding = 30;
-            const maxVal = Math.max(...balanceHistory, 40); 
-            const minVal = Math.min(...balanceHistory, 0);
-            const getX = (i) => (i * (width / 6));
-            const getY = (val) => height - padding - ((val - minVal) / (maxVal - minVal) * (height - 2 * padding));
-            const points = balanceHistory.map((val, i) => `${getX(i)},${getY(val)}`).join(' ');
-            
-            wrapper.innerHTML = `
-                <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
-                    <polyline fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" points="${points}" />
-                    <path d="M 0,${height} L ${points} L ${width},${height} Z" fill="#3b82f6" opacity="0.1" />
-                    ${balanceHistory.map((val, i) => `<circle cx="${getX(i)}" cy="${getY(val)}" r="4" fill="#3b82f6" />`).join('')}
-                </svg>`;
-        }
-
-        // --- List Rendering ---
-        function renderPastGames() {
-            const list = document.getElementById('past-games-list');
-            const pastGamesData = [
-                { home: 'Timberwolves', away: 'Spurs', homeScore: 109, awayScore: 139, homeColor: 'color-timberwolves', awayColor: 'color-spurs' },
-                { home: 'Cavaliers', away: 'Pistons', homeScore: 94, awayScore: 115, homeColor: 'color-cavaliers', awayColor: 'color-pistons' }
-            ];
-            list.innerHTML = pastGamesData.map(game => `
-                <div class="glass-card rounded-xl p-4 flex items-center justify-between">
-                    <div class="flex items-center gap-2"><span>${game.away}</span><span class="text-slate-600">@</span><span>${game.home}</span></div>
-                    <div class="font-black"><span class="${game.awayColor}">${game.awayScore}</span>-<span class="${game.homeColor}">${game.homeScore}</span></div>
-                </div>`).join('');
-        }
-
-        function renderSchedule() {
-            const list = document.getElementById('schedule-list');
-            list.innerHTML = liveScheduleData.map(game => `
-                <div class="glass-card rounded-2xl p-5">
-                    <div class="font-black">${game.away} @ ${game.home}</div>
-                    <div class="text-[10px] text-slate-500 uppercase">${game.date} • ${game.time}</div>
-                </div>`).join('');
-        }
-
         function renderBettingLines() {
             const list = document.getElementById('betting-odds-list');
             list.innerHTML = liveScheduleData.map(game => {
                 const s = selections[game.id] || {};
-                const formatOdds = (o) => (o > 0 ? '+' : '') + o;
-                const formatLine = (l) => (l > 0 ? '+' : '') + l.toFixed(1);
-                
+                const fmtO = (o) => (o > 0 ? '+' : '') + o;
+                const fmtL = (l) => (l > 0 ? '+' : '') + l.toFixed(1);
                 return `
                 <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
-                    <div class="font-black text-sm">${game.away} @ ${game.home}</div>
+                    <div class="font-black text-sm uppercase tracking-tight text-white">${game.away} @ ${game.home}</div>
                     <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setBet(${game.id}, 'ML', '${game.away}', ${game.odds.awayML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.away ? 'selected' : ''}">${game.away.split(' ').pop()} ${formatOdds(game.odds.awayML)}</button>
-                        <button onclick="setBet(${game.id}, 'Spread', '${game.away}', -110, ${game.odds.awaySpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.away ? 'selected' : ''}">${game.away.split(' ').pop()} ${formatLine(game.odds.awaySpread)}</button>
-                        <button onclick="setBet(${game.id}, 'Total', 'Over', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Over' ? 'selected' : ''}">Over ${game.odds.total.toFixed(1)}</button>
-                        <button onclick="setBet(${game.id}, 'ML', '${game.home}', ${game.odds.homeML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.home ? 'selected' : ''}">${game.home.split(' ').pop()} ${formatOdds(game.odds.homeML)}</button>
-                        <button onclick="setBet(${game.id}, 'Spread', '${game.home}', -110, ${game.odds.homeSpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.home ? 'selected' : ''}">${game.home.split(' ').pop()} ${formatLine(game.odds.homeSpread)}</button>
-                        <button onclick="setBet(${game.id}, 'Total', 'Under', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Under' ? 'selected' : ''}">Under ${game.odds.total.toFixed(1)}</button>
+                        <button onclick="setBet(${game.id}, 'ML', '${game.away}', ${game.odds.awayML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.away ? 'selected' : ''} text-white">${game.away.split(' ').pop()} ${fmtO(game.odds.awayML)}</button>
+                        <button onclick="setBet(${game.id}, 'Spread', '${game.away}', -110, ${game.odds.awaySpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.away ? 'selected' : ''} text-white">${game.away.split(' ').pop()} ${fmtL(game.odds.awaySpread)}</button>
+                        <button onclick="setBet(${game.id}, 'Total', 'Over', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Over' ? 'selected' : ''} text-white">OVER ${game.odds.total.toFixed(1)}</button>
+                        <button onclick="setBet(${game.id}, 'ML', '${game.home}', ${game.odds.homeML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.home ? 'selected' : ''} text-white">${game.home.split(' ').pop()} ${fmtO(game.odds.homeML)}</button>
+                        <button onclick="setBet(${game.id}, 'Spread', '${game.home}', -110, ${game.odds.homeSpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.home ? 'selected' : ''} text-white">${game.home.split(' ').pop()} ${fmtL(game.odds.homeSpread)}</button>
+                        <button onclick="setBet(${game.id}, 'Total', 'Under', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Under' ? 'selected' : ''} text-white">UNDER ${game.odds.total.toFixed(1)}</button>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <input type="number" id="wager-${game.id}" placeholder="Wager $" class="bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs w-full">
-                        <button onclick="confirmPlaceBet(${game.id})" class="px-6 py-1.5 bg-green-600 rounded-lg text-[10px] font-black uppercase">Place Bet</button>
+                    <div class="flex gap-2">
+                        <input type="number" id="wager-${game.id}" placeholder="Wager $" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs w-full text-white">
+                        <button onclick="confirmPlaceBet(${game.id})" class="px-6 py-1 bg-green-600 rounded-lg text-[10px] font-black uppercase text-white">Bet</button>
                     </div>
                 </div>`;
             }).join('');
@@ -458,112 +452,63 @@
 
         function renderActiveBets() {
             const container = document.getElementById('active-bets-container');
-            if (bets.length === 0) { container.innerHTML = `<div class="text-slate-600 text-xs italic p-6 glass-card rounded-xl text-center">No active wagers.</div>`; return; }
-            
-            let html = `
-                <div class="grid grid-cols-5 gap-2 px-4 mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                    <div class="col-span-2">Selection</div>
-                    <div>Type</div>
-                    <div>Odds</div>
-                    <div class="text-right">Wager</div>
-                </div>
-            `;
-            
-            html += bets.map((bet, index) => {
+            if (bets.length === 0) { container.innerHTML = `<div class="text-slate-600 text-[10px] italic p-6 glass-card rounded-xl text-center uppercase tracking-widest">No active wagers</div>`; return; }
+            container.innerHTML = bets.map((bet, index) => {
                 const game = liveScheduleData.find(g => g.id === bet.gameId);
-                let currentOddsValue = bet.originalOdds;
+                let liveO = bet.originalOdds;
                 if (game) {
-                    if (bet.type === 'ML') currentOddsValue = (bet.team === game.home ? game.odds.homeML : game.odds.awayML);
-                    else if (bet.type === 'Spread') currentOddsValue = game.odds.spreadOdds;
-                    else currentOddsValue = (bet.team === 'Over' ? game.odds.overOdds : game.odds.underOdds);
+                    if (bet.type === 'ML') liveO = (bet.team === game.home ? game.odds.homeML : game.odds.awayML);
+                    else if (bet.type === 'Spread') liveO = game.odds.spreadOdds;
+                    else liveO = (bet.team === 'Over' ? game.odds.overOdds : game.odds.underOdds);
                 }
-
-                function mlToDecimal(ml) { return ml > 0 ? (ml / 100) + 1 : (100 / Math.abs(ml)) + 1; }
-                const cashOutValue = (mlToDecimal(bet.originalOdds) / mlToDecimal(currentOddsValue)) * bet.amount * 0.95;
-
+                const dec = (ml) => (ml > 0 ? (ml/100)+1 : (100/Math.abs(ml))+1);
+                const cashOut = (dec(bet.originalOdds) / dec(liveO)) * bet.amount * 0.95;
                 return `
-                <div class="glass-card p-4 rounded-xl border-l-4 border-blue-500 space-y-3">
-                    <div class="grid grid-cols-5 gap-2 items-center">
-                        <div class="col-span-2">
-                            <div class="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1 text-blue-400">Team/Line</div>
-                            <div class="font-black text-sm text-white">${bet.team} ${bet.line !== undefined ? (bet.line > 0 ? '+' : '') + bet.line.toFixed(1) : ''}</div>
-                        </div>
-                        <div>
-                            <div class="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1 text-blue-400">Type</div>
-                            <div class="font-bold text-xs text-blue-400">${bet.type}</div>
-                        </div>
-                        <div>
-                            <div class="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1 text-blue-400">Odds</div>
-                            <div class="font-bold text-xs">${bet.originalOdds > 0 ? '+' : ''}${bet.originalOdds}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1 text-blue-400">Wager</div>
-                            <div class="font-black text-sm text-white">$${bet.amount.toFixed(2)}</div>
-                        </div>
+                <div class="glass-card p-4 rounded-xl border-l-4 border-blue-500">
+                    <div class="grid grid-cols-4 gap-2 text-[10px] font-black uppercase mb-2 text-slate-500">
+                        <div class="col-span-2">Selection</div><div>Odds</div><div class="text-right">Wager</div>
                     </div>
-                    <div class="flex items-center gap-3 pt-2 border-t border-slate-800">
-                         <div class="flex-1 text-[10px] font-bold text-slate-500 uppercase">Live Market: <span class="text-blue-400 ml-1">${currentOddsValue > 0 ? '+' : ''}${currentOddsValue}</span></div>
-                         <button onclick="cashOutBet(${index}, ${cashOutValue})" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-between px-3 transition-colors">
-                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Cash Out</span>
-                            <span class="text-green-500 font-bold">$${cashOutValue.toFixed(2)}</span>
+                    <div class="grid grid-cols-4 gap-2 items-center mb-3">
+                        <div class="col-span-2 font-bold text-sm text-white">${bet.team} ${bet.line !== undefined ? (bet.line > 0 ? '+' : '') + bet.line.toFixed(1) : ''}</div>
+                        <div class="font-bold text-xs text-white">${bet.originalOdds > 0 ? '+' : ''}${bet.originalOdds}</div>
+                        <div class="text-right font-black text-xs text-white">$${bet.amount.toFixed(2)}</div>
+                    </div>
+                    <div class="flex gap-3 pt-2 border-t border-slate-800">
+                        <button onclick="cashOutBet(${index}, ${cashOut})" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-between px-3">
+                            <span class="text-[9px] font-black uppercase text-slate-400">Cash Out</span>
+                            <span class="text-green-500 font-bold">$${cashOut.toFixed(2)}</span>
                         </button>
                     </div>
                 </div>`;
             }).join('');
-            
-            container.innerHTML = html;
         }
 
         function renderBetHistory() {
             const container = document.getElementById('bet-history-container');
-            if (!betHistory || betHistory.length === 0) { container.innerHTML = `<div class="text-slate-600 text-xs italic p-6 glass-card rounded-xl text-center">No completed wagers.</div>`; return; }
-            
-            container.innerHTML = betHistory.map((bet) => {
-                return `
-                <div class="glass-card p-4 rounded-xl border-l-4 border-slate-700 opacity-80">
-                    <div class="grid grid-cols-4 gap-2 items-center">
-                        <div class="col-span-2">
-                            <div class="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1">Selection</div>
-                            <div class="font-bold text-xs text-white">${bet.team} ${bet.line !== undefined ? (bet.line > 0 ? '+' : '') + bet.line.toFixed(1) : ''} (${bet.type})</div>
-                        </div>
-                        <div>
-                            <div class="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1">Wager</div>
-                            <div class="font-bold text-xs">$${bet.amount.toFixed(2)}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1">Result</div>
-                            <div class="font-bold text-xs text-green-400">+$${bet.payout.toFixed(2)}</div>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
+            if (!betHistory || betHistory.length === 0) { container.innerHTML = `<div class="text-slate-600 text-[10px] italic p-6 glass-card rounded-xl text-center uppercase">History Empty</div>`; return; }
+            container.innerHTML = betHistory.map(bet => `
+                <div class="glass-card p-3 rounded-xl border-l-4 border-slate-700 opacity-60 flex justify-between items-center text-xs">
+                    <div class="font-bold text-white">${bet.team} (${bet.type})</div>
+                    <div class="font-black text-green-400">+$${bet.payout.toFixed(2)}</div>
+                </div>`).join('');
         }
 
         window.setBet = function(gameId, type, team, odds, line) { selections[gameId] = { type, team, odds, line }; renderBettingLines(); };
-        
         window.confirmPlaceBet = async function(gameId) {
-            const sel = selections[gameId];
-            if (!sel) return;
-            const amtInput = document.getElementById(`wager-${gameId}`);
-            const amt = parseFloat(amtInput.value);
+            const sel = selections[gameId]; if (!sel) return;
+            const amt = parseFloat(document.getElementById(`wager-${gameId}`).value);
             if (isNaN(amt) || amt <= 0 || amt > balance) return;
             balance -= amt;
             bets.push({ gameId, type: sel.type, team: sel.team, line: sel.line, amount: amt, originalOdds: sel.odds, time: new Date().toISOString() });
-            updateBalanceUI();
-            await saveProfileToServer();
-            amtInput.value = ''; delete selections[gameId];
+            updateBalanceUI(); await saveProfileToServer();
             renderActiveBets(); renderBettingLines();
         };
-
         window.cashOutBet = async function(idx, value) {
-            if (!confirm(`Cash out this wager for $${value.toFixed(2)}?`)) return;
+            if (!confirm(`Cash out for $${value.toFixed(2)}?`)) return;
             balance += value;
-            const completedBet = { ...bets[idx], payout: value, result: 'Cashed Out', closedTime: new Date().toISOString() };
-            if (!betHistory) betHistory = [];
-            betHistory.unshift(completedBet); 
+            betHistory.unshift({ ...bets[idx], payout: value, closed: new Date().toISOString() });
             bets.splice(idx, 1);
-            updateBalanceUI();
-            await saveProfileToServer();
+            updateBalanceUI(); await saveProfileToServer();
             renderActiveBets(); renderBetHistory(); renderBettingLines();
         };
 
@@ -572,12 +517,56 @@
             document.getElementById('section-' + id).classList.remove('hidden');
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('tab-' + id).classList.add('active');
-            if (id === 'bets') { 
-                renderActiveBets(); 
-                renderBetHistory();
-                setTimeout(renderBalanceChart, 50); 
-            }
+            if (id === 'bets') { renderActiveBets(); renderBetHistory(); setTimeout(renderBalanceChart, 50); }
+            if (id === 'leaderboard') fetchLeaderboard();
         };
+
+        window.showProfileModal = function() {
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-content');
+            const actions = document.getElementById('modal-actions');
+            actions.innerHTML = `
+                <button onclick="closeModal()" class="flex-1 py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-slate-400 text-white">Cancel</button>
+                <button id="modal-confirm-btn" class="flex-1 py-3 bg-blue-600 rounded-xl font-bold text-xs uppercase tracking-widest text-white">Confirm</button>
+            `;
+            content.innerHTML = `<h3 class="text-xl font-bold text-center text-white">Sync Profile</h3><input type="text" id="name-input" placeholder="User Name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 mt-4 text-sm text-white" value="${userName === 'Guest' ? '' : userName}">`;
+            document.getElementById('modal-confirm-btn').onclick = () => {
+                const n = document.getElementById('name-input').value.trim();
+                if (n) { userName = n; closeModal(); syncProfileFromServer(n); }
+            };
+            modal.classList.remove('hidden');
+        };
+
+        window.showDeleteModal = function() {
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-content');
+            const actions = document.getElementById('modal-actions');
+            actions.innerHTML = `
+                <button onclick="closeModal()" class="flex-1 py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-slate-400 text-white">Cancel</button>
+                <button id="modal-confirm-btn" class="flex-1 py-3 bg-red-600 rounded-xl font-bold text-xs uppercase tracking-widest text-white">Delete Forever</button>
+            `;
+            content.innerHTML = `<div class="text-center"><h3 class="text-xl font-bold text-red-500">Delete Profile?</h3><p class="text-slate-400 text-xs mt-2">Clear cloud data for "${userName}"?</p></div>`;
+            document.getElementById('modal-confirm-btn').onclick = deleteProfileFromServer;
+            modal.classList.remove('hidden');
+        };
+
+        window.closeModal = () => document.getElementById('custom-modal').classList.add('hidden');
+        function showOverlay(m) { document.getElementById('sync-overlay').classList.remove('hidden'); document.getElementById('sync-message').innerText = m; }
+        function hideOverlay() { document.getElementById('sync-overlay').classList.add('hidden'); }
+        function renderBalanceChart() {
+            const wrapper = document.getElementById('chart-wrapper'); if (!wrapper) return;
+            const w = wrapper.clientWidth; const h = 220; const pad = 30;
+            const points = balanceHistory.map((val, i) => `${i * (w/6)},${h - pad - ((val/Math.max(...balanceHistory, 40)) * (h - 2*pad))}`).join(' ');
+            wrapper.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="#3b82f6" stroke-width="3" points="${points}" /><path d="M 0,${h} L ${points} L ${w},${h} Z" fill="#3b82f6" opacity="0.1" /></svg>`;
+        }
+        function renderPastGames() {
+            const list = document.getElementById('past-games-list');
+            list.innerHTML = `<div class="glass-card rounded-xl p-3 flex justify-between text-xs font-bold text-white"><span>Spurs @ Timberwolves (Final)</span><span class="text-blue-500">139-109</span></div>`;
+        }
+        function renderSchedule() {
+            const list = document.getElementById('schedule-list');
+            list.innerHTML = liveScheduleData.map(g => `<div class="glass-card rounded-xl p-4"><div class="font-black text-xs text-white">${g.away} @ ${g.home}</div><div class="text-[9px] text-slate-500">${g.date} • ${g.time}</div></div>`).join('');
+        }
 
         window.onload = init;
     </script>
