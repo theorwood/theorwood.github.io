@@ -32,7 +32,7 @@
         }
 
         @keyframes pulse {
-            0 { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
             70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
@@ -129,7 +129,7 @@
     <main class="max-w-6xl mx-auto p-4 md:p-6 space-y-8">
         
         <nav class="flex justify-between md:justify-start gap-4 md:gap-8 border-b border-slate-800 overflow-x-auto no-scrollbar whitespace-nowrap">
-            <button onclick="switchTab('today')" id="tab-today" class="nav-btn active pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0">Today's Slate</button>
+            <button onclick="switchTab('today')" id="tab-today" class="nav-btn active pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0">Today's Schedule</button>
             <button onclick="switchTab('past')" id="tab-past" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0">Recent Results</button>
             <button onclick="switchTab('schedule')" id="tab-schedule" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0">Full Schedule</button>
             <button onclick="switchTab('bets')" id="tab-bets" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0">Bets</button>
@@ -235,6 +235,7 @@
         let selections = {};
         let liveScheduleData = [];
 
+        // Verified 2026 Odds
         const baseOdds = [
             { 
                 id: 201, home: 'Pistons', away: 'Cavaliers', date: 'Sunday, May 17', time: '8:00 PM ET', round: 'Eastern Semis • G7', tv: 'PRIME VIDEO',
