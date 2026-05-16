@@ -197,6 +197,32 @@
                 <div id="active-bets-container" class="space-y-3"></div>
             </div>
         </section>
+
+        <section class="mt-12">
+            <h2 class="text-xl font-bold mb-6 text-center md:text-left">Playoff Leaders (2026)</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="glass-card p-4 rounded-xl">
+                    <div class="text-slate-400 text-[10px] font-bold uppercase mb-1">Points/G</div>
+                    <div class="text-xl md:text-2xl font-black">29.3</div>
+                    <div class="text-[10px] text-blue-400 font-medium">C. Cunningham</div>
+                </div>
+                <div class="glass-card p-4 rounded-xl">
+                    <div class="text-slate-400 text-[10px] font-bold uppercase mb-1">Assists/G</div>
+                    <div class="text-xl md:text-2xl font-black">11.4</div>
+                    <div class="text-[10px] text-blue-400 font-medium">J. Brunson</div>
+                </div>
+                <div class="glass-card p-4 rounded-xl">
+                    <div class="text-slate-400 text-[10px] font-bold uppercase mb-1">Rebounds/G</div>
+                    <div class="text-xl md:text-2xl font-black">13.8</div>
+                    <div class="text-[10px] text-blue-400 font-medium">Wembanyama</div>
+                </div>
+                <div class="glass-card p-4 rounded-xl">
+                    <div class="text-slate-400 text-[10px] font-bold uppercase mb-1">Blocks/G</div>
+                    <div class="text-xl md:text-2xl font-black">3.2</div>
+                    <div class="text-[10px] text-blue-400 font-medium">Wembanyama</div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <script>
@@ -210,6 +236,7 @@
         let liveScheduleData = [];
 
         // Verified 2026 Odds
+        // Note: We use .5 decimals here to prevent rounding issues on load
         const baseOdds = [
             { 
                 id: 201, home: 'Pistons', away: 'Cavaliers', date: 'Sunday, May 17', time: '8:00 PM ET', round: 'Eastern Semis • G7', tv: 'PRIME VIDEO',
@@ -225,28 +252,28 @@
             updateBalanceUI();
             updateUserNameUI();
             renderPastGames();
-            await fetchGameData(); // Automatic update on load
+            await fetchGameData(); 
         }
 
-        // Simulate Dynamic Fetching [User Intent: Automatic Update on Refresh]
+        // Automatic Update Logic [Fix: Precision Handling]
         async function fetchGameData() {
             const status = document.getElementById('sync-status');
             const timer = document.getElementById('last-updated-time');
             if (status) { status.innerText = "Syncing..."; status.className = "px-2 py-0.5 bg-blue-500/20 text-blue-400 text-[8px] font-bold uppercase rounded border border-blue-500/30"; }
 
-            // Simulate Network Delay
             await new Promise(resolve => setTimeout(resolve, 800));
 
-            // Apply Market Fluctuation Simulation (+/- 2-5 pts)
+            // Fix: Fluctuation logic now preserves the .5 offset for totals and spreads
             liveScheduleData = baseOdds.map(game => {
-                const fluctuation = Math.floor(Math.random() * 6) - 3; // -3 to +3
+                const mlFluct = Math.floor(Math.random() * 11) - 5; // -5 to +5 for ML
+                const totalFluct = Math.floor(Math.random() * 5) - 2; // -2 to +2 full points for Total
                 return {
                     ...game,
                     odds: {
                         ...game.odds,
-                        homeML: game.odds.homeML + (fluctuation * 2),
-                        awayML: game.odds.awayML - (fluctuation * 2),
-                        total: game.odds.total + (fluctuation / 2)
+                        homeML: game.odds.homeML + mlFluct,
+                        awayML: game.odds.awayML - mlFluct,
+                        total: game.odds.total + totalFluct // Maintains the .5 from baseOdds
                     }
                 };
             });
@@ -309,11 +336,11 @@
 
         function renderPastGames() {
             const list = document.getElementById('past-games-list');
-            const pastGames = [
+            const pastGamesData = [
                 { home: 'Timberwolves', away: 'Spurs', homeScore: 109, awayScore: 139, homeColor: 'color-timberwolves', awayColor: 'color-spurs' },
                 { home: 'Cavaliers', away: 'Pistons', homeScore: 94, awayScore: 115, homeColor: 'color-cavaliers', awayColor: 'color-pistons' }
             ];
-            list.innerHTML = pastGames.map(game => `
+            list.innerHTML = pastGamesData.map(game => `
                 <div class="glass-card rounded-xl p-4 flex items-center justify-between">
                     <div class="flex items-center gap-2 md:gap-4">
                         <span class="font-bold text-sm md:text-lg">${game.away}</span>
@@ -350,6 +377,11 @@
             const list = document.getElementById('betting-odds-list');
             list.innerHTML = liveScheduleData.map(game => {
                 const s = selections[game.id] || {};
+                // Display Fix: Force decimal formatting for spread and total
+                const fmtTotal = game.odds.total.toFixed(1);
+                const fmtHSpread = (game.odds.homeSpread > 0 ? '+' : '') + game.odds.homeSpread.toFixed(1);
+                const fmtASpread = (game.odds.awaySpread > 0 ? '+' : '') + game.odds.awaySpread.toFixed(1);
+
                 return `
                 <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
                     <div class="font-black text-sm md:text-base">${game.away} @ ${game.home}</div>
@@ -362,20 +394,20 @@
                             <span class="block opacity-60">${game.away}</span>${game.odds.awayML>0?'+':''}${game.odds.awayML}
                         </button>
                         <button onclick="setBet(${game.id}, 'Spread', '${game.away}', ${game.odds.spreadOdds}, ${game.odds.awaySpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold border-2 border-transparent ${s.type==='Spread' && s.team===game.away ? 'selected' : ''}">
-                             <span class="block opacity-60">${game.away} ${game.odds.awaySpread>0?'+':''}${game.odds.awaySpread}</span>-110
+                             <span class="block opacity-60">${game.away} ${fmtASpread}</span>-110
                         </button>
                         <button onclick="setBet(${game.id}, 'Total', 'Over', ${game.odds.overOdds}, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold border-2 border-transparent ${s.type==='Total' && s.team==='Over' ? 'selected' : ''}">
-                             <span class="block opacity-60">Over ${game.odds.total}</span>-110
+                             <span class="block opacity-60">Over ${fmtTotal}</span>-110
                         </button>
 
                         <button onclick="setBet(${game.id}, 'ML', '${game.home}', ${game.odds.homeML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold border-2 border-transparent ${s.type==='ML' && s.team===game.home ? 'selected' : ''}">
                             <span class="block opacity-60">${game.home}</span>${game.odds.homeML>0?'+':''}${game.odds.homeML}
                         </button>
                         <button onclick="setBet(${game.id}, 'Spread', '${game.home}', ${game.odds.spreadOdds}, ${game.odds.homeSpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold border-2 border-transparent ${s.type==='Spread' && s.team===game.home ? 'selected' : ''}">
-                            <span class="block opacity-60">${game.home} ${game.odds.homeSpread>0?'+':''}${game.odds.homeSpread}</span>-110
+                            <span class="block opacity-60">${game.home} ${fmtHSpread}</span>-110
                         </button>
                         <button onclick="setBet(${game.id}, 'Total', 'Under', ${game.odds.underOdds}, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[10px] font-bold border-2 border-transparent ${s.type==='Total' && s.team==='Under' ? 'selected' : ''}">
-                            <span class="block opacity-60">Under ${game.odds.total}</span>-110
+                            <span class="block opacity-60">Under ${fmtTotal}</span>-110
                         </button>
                     </div>
 
@@ -406,7 +438,7 @@
                     <div class="flex justify-between items-start">
                         <div>
                             <div class="text-[9px] font-bold text-blue-500 uppercase tracking-tighter">${bet.type} • ${bet.round}</div>
-                            <div class="font-black text-sm">${bet.team} ${bet.line !== undefined ? (bet.line > 0 ? '+' : '') + bet.line : ''}</div>
+                            <div class="font-black text-sm">${bet.team} ${bet.line !== undefined ? (bet.line > 0 ? '+' : '') + bet.line.toFixed(1) : ''}</div>
                             <div class="flex gap-3 text-[10px] mt-1 text-slate-500">
                                 <span>Entry: <b class="text-slate-300">${bet.originalOdds>0?'+':''}${bet.originalOdds}</b></span>
                                 <span>Live: <b class="text-blue-400">${currentOddsValue>0?'+':''}${currentOddsValue}</b></span>
