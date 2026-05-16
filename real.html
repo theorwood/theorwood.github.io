@@ -42,12 +42,12 @@
             color: #3b82f6;
         }
 
-        /* --- Original Modern Team Colors --- */
-        .color-spurs { color: #C4CED4; }
-        .color-timberwolves { color: #78BE20; }
+        /* --- Modern Team Palettes --- */
         .color-pistons { color: #C8102E; }
         .color-cavaliers { color: #860038; }
+        .color-spurs { color: #C4CED4; }
         .color-thunder { color: #007AC1; }
+        .color-timberwolves { color: #78BE20; }
 
         .bg-pistons { background-color: #1D428A; }
         .bg-cavaliers { background-color: #860038; }
@@ -79,7 +79,7 @@
             scrollbar-width: none;
         }
 
-        /* Loading Spinner */
+        /* Loading Animation */
         .btn-loading {
             position: relative;
             color: transparent !important;
@@ -160,7 +160,7 @@
         </div>
     </div>
 
-    <!-- Global Sync Overlay -->
+    <!-- Sync Spinner (Load Only) -->
     <div id="sync-overlay" class="hidden fixed inset-0 z-[110] bg-slate-950/80 backdrop-blur-md flex items-center justify-center">
         <div class="text-center space-y-4">
             <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
@@ -222,7 +222,7 @@
                 <div class="flex justify-between items-center mb-6">
                     <div class="flex items-center gap-3">
                         <h2 class="text-xl font-bold text-white">Available Betting Lines</h2>
-                        <span id="sync-status" class="px-2 py-0.5 bg-green-500/20 text-green-400 text-[8px] font-bold uppercase rounded border border-green-500/30">Manual Load Sync</span>
+                        <span id="sync-status" class="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-[8px] font-bold uppercase rounded border border-blue-500/30">Manual Sync Mode</span>
                     </div>
                     <div class="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase bg-slate-800 px-2 py-1 rounded" id="last-updated-time">Updating...</div>
                 </div>
@@ -287,14 +287,16 @@
 
         // --- DATABASE SYNC LOGIC ---
         async function syncProfileFromServer(name) {
-            showOverlay(`Syncing Profile: ${name}...`);
+            showOverlay(`Searching Cloud: ${name}...`);
             try {
-                // Fetch all profiles from SheetDB
+                // Fetch all profiles
                 const response = await fetch(USER_API_URL);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
                 const data = await response.json();
                 
-                // Find matching user
-                const profile = data.find(p => p.name.trim().toLowerCase() === name.trim().toLowerCase());
+                // Find matching user (case-insensitive)
+                const profile = data.find(p => p.name && p.name.toString().trim().toLowerCase() === name.trim().toLowerCase());
                 
                 if (profile) {
                     profileExists = true;
@@ -302,24 +304,23 @@
                     bets = JSON.parse(profile.bets || "[]");
                     betHistory = JSON.parse(profile.betHistory || "[]");
                     balanceHistory = JSON.parse(profile.history || "[25,25,25,25,25,25,25]");
-                    console.log("Profile Found and Synced:", profile);
                 } else {
                     profileExists = false;
-                    console.log("No profile found. Will create new entry on first save.");
+                    // Create new entry silently if it doesn't exist
+                    await saveProfileToServer();
                 }
                 userName = name;
                 updateBalanceUI();
                 updateUserNameUI();
             } catch (e) { 
                 console.error("Critical Sync Failure:", e);
-                alert("Database connection failed. Please check your internet or API status.");
+                alert("Cloud Connection Failed. Ensure your Spreadsheet has headers: name, balance, bets, betHistory, history, milestones.");
             }
             hideOverlay();
         }
 
         async function saveProfileToServer(btnElement = null) {
             if (userName === 'Guest') return;
-            
             if (btnElement) btnElement.classList.add('btn-loading');
             
             try {
@@ -332,26 +333,22 @@
                     milestones: "[]"
                 };
 
-                // SheetDB Write Logic
+                // SheetDB Write Formatting
                 if (profileExists) {
-                    // Update existing row
-                    const res = await fetch(`${USER_API_URL}/name/${encodeURIComponent(userName)}`, {
+                    // PATCH requires { "data": { "col": "val" } }
+                    await fetch(`${USER_API_URL}/name/${encodeURIComponent(userName)}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data: payload }) // Wrapped in data object for SheetDB
+                        body: JSON.stringify({ data: payload })
                     });
-                    console.log("PATCH Status:", res.status);
                 } else {
-                    // Create new row
+                    // POST requires { "data": [{ "col": "val" }] }
                     const res = await fetch(USER_API_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data: [payload] }) // Wrapped in array inside data for SheetDB
+                        body: JSON.stringify({ data: [payload] })
                     });
-                    if (res.ok) {
-                        profileExists = true;
-                        console.log("New Profile Created in Cloud");
-                    }
+                    if (res.ok) profileExists = true;
                 }
             } catch (e) { 
                 console.error("Cloud Write Failure:", e);
@@ -362,7 +359,7 @@
 
         async function deleteProfileFromServer() {
             if (userName === 'Guest') return;
-            showOverlay("Purging Profile from Cloud...");
+            showOverlay("Purging Profile Data...");
             try {
                 await fetch(`${USER_API_URL}/name/${encodeURIComponent(userName)}`, { method: 'DELETE' });
                 localStorage.removeItem('nba_user_name');
@@ -385,20 +382,45 @@
                     <div onclick="showUserDetail('${user.name}')" class="grid grid-cols-12 p-4 items-center hover:bg-slate-800/50 cursor-pointer transition-colors border-b border-slate-800">
                         <div class="col-span-1 text-[10px] font-black text-slate-500">${idx + 1}</div>
                         <div class="col-span-7 flex items-center gap-3">
-                            <div class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white">${user.name.charAt(0).toUpperCase()}</div>
+                            <div class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white">${user.name.toString().charAt(0).toUpperCase()}</div>
                             <span class="font-bold text-sm ${user.name === userName ? 'text-blue-400' : 'text-white'}">${user.name}</span>
                         </div>
                         <div class="col-span-4 text-right font-black text-xs text-green-400">$${parseFloat(user.balance).toFixed(2)}</div>
                     </div>`).join('');
             } catch (e) { 
-                list.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs">Error loading standings.</div>`; 
+                list.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs">Error loading rankings.</div>`; 
             }
+        }
+
+        function showUserDetail(name) {
+            const user = leaderboardData.find(u => u.name === name);
+            if (!user) return;
+            const hist = JSON.parse(user.history || "[25,25,25,25,25,25,25]");
+            const bHistory = JSON.parse(user.betHistory || "[]");
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-content');
+            const actions = document.getElementById('modal-actions');
+            
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-lg font-black text-white">${user.name.toString().charAt(0).toUpperCase()}</div>
+                        <div><h3 class="text-xl font-bold text-white">${user.name}</h3><p class="text-green-400 font-black text-sm">$${parseFloat(user.balance).toFixed(2)}</p></div>
+                    </div>
+                    <div id="modal-chart-wrapper" class="h-32 w-full glass-card rounded-xl p-2 relative"></div>
+                    <div class="max-h-48 overflow-y-auto no-scrollbar space-y-2">
+                        ${bHistory.length === 0 ? '<p class="text-slate-600 text-[10px] italic">No history available</p>' : bHistory.map(b => `<div class="glass-card p-3 rounded-lg border-l-2 border-slate-700 flex justify-between items-center text-[10px]"><span class="font-bold text-white">${b.team} (${b.type})</span><span class="text-green-400 font-black">+$${b.payout.toFixed(2)}</span></div>`).join('')}
+                    </div>
+                </div>`;
+            actions.innerHTML = `<button onclick="closeModal()" class="w-full py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-white">Close View</button>`;
+            modal.classList.remove('hidden');
+            setTimeout(() => renderMiniChart('modal-chart-wrapper', hist), 50);
         }
 
         // --- ODDS & SCHEDULE ---
         async function fetchGameData() {
             try {
-                // Official 2026 Odds
+                // Verified 2026 Odds
                 liveScheduleData = [
                     { 
                         id: 201, home: 'Pistons', away: 'Cavaliers', date: 'Sunday, May 17', time: '8:00 PM ET',
@@ -419,33 +441,19 @@
         }
 
         // --- BETTING LOGIC ---
-        window.setBet = function(gameId, type, team, odds, line) { 
-            selections[gameId] = { type, team, odds, line }; 
-            renderBettingLines(); 
-        };
+        window.setBet = function(gameId, type, team, odds, line) { selections[gameId] = { type, team, odds, line }; renderBettingLines(); };
         
         window.confirmPlaceBet = async function(gameId, btn) {
             const sel = selections[gameId];
             if (!sel) return;
             const amt = parseFloat(document.getElementById(`wager-${gameId}`).value);
-            if (isNaN(amt) || amt <= 0 || amt > balance) {
-                alert("Invalid wager amount or insufficient balance.");
-                return;
-            }
+            if (isNaN(amt) || amt <= 0 || amt > balance) return;
             
             balance -= amt;
-            bets.push({ 
-                gameId, 
-                type: sel.type, 
-                team: sel.team, 
-                line: sel.line, 
-                amount: amt, 
-                originalOdds: sel.odds, 
-                time: new Date().toISOString() 
-            });
+            bets.push({ gameId, type: sel.type, team: sel.team, line: sel.line, amount: amt, originalOdds: sel.odds, time: new Date().toISOString() });
             
             updateBalanceUI();
-            await saveProfileToServer(btn); // Save to SheetDB
+            await saveProfileToServer(btn);
             delete selections[gameId]; 
             renderActiveBets(); 
             renderBettingLines();
@@ -457,13 +465,13 @@
             betHistory.unshift({ ...bets[idx], payout: value, closed: new Date().toISOString() });
             bets.splice(idx, 1);
             updateBalanceUI();
-            await saveProfileToServer(btn); // Save to SheetDB
+            await saveProfileToServer(btn);
             renderActiveBets(); 
             renderBetHistory(); 
             renderBettingLines();
         };
 
-        // --- UI RENDERING HELPERS ---
+        // --- UI HELPERS ---
         function updateBalanceUI() {
             document.getElementById('user-balance').innerText = `$${balance.toFixed(2)}`;
             balanceHistory[6] = balance;
@@ -553,11 +561,7 @@
 
         function renderSchedule() {
             const list = document.getElementById('schedule-list');
-            list.innerHTML = liveScheduleData.map(g => `
-                <div class="glass-card rounded-xl p-4">
-                    <div class="font-black text-xs text-white">${g.away} @ ${g.home}</div>
-                    <div class="text-[9px] text-slate-500">${g.date} at ${g.time}</div>
-                </div>`).join('');
+            list.innerHTML = liveScheduleData.map(g => `<div class="glass-card rounded-xl p-4"><div class="font-black text-xs text-white">${g.away} @ ${g.home}</div><div class="text-[9px] text-slate-500">${g.date}</div></div>`).join('');
         }
 
         // --- NAVIGATION & MODALS ---
