@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA Playoff Hub 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .live-pulse {
+            width: 8px;
+            height: 8px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            box-shadow: 0 0 0 rgba(239, 68, 68, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .nav-btn.active {
+            border-bottom: 3px solid #3b82f6;
+            color: #3b82f6;
+        }
+
+        /* Official Team Colors */
+        .color-spurs { color: #C4CED4; }
+        .color-timberwolves { color: #78BE20; }
+        .color-pistons { color: #C8102E; }
+        .color-cavaliers { color: #860038; }
+        .color-thunder { color: #007AC1; }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .odds-btn.selected {
+            background-color: #2563eb !important;
+            border-color: #60a5fa !important;
+            color: white !important;
+        }
+
+        .chart-container {
+            height: 220px;
+            width: 100%;
+        }
+
+        .marker-tooltip {
+            visibility: hidden;
+            background: #1e293b;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            position: absolute;
+            z-index: 10;
+            font-size: 10px;
+            pointer-events: none;
+            border: 1px solid #3b82f6;
+        }
+
+        .marker:hover + .marker-tooltip {
+            visibility: visible;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <!-- Header -->
+    <header class="p-6 bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-lg">
+                    <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M11 7h2v6h-2zm0 8h2v2h-2z"/></svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-tighter">NBA PLAYOFFS <span class="text-blue-500">2026</span></h1>
+                    <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest" id="current-date-display">Saturday, May 16, 2026</div>
+                </div>
+            </div>
+            
+            <!-- User Profile & Wallet -->
+            <div class="flex items-center gap-4">
+                <!-- Profile Section -->
+                <div onclick="editUserName()" class="bg-slate-800 border border-slate-700 px-3 py-2 rounded-full flex items-center gap-3 shadow-lg cursor-pointer hover:bg-slate-700 transition-colors">
+                    <div class="bg-blue-500/20 p-1.5 rounded-full">
+                        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </div>
+                    <div class="hidden sm:block">
+                        <span class="text-slate-400 text-[10px] font-bold uppercase block leading-none mb-1">Session</span>
+                        <span class="text-white font-bold text-xs" id="user-name-display">Guest</span>
+                    </div>
+                </div>
+
+                <!-- Wallet Display -->
+                <div class="bg-slate-800 border border-slate-700 px-4 py-2 rounded-full flex items-center gap-3 shadow-lg">
+                    <div class="bg-green-500/20 p-1.5 rounded-full">
+                        <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[10px] font-bold uppercase block leading-none mb-1">Balance</span>
+                        <span class="text-white font-black" id="user-balance">$25.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-6 space-y-8">
+        
+        <!-- Navigation Tabs -->
+        <nav class="flex gap-8 border-b border-slate-800 overflow-x-auto whitespace-nowrap">
+            <button onclick="switchTab('today')" id="tab-today" class="nav-btn active pb-4 font-semibold transition-all">Today's Slate</button>
+            <button onclick="switchTab('past')" id="tab-past" class="nav-btn pb-4 font-semibold transition-all">Recent Results</button>
+            <button onclick="switchTab('schedule')" id="tab-schedule" class="nav-btn pb-4 font-semibold transition-all">Full Schedule</button>
+            <button onclick="switchTab('bets')" id="tab-bets" class="nav-btn pb-4 font-semibold transition-all">Bets</button>
+        </nav>
+
+        <!-- Sections -->
+        <section id="section-today" class="tab-content">
+            <div class="flex items-center gap-2 mb-6">
+                <span class="live-pulse"></span>
+                <h2 class="text-xl font-bold">Games for May 16</h2>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-12 text-center flex flex-col items-center">
+                <div class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                    <svg class="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-2">No Games Scheduled Today</h3>
+                <p class="text-slate-400 max-w-md mx-auto">Teams are traveling or resting. The playoffs resume tomorrow with a decisive Game 7 in the Eastern Conference.</p>
+                <button onclick="switchTab('schedule')" class="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-full font-bold transition-colors">View Schedule</button>
+            </div>
+        </section>
+
+        <section id="section-past" class="tab-content hidden space-y-4">
+            <h2 class="text-xl font-bold mb-6">Friday, May 15 Results</h2>
+            <div class="space-y-3" id="past-games-list">
+                <!-- Data injected via JS -->
+            </div>
+        </section>
+
+        <section id="section-schedule" class="tab-content hidden space-y-6">
+            <h2 class="text-xl font-bold mb-6">Playoff Schedule</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="schedule-list">
+                <!-- Data injected via JS -->
+            </div>
+        </section>
+
+        <!-- Bets Tab -->
+        <section id="section-bets" class="tab-content hidden space-y-8">
+            <!-- Balance Trend Graph with Milestones -->
+            <div class="glass-card rounded-2xl p-6 border border-slate-800">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest">7-Day Balance Trend & Milestones</h3>
+                    <div class="flex gap-2 items-center">
+                        <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                        <span class="text-[9px] font-bold text-slate-500 uppercase">Balance</span>
+                        <span class="w-2 h-2 bg-yellow-500 rounded-full ml-2"></span>
+                        <span class="text-[9px] font-bold text-slate-500 uppercase">Wagers</span>
+                    </div>
+                </div>
+                <div id="chart-wrapper" class="chart-container relative">
+                    <!-- SVG Chart injected via JS -->
+                </div>
+                <div class="flex justify-between mt-4 text-[9px] font-bold text-slate-600 uppercase tracking-tighter">
+                    <span>May 10</span>
+                    <span>May 11</span>
+                    <span>May 12</span>
+                    <span>May 13</span>
+                    <span>May 14</span>
+                    <span>May 15</span>
+                    <span>Today</span>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">Available Betting Lines</h2>
+                    <div class="text-[10px] text-slate-500 font-bold uppercase bg-slate-800 px-2 py-1 rounded">Source: ESPN Odds</div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="betting-odds-list">
+                    <!-- Odds injected via JS -->
+                </div>
+            </div>
+
+            <div class="pt-8 border-t border-slate-800">
+                <h2 class="text-xl font-bold mb-6">Your Active Wagers</h2>
+                <div id="active-bets-container" class="space-y-3">
+                    <!-- Bets injected via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Quick Look -->
+        <section class="mt-12">
+            <h2 class="text-xl font-bold mb-6">Playoff Leaders (2026)</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="glass-card p-4 rounded-xl">
+                    <div class="text-slate-400 text-xs font-bold uppercase mb-1">Points/Game</div>
+                    <div class="text-2xl font-black">29.3</div>
+                    <div class="text-xs text-blue-400 font-medium">Cade Cunningham (DET)</div>
+                </div>
+                <div class="glass-card p-4 rounded-xl">
+                    <div class="text-slate-400 text-xs font-bold uppercase mb-1">Assists/Game</div>
+                    <div class="text-2xl font-black">11.4</div>
+                    <div class="text-xs text-blue-400 font-medium">Jalen Brunson (NYK)</div>
+                </div>
+                <div class="glass-card p-4 rounded-xl">
+                    <div class="text-slate-400 text-xs font-bold uppercase mb-1">Rebounds/Game</div>
+                    <div class="text-2xl font-black">13.8</div>
+                    <div class="text-xs text-blue-400 font-medium">V. Wembanyama (SAS)</div>
+                </div>
+                <div class="glass-card p-4 rounded-xl">
+                    <div class="text-slate-400 text-xs font-bold uppercase mb-1">Blocks/Game</div>
+                    <div class="text-2xl font-black">3.2</div>
+                    <div class="text-xs text-blue-400 font-medium">V. Wembanyama (SAS)</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // --- Data ---
+        const pastGames = [
+            { id: 101, home: 'Timberwolves', away: 'Spurs', homeScore: 109, awayScore: 139, homeColor: 'color-timberwolves', awayColor: 'color-spurs', date: 'May 15' },
+            { id: 102, home: 'Cavaliers', away: 'Pistons', homeScore: 94, awayScore: 115, homeColor: 'color-cavaliers', awayColor: 'color-pistons', date: 'May 15' }
+        ];
+
+        const schedule = [
+            { 
+                id: 201, 
+                home: 'Cavaliers', 
+                away: 'Pistons', 
+                date: 'Sunday, May 17', 
+                time: '8:00 PM ET', 
+                round: 'Eastern Semifinals • Game 7',
+                tv: 'PRIME VIDEO',
+                odds: { home: 163, away: -178 } 
+            },
+            { 
+                id: 202, 
+                home: 'Thunder', 
+                away: 'Spurs', 
+                date: 'Monday, May 18', 
+                time: '8:30 PM ET', 
+                round: 'Western Conference Finals • Game 1',
+                tv: 'NBC / PEACOCK',
+                odds: { home: -265, away: 215 } 
+            }
+        ];
+
+        // --- State Management ---
+        let balance = parseFloat(localStorage.getItem('nba_balance')) || 25.00;
+        let bets = JSON.parse(localStorage.getItem('nba_bets')) || [];
+        let balanceHistory = JSON.parse(localStorage.getItem('nba_balance_history')) || [25, 25, 25, 25, 25, 25, 25];
+        let betMilestones = JSON.parse(localStorage.getItem('nba_bet_milestones')) || []; 
+        let userName = localStorage.getItem('nba_user_name') || 'Guest';
+        let selections = {};
+
+        function init() {
+            if (!localStorage.getItem('nba_balance')) {
+                localStorage.setItem('nba_balance', '25.00');
+            }
+            if (!localStorage.getItem('nba_balance_history')) {
+                localStorage.setItem('nba_balance_history', JSON.stringify(balanceHistory));
+            }
+            updateBalanceUI();
+            updateUserNameUI();
+            renderPastGames();
+            renderSchedule();
+            renderBettingLines();
+            renderActiveBets();
+            renderBalanceChart();
+        }
+
+        function updateBalanceUI() {
+            document.getElementById('user-balance').innerText = `$${balance.toFixed(2)}`;
+            localStorage.setItem('nba_balance', balance.toString());
+            
+            balanceHistory[6] = balance;
+            localStorage.setItem('nba_balance_history', JSON.stringify(balanceHistory));
+            renderBalanceChart();
+        }
+
+        function updateUserNameUI() {
+            document.getElementById('user-name-display').innerText = userName;
+            localStorage.setItem('nba_user_name', userName);
+        }
+
+        window.editUserName = function() {
+            const newName = prompt("Enter your name to verify session persistence:", userName);
+            if (newName && newName.trim().length > 0) {
+                userName = newName.trim();
+                updateUserNameUI();
+            }
+        };
+
+        // --- Chart Rendering ---
+        function renderBalanceChart() {
+            const wrapper = document.getElementById('chart-wrapper');
+            if (!wrapper) return;
+            
+            const width = wrapper.clientWidth || 800;
+            const height = 220;
+            const padding = 30;
+
+            const maxVal = Math.max(...balanceHistory, 40); 
+            const minVal = Math.min(...balanceHistory, 0);
+
+            const getX = (i) => (i * (width / 6));
+            const getY = (val) => height - padding - ((val - minVal) / (maxVal - minVal) * (height - 2 * padding));
+
+            const points = balanceHistory.map((val, i) => `${getX(i)},${getY(val)}`).join(' ');
+
+            const todayMilestones = betMilestones.filter(m => {
+                const d = new Date(m.time);
+                return d.toDateString() === new Date("May 16, 2026").toDateString();
+            });
+
+            wrapper.innerHTML = `
+                <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+                    <line x1="0" y1="${getY(maxVal)}" x2="${width}" y2="${getY(maxVal)}" stroke="#1e293b" stroke-width="1" />
+                    <line x1="0" y1="${getY(minVal)}" x2="${width}" y2="${getY(minVal)}" stroke="#1e293b" stroke-width="1" />
+                    
+                    <polyline fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="${points}" />
+                    <path d="M 0,${height} L ${points} L ${width},${height} Z" fill="url(#gradient)" opacity="0.2" />
+                    
+                    ${balanceHistory.map((val, i) => `
+                        <circle cx="${getX(i)}" cy="${getY(val)}" r="4" fill="#3b82f6" />
+                        <text x="${getX(i)}" y="${getY(val) - 12}" fill="#94a3b8" font-size="10" font-weight="bold" text-anchor="middle">$${val.toFixed(0)}</text>
+                    `).join('')}
+
+                    ${todayMilestones.map((m, idx) => `
+                        <circle class="marker cursor-help" cx="${getX(6)}" cy="${getY(balanceHistory[6])}" r="7" fill="#f59e0b" stroke="#0f172a" stroke-width="2" opacity="0.8" />
+                        <foreignObject x="${getX(6) - 50}" y="${getY(balanceHistory[6]) + 15}" width="100" height="40">
+                             <div class="text-[8px] text-yellow-500 font-black uppercase text-center bg-slate-900/80 rounded px-1 py-0.5">
+                                Bet: ${m.team}<br>$${m.amount}
+                             </div>
+                        </foreignObject>
+                    `).join('')}
+
+                    <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+            `;
+        }
+
+        // --- UI Rendering ---
+        function renderPastGames() {
+            const list = document.getElementById('past-games-list');
+            list.innerHTML = pastGames.map(game => `
+                <div class="glass-card rounded-xl p-5 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <span class="font-bold text-lg">${game.away}</span>
+                        <span class="text-slate-500 font-medium">@</span>
+                        <span class="font-medium text-slate-400">${game.home}</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-2xl font-black tracking-wider">
+                            <span class="${game.awayColor}">${game.awayScore}</span>
+                            <span class="text-slate-600"> - </span>
+                            <span class="${game.homeColor}">${game.homeScore}</span>
+                        </div>
+                        <span class="px-2 py-1 bg-slate-800 text-[10px] font-bold uppercase rounded text-slate-400 border border-slate-700">Final</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderSchedule() {
+            const list = document.getElementById('schedule-list');
+            list.innerHTML = schedule.map(game => `
+                <div class="glass-card rounded-2xl overflow-hidden p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="text-[10px] font-bold text-blue-400 uppercase tracking-tighter">${game.round}</div>
+                            <div class="font-black text-xl">${game.away} @ ${game.home}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs font-bold text-slate-500 uppercase">${game.date}</div>
+                            <div class="text-slate-400 font-bold text-sm">${game.time}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-4">
+                        <span class="px-2 py-1 bg-slate-800 rounded text-[10px] font-bold text-slate-400 border border-slate-700">TV: ${game.tv}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderBettingLines() {
+            const list = document.getElementById('betting-odds-list');
+            list.innerHTML = schedule.map(game => {
+                const selection = selections[game.id];
+                return `
+                <div class="glass-card rounded-2xl p-6 border border-slate-800">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase mb-4">${game.date} • ${game.round}</div>
+                    <div class="font-black text-lg mb-6">${game.away} @ ${game.home}</div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <button id="btn-${game.id}-away" onclick="selectTeam(${game.id}, '${game.away}', ${game.odds.away})" 
+                            class="odds-btn py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-black transition-all flex flex-col items-center gap-1 border-2 border-transparent ${selection?.team === game.away ? 'selected' : ''}">
+                            <span class="text-slate-400 uppercase text-[9px]">${game.away} ML</span>
+                            <span class="text-sm">${game.odds.away > 0 ? '+' + game.odds.away : game.odds.away}</span>
+                        </button>
+                        <button id="btn-${game.id}-home" onclick="selectTeam(${game.id}, '${game.home}', ${game.odds.home})" 
+                            class="odds-btn py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-black transition-all flex flex-col items-center gap-1 border-2 border-transparent ${selection?.team === game.home ? 'selected' : ''}">
+                            <span class="text-slate-400 uppercase text-[9px]">${game.home} ML</span>
+                            <span class="text-sm">${game.odds.home > 0 ? '+' + game.odds.home : game.odds.home}</span>
+                        </button>
+                    </div>
+                    
+                    <div class="mt-6 flex flex-col gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold uppercase text-slate-500">Wager:</span>
+                                <input type="number" id="wager-${game.id}" placeholder="0.00" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs font-bold w-24 focus:outline-none focus:border-blue-500">
+                            </div>
+                            <span class="text-[9px] text-slate-600 font-bold uppercase italic">Limit: $${balance.toFixed(2)}</span>
+                        </div>
+                        <button onclick="confirmPlaceBet(${game.id})" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-black uppercase tracking-widest transition-colors shadow-lg">
+                            Place Bet
+                        </button>
+                    </div>
+                </div>
+            `;}).join('');
+        }
+
+        function renderActiveBets() {
+            const container = document.getElementById('active-bets-container');
+            if (bets.length === 0) {
+                container.innerHTML = `<div class="text-slate-600 text-sm italic p-8 glass-card rounded-xl text-center">No active wagers. Select a line above to place a bet.</div>`;
+                return;
+            }
+            container.innerHTML = bets.map((bet, index) => `
+                <div class="glass-card p-4 rounded-xl flex justify-between items-center border-l-4 border-blue-500">
+                    <div>
+                        <div class="text-[10px] font-bold text-blue-500 uppercase">${bet.round}</div>
+                        <div class="font-bold">${bet.team} to Win</div>
+                        <div class="text-xs text-slate-400">Risking $${bet.amount.toFixed(2)} to win $${bet.potentialProfit.toFixed(2)}</div>
+                    </div>
+                    <button onclick="cancelBet(${index})" class="text-slate-600 hover:text-red-500 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // --- Actions ---
+        window.selectTeam = function(gameId, teamName, odds) {
+            selections[gameId] = { team: teamName, odds: odds };
+            renderBettingLines();
+        };
+
+        window.confirmPlaceBet = function(gameId) {
+            const selection = selections[gameId];
+            if (!selection) {
+                alert("Please select a team first.");
+                return;
+            }
+
+            const wagerInput = document.getElementById(`wager-${gameId}`);
+            const amount = parseFloat(wagerInput.value);
+
+            if (isNaN(amount) || amount <= 0) {
+                alert("Please enter a valid wager amount.");
+                return;
+            }
+
+            if (amount > balance) {
+                alert("Insufficient balance.");
+                return;
+            }
+
+            const odds = selection.odds;
+            let profit = (odds > 0) ? amount * (odds / 100) : amount * (100 / Math.abs(odds));
+            const game = schedule.find(g => g.id === gameId);
+            
+            const newBet = {
+                gameId, team: selection.team, amount, potentialProfit: profit, 
+                round: game.round, time: new Date().toISOString()
+            };
+
+            balance -= amount;
+            bets.push(newBet);
+            betMilestones.push(newBet); 
+
+            localStorage.setItem('nba_bets', JSON.stringify(bets));
+            localStorage.setItem('nba_bet_milestones', JSON.stringify(betMilestones));
+            
+            delete selections[gameId];
+            wagerInput.value = '';
+            
+            updateBalanceUI();
+            renderActiveBets();
+            renderBettingLines();
+        };
+
+        window.cancelBet = function(index) {
+            const bet = bets[index];
+            balance += bet.amount;
+            
+            betMilestones = betMilestones.filter(m => m.time !== bet.time);
+            
+            bets.splice(index, 1);
+            localStorage.setItem('nba_bets', JSON.stringify(bets));
+            localStorage.setItem('nba_bet_milestones', JSON.stringify(betMilestones));
+            
+            updateBalanceUI();
+            renderActiveBets();
+            renderBettingLines();
+        };
+
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(section => section.classList.add('hidden'));
+            document.getElementById('section-' + tabId).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            
+            if (tabId === 'bets') {
+                setTimeout(renderBalanceChart, 50);
+            }
+        };
+
+        window.onresize = renderBalanceChart;
+
+        window.onload = init;
+    </script>
+</body>
+</html>
