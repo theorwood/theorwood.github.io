@@ -221,20 +221,22 @@
                 <h2 class="text-xl font-bold mb-6">Your Active Wagers</h2>
                 <div id="active-bets-container" class="space-y-3"></div>
             </div>
+
+            <div class="pt-8 border-t border-slate-800">
+                <h2 class="text-xl font-bold mb-6">Win/Loss History</h2>
+                <div id="bet-history-container" class="space-y-3"></div>
+            </div>
         </section>
     </main>
 
     <script>
         // --- DATABASE CONFIGURATION ---
-        // Your specific CSV URL for Game Data
-        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQB9wfh9THrugfdyR89DmK0ZGAGN1ltCGUVM5tt9pPAwu_1SsGGbRRE97VQgC8SLgr0A26qrC0F2_JE/pub?gid=0&single=true&output=csv";
-        
-        // PLACEHOLDER: Replace with your SheetDB or Sheety API URL for User Profiles
-        const USER_API_URL = "PASTE_YOUR_API_URL_HERE"; 
+        const USER_API_URL = "https://sheetdb.io"; 
 
         // --- State Management ---
         let balance = 25.00;
         let bets = [];
+        let betHistory = []; // Tracks completed/cashed out bets
         let balanceHistory = [25, 25, 25, 25, 25, 25, 25];
         let betMilestones = []; 
         let userName = localStorage.getItem('nba_user_name') || 'Guest';
@@ -255,22 +257,21 @@
         // --- Data Syncing Engine ---
         async function fetchGameData() {
             try {
-                // In a real app, you would parse the CSV from CSV_URL here.
-                // For this demo, we simulate the fresh load from that source.
                 await new Promise(r => setTimeout(r, 600));
                 liveScheduleData = [
                     { 
                         id: 201, home: 'Pistons', away: 'Cavaliers', date: 'Sunday, May 17', time: '8:00 PM ET', round: 'Eastern Semis • G7', tv: 'PRIME VIDEO',
-                        odds: { homeML: -180, awayML: 150, homeSpread: -4.5, awaySpread: 4.5, total: 206.5 } 
+                        odds: { homeML: -180, awayML: 150, homeSpread: -4.5, awaySpread: 4.5, total: 206.5, overOdds: -110, underOdds: -110, spreadOdds: -110 } 
                     },
                     { 
                         id: 202, home: 'Thunder', away: 'Spurs', date: 'Monday, May 18', time: '8:30 PM ET', round: 'Western Finals • G1', tv: 'NBC / PEACOCK',
-                        odds: { homeML: -265, awayML: 215, homeSpread: -6.5, awaySpread: 6.5, total: 218.5 } 
+                        odds: { homeML: -265, awayML: 215, homeSpread: -6.5, awaySpread: 6.5, total: 218.5, overOdds: -110, underOdds: -110, spreadOdds: -110 } 
                     }
                 ];
                 renderSchedule();
                 renderBettingLines();
                 renderActiveBets();
+                renderBetHistory();
                 renderBalanceChart();
             } catch (e) { console.error("Game Load Error", e); }
         }
@@ -286,6 +287,7 @@
                 if (profile) {
                     balance = parseFloat(profile.balance);
                     bets = JSON.parse(profile.bets || "[]");
+                    betHistory = JSON.parse(profile.betHistory || "[]");
                     balanceHistory = JSON.parse(profile.history || "[25,25,25,25,25,25,25]");
                     betMilestones = JSON.parse(profile.milestones || "[]");
                 } else {
@@ -307,6 +309,7 @@
                         name: name,
                         balance: balance,
                         bets: JSON.stringify(bets),
+                        betHistory: JSON.stringify(betHistory),
                         history: JSON.stringify(balanceHistory),
                         milestones: JSON.stringify(betMilestones)
                     })
@@ -318,7 +321,6 @@
             if (USER_API_URL.includes("PASTE_YOUR")) return;
             showOverlay("Deleting Data...");
             try {
-                // Using SheetDB/Sheety standard delete pattern
                 await fetch(`${USER_API_URL}/name/${userName}`, { method: 'DELETE' });
                 localStorage.removeItem('nba_user_name');
                 location.reload();
@@ -452,14 +454,82 @@
         function renderActiveBets() {
             const container = document.getElementById('active-bets-container');
             if (bets.length === 0) { container.innerHTML = `<div class="text-slate-600 text-xs italic p-6 glass-card rounded-xl text-center">No active wagers.</div>`; return; }
-            container.innerHTML = bets.map((bet, index) => {
+            
+            let html = `
+                <div class="grid grid-cols-5 gap-2 px-4 mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    <div class="col-span-2">Selection</div>
+                    <div>Type</div>
+                    <div>Odds</div>
+                    <div class="text-right">Wager</div>
+                </div>
+            `;
+            
+            html += bets.map((bet, index) => {
+                const game = liveScheduleData.find(g => g.id === bet.gameId);
+                let currentOddsValue = bet.originalOdds;
+                if (game) {
+                    if (bet.type === 'ML') currentOddsValue = (bet.team === game.home ? game.odds.homeML : game.odds.awayML);
+                    else if (bet.type === 'Spread') currentOddsValue = game.odds.spreadOdds;
+                    else currentOddsValue = (bet.team === 'Over' ? game.odds.overOdds : game.odds.underOdds);
+                }
+
+                function mlToDecimal(ml) { return ml > 0 ? (ml / 100) + 1 : (100 / Math.abs(ml)) + 1; }
+                const cashOutValue = (mlToDecimal(bet.originalOdds) / mlToDecimal(currentOddsValue)) * bet.amount * 0.95;
+
                 return `
-                <div class="glass-card p-4 rounded-xl border-l-4 border-blue-500">
-                    <div class="flex justify-between items-start">
-                        <div><div class="font-black text-sm">${bet.team} ${bet.line ? bet.line.toFixed(1) : ''}</div></div>
-                        <div class="text-right"><div class="text-[9px] uppercase font-bold text-slate-500">Wager</div><div class="font-bold text-sm">$${bet.amount.toFixed(2)}</div></div>
+                <div class="glass-card p-4 rounded-xl border-l-4 border-blue-500 space-y-3">
+                    <div class="grid grid-cols-5 gap-2 items-center">
+                        <div class="col-span-2">
+                            <div class="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1 text-blue-400">Team/Line</div>
+                            <div class="font-black text-sm text-white">${bet.team} ${bet.line !== undefined ? (bet.line > 0 ? '+' : '') + bet.line.toFixed(1) : ''}</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1 text-blue-400">Type</div>
+                            <div class="font-bold text-xs text-blue-400">${bet.type}</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1 text-blue-400">Odds</div>
+                            <div class="font-bold text-xs">${bet.originalOdds > 0 ? '+' : ''}${bet.originalOdds}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1 text-blue-400">Wager</div>
+                            <div class="font-black text-sm text-white">$${bet.amount.toFixed(2)}</div>
+                        </div>
                     </div>
-                    <button onclick="cashOutBet(${index})" class="w-full mt-3 py-2 bg-slate-800 rounded-lg text-xs font-bold text-green-500">Cash Out</button>
+                    <div class="flex items-center gap-3 pt-2 border-t border-slate-800">
+                         <div class="flex-1 text-[10px] font-bold text-slate-500 uppercase">Live Market: <span class="text-blue-400 ml-1">${currentOddsValue > 0 ? '+' : ''}${currentOddsValue}</span></div>
+                         <button onclick="cashOutBet(${index}, ${cashOutValue})" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-between px-3 transition-colors">
+                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Cash Out</span>
+                            <span class="text-green-500 font-bold">$${cashOutValue.toFixed(2)}</span>
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+
+        function renderBetHistory() {
+            const container = document.getElementById('bet-history-container');
+            if (betHistory.length === 0) { container.innerHTML = `<div class="text-slate-600 text-xs italic p-6 glass-card rounded-xl text-center">No completed wagers.</div>`; return; }
+            
+            container.innerHTML = betHistory.map((bet) => {
+                return `
+                <div class="glass-card p-4 rounded-xl border-l-4 border-slate-700 opacity-80">
+                    <div class="grid grid-cols-4 gap-2 items-center">
+                        <div class="col-span-2">
+                            <div class="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1">Selection</div>
+                            <div class="font-bold text-xs text-white">${bet.team} ${bet.line !== undefined ? (bet.line > 0 ? '+' : '') + bet.line.toFixed(1) : ''} (${bet.type})</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1">Wager</div>
+                            <div class="font-bold text-xs">$${bet.amount.toFixed(2)}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1">Result</div>
+                            <div class="font-bold text-xs text-green-400">+$${bet.payout.toFixed(2)}</div>
+                        </div>
+                    </div>
                 </div>`;
             }).join('');
         }
@@ -468,22 +538,27 @@
         
         window.confirmPlaceBet = async function(gameId) {
             const sel = selections[gameId];
-            const amt = parseFloat(document.getElementById(`wager-${gameId}`).value);
+            if (!sel) return;
+            const amtInput = document.getElementById(`wager-${gameId}`);
+            const amt = parseFloat(amtInput.value);
             if (isNaN(amt) || amt <= 0 || amt > balance) return;
             balance -= amt;
             bets.push({ gameId, type: sel.type, team: sel.team, line: sel.line, amount: amt, originalOdds: sel.odds, time: new Date().toISOString() });
             updateBalanceUI();
             await saveProfileToServer();
+            amtInput.value = ''; delete selections[gameId];
             renderActiveBets(); renderBettingLines();
         };
 
-        window.cashOutBet = async function(idx) {
-            const amt = bets[idx].amount;
-            balance += (amt * 0.95);
+        window.cashOutBet = async function(idx, value) {
+            if (!confirm(`Cash out this wager for $${value.toFixed(2)}?`)) return;
+            balance += value;
+            const completedBet = { ...bets[idx], payout: value, result: 'Cashed Out', closedTime: new Date().toISOString() };
+            betHistory.unshift(completedBet); // Add to start of history
             bets.splice(idx, 1);
             updateBalanceUI();
             await saveProfileToServer();
-            renderActiveBets(); renderBettingLines();
+            renderActiveBets(); renderBetHistory(); renderBettingLines();
         };
 
         window.switchTab = function(id) {
@@ -491,6 +566,11 @@
             document.getElementById('section-' + id).classList.remove('hidden');
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('tab-' + id).classList.add('active');
+            if (id === 'bets') { 
+                renderActiveBets(); 
+                renderBetHistory();
+                setTimeout(renderBalanceChart, 50); 
+            }
         };
 
         window.onload = init;
