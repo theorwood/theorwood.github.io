@@ -67,7 +67,7 @@
         }
 
         .chart-container {
-            height: 220px;
+            height: 260px;
             width: 100%;
         }
 
@@ -196,7 +196,7 @@
         <!-- Recent Results -->
         <section id="section-past" class="tab-content hidden space-y-4">
             <h2 class="text-xl font-bold mb-6 text-white">Recent Playoff Results</h2>
-            <div class="space-y-3" id="past-games-list"></div>
+            <div class="space-y-4" id="past-games-list"></div>
         </section>
 
         <section id="section-schedule" class="tab-content hidden space-y-6">
@@ -205,16 +205,12 @@
         </section>
 
         <section id="section-bets" class="tab-content hidden space-y-8">
-            <div class="glass-card rounded-2xl p-4 md:p-6 border border-slate-800">
+            <div class="glass-card rounded-2xl p-4 md:p-8 border border-slate-800">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest">7-Day Balance Trend</h3>
-                    <div class="flex gap-2 items-center">
-                        <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-                        <span class="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase">Balance</span>
-                    </div>
+                    <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest">7-Day Balance Trend (w/ Labels)</h3>
                 </div>
                 <div id="chart-wrapper" class="chart-container relative"></div>
-                <div class="flex justify-between mt-4 text-[8px] md:text-[9px] font-bold text-slate-600 uppercase tracking-tighter">
+                <div class="flex justify-between mt-4 text-[9px] font-bold text-slate-600 uppercase tracking-tighter ml-[50px]">
                     <span>May 10</span><span>May 11</span><span>May 12</span><span>May 13</span><span>May 14</span><span>May 15</span><span>Today</span>
                 </div>
             </div>
@@ -222,7 +218,7 @@
                 <div class="flex justify-between items-center mb-6">
                     <div class="flex items-center gap-3">
                         <h2 class="text-xl font-bold text-white">Available Betting Lines</h2>
-                        <span id="sync-status" class="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[8px] font-bold uppercase rounded border border-orange-500/30">Firebase Realtime Sync</span>
+                        <span id="sync-status" class="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[8px] font-bold uppercase rounded border border-orange-500/30">Firebase Sync Enabled</span>
                     </div>
                     <div class="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase bg-slate-800 px-2 py-1 rounded" id="last-updated-time">Updating...</div>
                 </div>
@@ -284,10 +280,9 @@
             await fetchGameData();
         }
 
-        // --- DATABASE SYNC LOGIC (FIREBASE REST API) ---
+        // --- DATABASE SYNC LOGIC ---
         async function syncProfileFromServer(name) {
             if (!FIREBASE_DB_URL || FIREBASE_DB_URL.includes("PASTE_YOUR")) return;
-            
             showOverlay(`Syncing Profile: ${name}...`);
             try {
                 const response = await fetch(`${FIREBASE_DB_URL}/users/${encodeURIComponent(name)}.json`);
@@ -306,17 +301,13 @@
                 userName = name;
                 updateBalanceUI();
                 updateUserNameUI();
-            } catch (e) { 
-                console.error("Firebase Sync Failure:", e);
-                alert("Database connection failed. Please check your Firebase URL and Security Rules.");
-            }
+            } catch (e) { console.error(e); }
             hideOverlay();
         }
 
         async function saveProfileToServer(btnElement = null) {
             if (userName === 'Guest' || !FIREBASE_DB_URL || FIREBASE_DB_URL.includes("PASTE_YOUR")) return;
             if (btnElement) btnElement.classList.add('btn-loading');
-            
             try {
                 const payload = {
                     name: userName,
@@ -325,18 +316,14 @@
                     betHistory: JSON.stringify(betHistory),
                     history: JSON.stringify(balanceHistory)
                 };
-
                 await fetch(`${FIREBASE_DB_URL}/users/${encodeURIComponent(userName)}.json`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
                 profileExists = true;
-            } catch (e) { 
-                console.error("Firebase Write Failure:", e);
-            } finally {
-                if (btnElement) btnElement.classList.remove('btn-loading');
-            }
+            } catch (e) { console.error(e); }
+            if (btnElement) btnElement.classList.remove('btn-loading');
         }
 
         async function deleteProfileFromServer() {
@@ -346,10 +333,7 @@
                 await fetch(`${FIREBASE_DB_URL}/users/${encodeURIComponent(userName)}.json`, { method: 'DELETE' });
                 localStorage.removeItem('nba_user_name');
                 location.reload();
-            } catch (e) { 
-                console.error(e); 
-                hideOverlay(); 
-            }
+            } catch (e) { console.error(e); hideOverlay(); }
         }
 
         async function fetchLeaderboard() {
@@ -358,7 +342,6 @@
             try {
                 const response = await fetch(`${FIREBASE_DB_URL}/users.json`);
                 const data = await response.json();
-                
                 leaderboardData = data ? Object.values(data) : [];
                 leaderboardData.sort((a, b) => parseFloat(b.balance) - parseFloat(a.balance));
                 
@@ -371,9 +354,7 @@
                         </div>
                         <div class="col-span-4 text-right font-black text-xs text-green-400">$${parseFloat(user.balance).toFixed(2)}</div>
                     </div>`).join('');
-            } catch (e) { 
-                list.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs">Error loading standings.</div>`; 
-            }
+            } catch (e) { list.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs">Error loading standings.</div>`; }
         }
 
         function showUserDetail(name) {
@@ -381,6 +362,8 @@
             if (!user) return;
             const hist = JSON.parse(user.history || "[25,25,25,25,25,25,25]");
             const bHistory = JSON.parse(user.betHistory || "[]");
+            const activeBets = JSON.parse(user.bets || "[]");
+            
             const modal = document.getElementById('custom-modal');
             const content = document.getElementById('modal-content');
             const actions = document.getElementById('modal-actions');
@@ -391,12 +374,28 @@
                         <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-lg font-black text-white">${user.name.toString().charAt(0).toUpperCase()}</div>
                         <div><h3 class="text-xl font-bold text-white">${user.name}</h3><p class="text-green-400 font-black text-sm">$${parseFloat(user.balance).toFixed(2)}</p></div>
                     </div>
-                    <div id="modal-chart-wrapper" class="h-32 w-full glass-card rounded-xl p-2 relative"></div>
-                    <div class="max-h-48 overflow-y-auto no-scrollbar space-y-2">
-                        ${bHistory.length === 0 ? '<p class="text-slate-600 text-[10px] italic">No history</p>' : bHistory.map(b => `<div class="glass-card p-3 rounded-lg border-l-2 border-slate-700 flex justify-between items-center text-[10px]"><span class="font-bold text-white">${b.team} (${b.type})</span><span class="text-green-400 font-black">+$${b.payout.toFixed(2)}</span></div>`).join('')}
+                    <div id="modal-chart-wrapper" class="h-40 w-full glass-card rounded-xl p-2 relative"></div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Pending Bets</h4>
+                            <div class="space-y-2 max-h-32 overflow-y-auto no-scrollbar">
+                                ${activeBets.length === 0 ? '<p class="text-slate-600 text-[10px] italic">No active wagers</p>' : activeBets.map(b => `
+                                    <div class="glass-card p-3 rounded-lg border-l-2 border-blue-500 flex justify-between items-center text-[10px]">
+                                        <span class="font-bold text-white">${b.team} (${b.type})</span>
+                                        <span class="text-blue-400 font-black">$${b.amount.toFixed(2)}</span>
+                                    </div>`).join('')}
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Full History</h4>
+                            <div class="max-h-48 overflow-y-auto no-scrollbar space-y-2">
+                                ${bHistory.length === 0 ? '<p class="text-slate-600 text-[10px] italic">No archived bets</p>' : bHistory.map(b => `<div class="glass-card p-3 rounded-lg border-l-2 border-slate-700 flex justify-between items-center text-[10px]"><span class="font-bold text-white">${b.team} (${b.type})</span><span class="text-green-400 font-black">+$${b.payout.toFixed(2)}</span></div>`).join('')}
+                            </div>
+                        </div>
                     </div>
                 </div>`;
-            actions.innerHTML = `<button onclick="closeModal()" class="w-full py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-white">Close</button>`;
+            actions.innerHTML = `<button onclick="closeModal()" class="w-full py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-white">Close View</button>`;
             modal.classList.remove('hidden');
             setTimeout(() => renderMiniChart('modal-chart-wrapper', hist), 50);
         }
@@ -406,14 +405,8 @@
             try {
                 // Official 2026 Odds
                 liveScheduleData = [
-                    { 
-                        id: 201, home: 'Pistons', away: 'Cavaliers', date: 'Sunday, May 17', time: '8:00 PM ET',
-                        odds: { homeML: -180, awayML: 150, homeSpread: -4.5, awaySpread: 4.5, total: 206.5 } 
-                    },
-                    { 
-                        id: 202, home: 'Thunder', away: 'Spurs', date: 'Monday, May 18', time: '8:30 PM ET',
-                        odds: { homeML: -265, awayML: 215, homeSpread: -6.5, awaySpread: 6.5, total: 218.5 } 
-                    }
+                    { id: 201, home: 'Pistons', away: 'Cavaliers', date: 'Sunday, May 17', time: '8:00 PM ET', odds: { homeML: -180, awayML: 150, homeSpread: -4.5, awaySpread: 4.5, total: 206.5 } },
+                    { id: 202, home: 'Thunder', away: 'Spurs', date: 'Monday, May 18', time: '8:30 PM ET', odds: { homeML: -265, awayML: 215, homeSpread: -6.5, awaySpread: 6.5, total: 218.5 } }
                 ];
                 renderSchedule(); renderBettingLines(); renderActiveBets(); renderBetHistory(); renderBalanceChart();
                 document.getElementById('last-updated-time').innerText = `SYNCED: ${new Date().toLocaleTimeString()}`;
@@ -422,28 +415,19 @@
 
         // --- BETTING LOGIC ---
         window.setBet = function(gameId, type, team, odds, line) { selections[gameId] = { type, team, odds, line }; renderBettingLines(); };
-        
         window.confirmPlaceBet = async function(gameId, btn) {
-            const sel = selections[gameId];
-            if (!sel) return;
+            const sel = selections[gameId]; if (!sel) return;
             const amt = parseFloat(document.getElementById(`wager-${gameId}`).value);
             if (isNaN(amt) || amt <= 0 || amt > balance) return;
-            
             balance -= amt;
             bets.push({ gameId, type: sel.type, team: sel.team, line: sel.line, amount: amt, originalOdds: sel.odds, time: new Date().toISOString() });
-            
-            updateBalanceUI();
-            await saveProfileToServer(btn);
+            updateBalanceUI(); await saveProfileToServer(btn);
             delete selections[gameId]; renderActiveBets(); renderBettingLines();
         };
-
         window.cashOutBet = async function(idx, value, btn) {
             if (!confirm(`Confirm Cash Out for $${value.toFixed(2)}?`)) return;
-            balance += value;
-            betHistory.unshift({ ...bets[idx], payout: value, closed: new Date().toISOString() });
-            bets.splice(idx, 1);
-            updateBalanceUI();
-            await saveProfileToServer(btn);
+            balance += value; betHistory.unshift({ ...bets[idx], payout: value, closed: new Date().toISOString() });
+            bets.splice(idx, 1); updateBalanceUI(); await saveProfileToServer(btn);
             renderActiveBets(); renderBetHistory(); renderBettingLines();
         };
 
@@ -453,7 +437,6 @@
             balanceHistory[6] = balance;
             renderBalanceChart();
         }
-
         function updateUserNameUI() {
             document.getElementById('user-name-display').innerText = userName;
             localStorage.setItem('nba_user_name', userName);
@@ -467,9 +450,7 @@
                 const fmtL = (l) => (l > 0 ? '+' : '') + l.toFixed(1);
                 return `
                 <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
-                    <div class="font-black text-sm uppercase text-white">
-                        <span class="color-cavaliers">${game.away}</span> @ <span class="color-pistons">${game.home}</span>
-                    </div>
+                    <div class="font-black text-sm uppercase text-white"><span class="color-cavaliers">${game.away}</span> @ <span class="color-pistons">${game.home}</span></div>
                     <div class="grid grid-cols-3 gap-2">
                         <button onclick="setBet(${game.id}, 'ML', '${game.away}', ${game.odds.awayML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.away ? 'selected' : ''} text-white">${game.away.split(' ').pop()} ${fmtO(game.odds.awayML)}</button>
                         <button onclick="setBet(${game.id}, 'Spread', '${game.away}', -110, ${game.odds.awaySpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.away ? 'selected' : ''} text-white">${game.away.split(' ').pop()} ${fmtL(game.odds.awaySpread)}</button>
@@ -494,7 +475,6 @@
                     <div>Team/Line</div><div>Type</div><div>Odds</div><div>Wager</div>
                 </div>
                 ${bets.map((bet, index) => {
-                    const dec = (ml) => (ml > 0 ? (ml/100)+1 : (100/Math.abs(ml))+1);
                     const cashOutValue = bet.amount * 0.95;
                     return `
                     <div class="glass-card p-4 rounded-b-xl border-l-4 border-blue-500 mb-2">
@@ -528,21 +508,38 @@
         function renderPastGames() {
             const list = document.getElementById('past-games-list');
             const results = [
-                { date: 'May 15', game: 'Cavaliers @ Pistons', score: '94-115', winner: 'Pistons' },
-                { date: 'May 15', game: 'Spurs @ Timberwolves', score: '139-109', winner: 'Spurs' },
-                { date: 'May 13', game: 'Pistons @ Cavaliers', score: '113-117 (OT)', winner: 'Cavaliers' },
-                { date: 'May 12', game: 'Timberwolves @ Spurs', score: '97-126', winner: 'Spurs' }
+                { date: 'May 15', away: 'Cavaliers', home: 'Pistons', score: [94, 115], awayCol: 'color-cavaliers', homeCol: 'color-pistons' },
+                { date: 'May 15', away: 'Spurs', home: 'Timberwolves', score: [139, 109], awayCol: 'color-spurs', homeCol: 'color-timberwolves' },
+                { date: 'May 13', away: 'Pistons', home: 'Cavaliers', score: [113, 117], awayCol: 'color-pistons', homeCol: 'color-cavaliers' },
+                { date: 'May 12', away: 'Timberwolves', home: 'Spurs', score: [97, 126], awayCol: 'color-timberwolves', homeCol: 'color-spurs' }
             ];
             list.innerHTML = results.map(r => `
-                <div class="glass-card rounded-xl p-3 flex justify-between items-center text-xs font-bold text-white">
-                    <div class="flex items-center gap-3"><span class="text-[9px] text-slate-500 uppercase">${r.date}</span><span>${r.game}</span></div>
-                    <span class="${r.winner === 'Pistons' ? 'color-pistons' : 'color-cavaliers'}">${r.score}</span>
+                <div class="glass-card rounded-xl p-4 flex justify-between items-center">
+                    <div class="flex flex-col">
+                        <span class="text-[9px] text-slate-500 uppercase font-black mb-1">${r.date}</span>
+                        <span class="text-sm font-bold text-white">${r.away} @ ${r.home}</span>
+                    </div>
+                    <span class="text-2xl font-black tracking-tighter">
+                        <span class="${r.awayCol}">${r.score[0]}</span><span class="text-slate-700">-</span><span class="${r.homeCol}">${r.score[1]}</span>
+                    </span>
                 </div>`).join('');
         }
 
         function renderSchedule() {
             const list = document.getElementById('schedule-list');
-            list.innerHTML = liveScheduleData.map(g => `<div class="glass-card rounded-xl p-4"><div class="font-black text-xs text-white">${g.away} @ ${g.home}</div><div class="text-[9px] text-slate-500">${g.date}</div></div>`).join('');
+            list.innerHTML = liveScheduleData.map(g => `
+                <div class="glass-card rounded-xl p-5 border border-slate-800">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="font-black text-sm text-white">${g.away} @ ${g.home}</div>
+                        <div class="text-[9px] text-slate-500 uppercase font-bold">${g.date}</div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] text-slate-400 font-bold uppercase">${g.time}</span>
+                        <span class="text-xl font-black text-slate-700 tracking-widest italic">
+                            <span class="${'color-'+g.away.toLowerCase()}">0</span>-<span class="${'color-'+g.home.toLowerCase()}">0</span>
+                        </span>
+                    </div>
+                </div>`).join('');
         }
 
         window.switchTab = function(id) {
@@ -550,7 +547,7 @@
             document.getElementById('section-' + id).classList.remove('hidden');
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('tab-' + id).classList.add('active');
-            if (id === 'bets') { setTimeout(renderBalanceChart, 50); }
+            if (id === 'bets') { setTimeout(renderBalanceChart, 100); }
             if (id === 'leaderboard') fetchLeaderboard();
         };
 
@@ -583,15 +580,49 @@
 
         function renderBalanceChart() {
             const wrapper = document.getElementById('chart-wrapper'); if (!wrapper) return;
-            const w = wrapper.clientWidth; const h = 220; const pad = 30;
-            const points = balanceHistory.map((val, i) => `${i * (w/6)},${h - pad - ((val/Math.max(...balanceHistory, 40)) * (h - 2*pad))}`).join(' ');
-            wrapper.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="#3b82f6" stroke-width="3" points="${points}" /><path d="M 0,${h} L ${points} L ${w},${h} Z" fill="#3b82f6" opacity="0.1" /></svg>`;
+            const w = wrapper.clientWidth; const h = 260; const padX = 50; const padY = 40;
+            const maxVal = Math.max(...balanceHistory, 40) * 1.1;
+            
+            const points = balanceHistory.map((val, i) => {
+                const px = padX + (i * ((w - padX) / 6));
+                const py = h - padY - ((val / maxVal) * (h - 2 * padY));
+                return {x: px, y: py, val: val};
+            });
+
+            const polyPoints = points.map(p => `${p.x},${p.y}`).join(' ');
+            let svg = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}">`;
+            
+            for(let i=0; i<=4; i++) {
+                const yVal = (maxVal / 4) * i;
+                const yPos = h - padY - ((yVal / maxVal) * (h - 2 * padY));
+                svg += `<text x="5" y="${yPos + 4}" fill="#475569" font-size="9" font-weight="800">$${yVal.toFixed(0)}</text>`;
+                svg += `<line x1="${padX}" y1="${yPos}" x2="${w}" y2="${yPos}" stroke="#334155" stroke-dasharray="4" />`;
+            }
+
+            svg += `<path d="M ${padX},${h-padY} L ${polyPoints} L ${w},${h-padY} Z" fill="#3b82f6" opacity="0.1" />`;
+            svg += `<polyline fill="none" stroke="#3b82f6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" points="${polyPoints}" />`;
+            points.forEach(p => {
+                svg += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#3b82f6" stroke="#0f172a" stroke-width="2" />`;
+                svg += `<text x="${p.x}" y="${p.y - 12}" fill="white" font-size="10" font-weight="900" text-anchor="middle">$${p.val.toFixed(2)}</text>`;
+            });
+            svg += `</svg>`;
+            wrapper.innerHTML = svg;
         }
+
         function renderMiniChart(id, hist) {
             const wrapper = document.getElementById(id); if (!wrapper) return;
             const w = wrapper.clientWidth; const h = wrapper.clientHeight;
-            const points = hist.map((v, i) => `${i*(w/6)},${h-10-((v/Math.max(...hist, 40))*(h-20))}`).join(' ');
-            wrapper.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="#3b82f6" stroke-width="2" points="${points}" /></svg>`;
+            const pad = 20; const maxVal = Math.max(...hist, 30) * 1.1;
+            const points = hist.map((val, i) => ({x: i * (w / 6), y: h - pad - ((val / maxVal) * (h - 2 * pad)), val: val}));
+            const polyPoints = points.map(p => `${p.x},${p.y}`).join(' ');
+            let svg = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}">`;
+            svg += `<polyline fill="none" stroke="#3b82f6" stroke-width="2" points="${polyPoints}" />`;
+            points.forEach(p => {
+                svg += `<circle cx="${p.x}" cy="${p.y}" r="2" fill="#3b82f6" />`;
+                svg += `<text x="${p.x}" y="${p.y - 6}" fill="#94a3b8" font-size="8" font-weight="700" text-anchor="middle">$${p.val.toFixed(0)}</text>`;
+            });
+            svg += `</svg>`;
+            wrapper.innerHTML = svg;
         }
 
         window.onload = init;
