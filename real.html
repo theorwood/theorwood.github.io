@@ -42,17 +42,126 @@
             color: #3b82f6;
         }
 
-        /* --- Modern Team Palettes --- */
-        .color-pistons { color: #C8102E; }
-        .color-cavaliers { color: #860038; }
-        .color-spurs { color: #C4CED4; }
-        .color-thunder { color: #007AC1; }
-        .color-timberwolves { color: #78BE20; }
+        /* --- 30 NBA Franchise Color Palettes --- */
+        /* Atlanta Hawks */
+        .color-hawks { color: #E31837; }
+        .bg-hawks { background-color: #C1D32F; }
 
-        .bg-pistons { background-color: #1D428A; }
+        /* Boston Celtics */
+        .color-celtics { color: #007A33; }
+        .bg-celtics { background-color: #007A33; }
+
+        /* Brooklyn Nets */
+        .color-nets { color: #FFFFFF; }
+        .bg-nets { background-color: #000000; }
+
+        /* Charlotte Hornets */
+        .color-hornets { color: #00788C; }
+        .bg-hornets { background-color: #1D1160; }
+
+        /* Chicago Bulls */
+        .color-bulls { color: #CE1141; }
+        .bg-bulls { background-color: #CE1141; }
+
+        /* Cleveland Cavaliers */
+        .color-cavaliers { color: #FDBB30; }
         .bg-cavaliers { background-color: #860038; }
-        .bg-spurs { background-color: #000000; }
+
+        /* Dallas Mavericks */
+        .color-mavericks { color: #00538C; }
+        .bg-mavericks { background-color: #002B5E; }
+
+        /* Denver Nuggets */
+        .color-nuggets { color: #FEC524; }
+        .bg-nuggets { background-color: #0E2240; }
+
+        /* Detroit Pistons */
+        .color-pistons { color: #C8102E; }
+        .bg-pistons { background-color: #1D428A; }
+
+        /* Golden State Warriors */
+        .color-warriors { color: #FFC72C; }
+        .bg-warriors { background-color: #1D428A; }
+
+        /* Houston Rockets */
+        .color-rockets { color: #CE1141; }
+        .bg-rockets { background-color: #CE1141; }
+
+        /* Indiana Pacers */
+        .color-pacers { color: #FDBB30; }
+        .bg-pacers { background-color: #002D62; }
+
+        /* LA Clippers */
+        .color-clippers { color: #C8102E; }
+        .bg-clippers { background-color: #1D428A; }
+
+        /* Los Angeles Lakers */
+        .color-lakers { color: #FDB927; }
+        .bg-lakers { background-color: #552583; }
+
+        /* Memphis Grizzlies */
+        .color-grizzlies { color: #5D76A9; }
+        .bg-grizzlies { background-color: #12173F; }
+
+        /* Miami Heat */
+        .color-heat { color: #F9A01B; }
+        .bg-heat { background-color: #98002E; }
+
+        /* Milwaukee Bucks */
+        .color-bucks { color: #EEE1C6; }
+        .bg-bucks { background-color: #00471B; }
+
+        /* Minnesota Timberwolves */
+        .color-timberwolves { color: #78BE20; }
+        .bg-timberwolves { background-color: #0C2340; }
+
+        /* New Orleans Pelicans */
+        .color-pelicans { color: #C8102E; }
+        .bg-pelicans { background-color: #0C2340; }
+
+        /* New York Knicks */
+        .color-knicks { color: #F58426; }
+        .bg-knicks { background-color: #006BB6; }
+
+        /* Oklahoma City Thunder */
+        .color-thunder { color: #F59115; }
         .bg-thunder { background-color: #007AC1; }
+
+        /* Orlando Magic */
+        .color-magic { color: #0077C0; }
+        .bg-magic { background-color: #0077C0; }
+
+        /* Philadelphia 76ers */
+        .color-76ers { color: #ED174C; }
+        .bg-76ers { background-color: #006BB6; }
+
+        /* Phoenix Suns */
+        .color-suns { color: #E56020; }
+        .bg-suns { background-color: #1D1160; }
+
+        /* Portland Trail Blazers */
+        .color-blazers { color: #E03A3E; }
+        .bg-blazers { background-color: #000000; }
+
+        /* Sacramento Kings */
+        .color-kings { color: #5A2D81; }
+        .bg-kings { background-color: #5A2D81; }
+
+        /* San Antonio Spurs */
+        .color-spurs { color: #C4CED4; }
+        .bg-spurs { background-color: #000000; }
+
+        /* Toronto Raptors */
+        .color-raptors { color: #CE1141; }
+        .bg-raptors { background-color: #CE1141; }
+
+        /* Utah Jazz */
+        .color-jazz { color: #F9A01B; }
+        .bg-jazz { background-color: #002B5C; }
+
+        /* Washington Wizards */
+        .color-wizards { color: #E31837; }
+        .bg-wizards { background-color: #002B5C; }
 
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button {
@@ -309,6 +418,14 @@
             localStorage.setItem(`nba_bets_${name}`, JSON.stringify(bets));
             localStorage.setItem(`nba_betHistory_${name}`, JSON.stringify(betHistory));
             localStorage.setItem(`nba_history_${name}`, JSON.stringify(balanceHistory));
+        }
+
+        // --- TEAM NAME TO CSS CLASS UTILITY ---
+        function getTeamClass(name) {
+            if (!name) return 'slate-400';
+            const words = name.trim().split(' ');
+            const nick = words[words.length - 1].toLowerCase();
+            return nick;
         }
 
         // --- DATE RESOLVER & STANDARDIZER ---
@@ -676,7 +793,7 @@
 
         window.updateBetPayoutDisplay = function(gameId) {
             const val = parseFloat(document.getElementById(`wager-${gameId}`).value);
-            const displayEl = document.getElementById(`payout-display-${gameId}`);
+            const displayEl = document.getElementById('payout-display-' + gameId);
             const sel = selections[gameId];
             if (!sel || !sel.odds || isNaN(val) || val <= 0) {
                 if (displayEl) displayEl.innerHTML = '';
@@ -766,7 +883,7 @@
 
                 return `
                 <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
-                    <div class="font-black text-sm uppercase text-white"><span class="color-cavaliers">${game.away}</span> @ <span class="color-pistons">${game.home}</span></div>
+                    <div class="font-black text-sm uppercase text-white"><span class="color-${getTeamClass(game.away)}">${game.away}</span> @ <span class="color-${getTeamClass(game.home)}">${game.home}</span></div>
                     <div class="grid grid-cols-3 gap-2">
                         <!-- Moneyline Away -->
                         <button onclick="setBet(${game.id}, 'ML', '${game.away}', ${game.odds.awayML})" class="odds-btn bg-slate-800 py-2 rounded-lg ${awayMLSel ? 'selected' : ''} text-white flex flex-col items-center justify-center gap-0.5 min-h-[52px] transition-all">
@@ -874,13 +991,13 @@
 
             // Past 7 Days of Games grouped descending
             const results = [
-                { date: 'Friday, May 15', away: 'Cavaliers', home: 'Pistons', score: [94, 115], awayCol: 'color-cavaliers', homeCol: 'color-pistons' },
-                { date: 'Friday, May 15', away: 'Spurs', home: 'Timberwolves', score: [139, 109], awayCol: 'color-spurs', homeCol: 'color-timberwolves' },
-                { date: 'Thursday, May 14', away: 'Thunder', home: 'Spurs', score: [112, 105], awayCol: 'color-thunder', homeCol: 'color-spurs' },
-                { date: 'Wednesday, May 13', away: 'Pistons', home: 'Cavaliers', score: [113, 117], awayCol: 'color-pistons', homeCol: 'color-cavaliers' },
-                { date: 'Tuesday, May 12', away: 'Timberwolves', home: 'Spurs', score: [97, 126], awayCol: 'color-timberwolves', homeCol: 'color-spurs' },
-                { date: 'Monday, May 11', away: 'Cavaliers', home: 'Pistons', score: [101, 108], awayCol: 'color-cavaliers', homeCol: 'color-pistons' },
-                { date: 'Sunday, May 10', away: 'Spurs', home: 'Thunder', score: [114, 120], awayCol: 'color-spurs', homeCol: 'color-thunder' }
+                { date: 'Friday, May 15', away: 'Cavaliers', home: 'Pistons', score: [94, 115] },
+                { date: 'Friday, May 15', away: 'Spurs', home: 'Timberwolves', score: [139, 109] },
+                { date: 'Thursday, May 14', away: 'Thunder', home: 'Spurs', score: [112, 105] },
+                { date: 'Wednesday, May 13', away: 'Pistons', home: 'Cavaliers', score: [113, 117] },
+                { date: 'Tuesday, May 12', away: 'Timberwolves', home: 'Spurs', score: [97, 126] },
+                { date: 'Monday, May 11', away: 'Cavaliers', home: 'Pistons', score: [101, 108] },
+                { date: 'Sunday, May 10', away: 'Spurs', home: 'Thunder', score: [114, 120] }
             ];
 
             // Group games by date header
@@ -902,24 +1019,26 @@
                 groups[date].forEach(r => {
                     const awayWon = r.score[0] > r.score[1];
                     const homeWon = r.score[1] > r.score[0];
+                    const awayClass = getTeamClass(r.away);
+                    const homeClass = getTeamClass(r.home);
                     
                     // Format team names (bold winner, regular loser)
                     const awayTeamHTML = awayWon 
-                        ? `<span class="${r.awayCol} font-black text-white">${r.away}</span>` 
+                        ? `<span class="color-${awayClass} font-black text-white">${r.away}</span>` 
                         : `<span class="text-slate-400 font-normal">${r.away}</span>`;
                     
                     const homeTeamHTML = homeWon 
-                        ? `<span class="${r.homeCol} font-black text-white">${r.home}</span>` 
+                        ? `<span class="color-${homeClass} font-black text-white">${r.home}</span>` 
                         : `<span class="text-slate-400 font-normal">${r.home}</span>`;
 
                     // Format scores (bold winner, substantial and visible but styled loser)
                     const awayScoreHTML = awayWon
-                        ? `<span class="${r.awayCol} font-black text-2xl tracking-tighter">${r.score[0]}</span>`
-                        : `<span class="${r.awayCol} font-bold text-xl opacity-60 tracking-tighter">${r.score[0]}</span>`;
+                        ? `<span class="color-${awayClass} font-black text-2xl tracking-tighter">${r.score[0]}</span>`
+                        : `<span class="color-${awayClass} font-bold text-xl opacity-60 tracking-tighter">${r.score[0]}</span>`;
 
                     const homeScoreHTML = homeWon
-                        ? `<span class="${r.homeCol} font-black text-2xl tracking-tighter">${r.score[1]}</span>`
-                        : `<span class="${r.homeCol} font-bold text-xl opacity-60 tracking-tighter">${r.score[1]}</span>`;
+                        ? `<span class="color-${homeClass} font-black text-2xl tracking-tighter">${r.score[1]}</span>`
+                        : `<span class="color-${homeClass} font-bold text-xl opacity-60 tracking-tighter">${r.score[1]}</span>`;
 
                     html += `
                     <div class="glass-card rounded-xl p-4 flex justify-between items-center transition-colors hover:bg-slate-800/30">
@@ -964,7 +1083,7 @@
                     <div class="flex justify-between items-center">
                         <span class="text-[10px] text-slate-400 font-bold uppercase">${g.time}</span>
                         <span class="text-xl font-black text-slate-700 tracking-widest italic">
-                            <span class="${'color-'+g.away.toLowerCase()}">0</span>-<span class="${'color-'+g.home.toLowerCase()}">0</span>
+                            <span class="color-${getTeamClass(g.away)}">0</span>-<span class="color-${getTeamClass(g.home)}">0</span>
                         </span>
                     </div>
                 </div>`;
