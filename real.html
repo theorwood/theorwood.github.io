@@ -67,7 +67,7 @@
         }
 
         .chart-container {
-            height: 260px;
+            height: 180px;
             width: 100%;
         }
 
@@ -204,8 +204,8 @@
         </section>
 
         <section id="section-bets" class="tab-content hidden space-y-8">
-            <div class="glass-card rounded-2xl p-4 md:p-8 border border-slate-800 relative">
-                <div class="flex justify-between items-center mb-4">
+            <div class="glass-card rounded-2xl p-4 md:p-5 border border-slate-800 relative">
+                <div class="flex justify-between items-center mb-2">
                     <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest">This Week</h3>
                 </div>
                 <div id="chart-wrapper" class="chart-container relative"></div>
@@ -213,18 +213,22 @@
                 <!-- Dynamic Hover/Touch Tooltip container -->
                 <div id="chart-tooltip" class="absolute hidden bg-slate-950/95 backdrop-blur border border-blue-500 text-white font-bold text-[11px] px-3 py-2 rounded-xl shadow-2xl pointer-events-none transition-all duration-100 z-50"></div>
 
-                <div class="flex justify-between mt-4 text-[9px] font-bold text-slate-600 uppercase tracking-tighter ml-[50px]">
+                <div class="flex justify-between mt-1.5 text-[9px] font-bold text-slate-600 uppercase tracking-tighter ml-[50px]">
                     <span>May 10</span><span>May 11</span><span>May 12</span><span>May 13</span><span>May 14</span><span>May 15</span><span>Today</span>
                 </div>
             </div>
             <div>
-                <div class="flex justify-between items-center mb-6">
-                    <div class="flex items-center gap-3">
+                <div class="flex justify-between items-center mb-6 gap-4">
+                    <div class="flex items-center gap-2">
                         <h2 class="text-xl font-bold text-white">Available Betting Lines</h2>
-                        <div class="flex items-center gap-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase">
+                        <div class="flex items-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 p-1.5 rounded-full" title="System Operational">
                             <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-                            <span>Operational</span>
                         </div>
+                    </div>
+                    <!-- Odds format selector -->
+                    <div class="flex bg-slate-800 p-0.5 rounded-lg border border-slate-700 text-[10px] font-bold">
+                        <button onclick="changeOddsFormat('american')" id="btn-odds-american" class="px-2.5 py-1 rounded bg-blue-600 text-white transition-all">+/-</button>
+                        <button onclick="changeOddsFormat('percent')" id="btn-odds-percent" class="px-2.5 py-1 rounded text-slate-400 transition-all">%</button>
                     </div>
                 </div>
                 <div class="space-y-6" id="betting-odds-list"></div>
@@ -270,6 +274,7 @@
         let liveScheduleData = [];
         let leaderboardData = [];
         let profileExists = false;
+        let oddsFormat = 'american'; // Tracks odds format option: 'american' or 'percent'
 
         // --- DATE RESOLVER & STANDARDIZER ---
         function formatGameDate(date, includeYear = false) {
@@ -574,6 +579,28 @@
             } catch (e) { console.error(e); }
         }
 
+        // --- ODDS TOGGLE OPTION MECHANICS ---
+        window.changeOddsFormat = function(format) {
+            oddsFormat = format;
+            
+            const btnAmerican = document.getElementById('btn-odds-american');
+            const btnPercent = document.getElementById('btn-odds-percent');
+            
+            if (format === 'american') {
+                btnAmerican.classList.add('bg-blue-600', 'text-white');
+                btnAmerican.classList.remove('text-slate-400');
+                btnPercent.classList.add('text-slate-400');
+                btnPercent.classList.remove('bg-blue-600', 'text-white');
+            } else {
+                btnPercent.classList.add('bg-blue-600', 'text-white');
+                btnPercent.classList.remove('text-slate-400');
+                btnAmerican.classList.add('text-slate-400');
+                btnAmerican.classList.remove('bg-blue-600', 'text-white');
+            }
+            
+            renderBettingLines();
+        };
+
         // --- BETTING LOGIC ---
         window.setBet = function(gameId, type, team, odds, line) { 
             const existingWager = selections[gameId]?.wager || '';
@@ -646,7 +673,24 @@
             if (!list) return;
             list.innerHTML = liveScheduleData.map(game => {
                 const s = selections[game.id] || {};
-                const fmtO = (o) => (o > 0 ? '+' : '') + o;
+                
+                // Helper formatting calculations for American or Implied % views
+                const formatOdds = (o) => {
+                    if (oddsFormat === 'percent') {
+                        const prob = o > 0 ? (100 / (o + 100)) * 100 : (Math.abs(o) / (Math.abs(o) + 100)) * 100;
+                        return prob.toFixed(1) + '%';
+                    }
+                    return (o > 0 ? '+' : '') + o;
+                };
+
+                const formatJuice = (o) => {
+                    if (oddsFormat === 'percent') {
+                        const prob = (Math.abs(o) / (Math.abs(o) + 100)) * 100;
+                        return ` (${prob.toFixed(1)}%)`;
+                    }
+                    return ''; // Keep line representation clean in american view
+                };
+
                 const fmtL = (l) => (l > 0 ? '+' : '') + l.toFixed(1);
                 
                 const wagerVal = parseFloat(s.wager) || 0;
@@ -665,12 +709,12 @@
                 <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
                     <div class="font-black text-sm uppercase text-white"><span class="color-cavaliers">${game.away}</span> @ <span class="color-pistons">${game.home}</span></div>
                     <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setBet(${game.id}, 'ML', '${game.away}', ${game.odds.awayML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.away ? 'selected' : ''} text-white">${game.away.split(' ').pop()} ${fmtO(game.odds.awayML)}</button>
-                        <button onclick="setBet(${game.id}, 'Spread', '${game.away}', -110, ${game.odds.awaySpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.away ? 'selected' : ''} text-white">${game.away.split(' ').pop()} ${fmtL(game.odds.awaySpread)}</button>
-                        <button onclick="setBet(${game.id}, 'Total', 'Over', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Over' ? 'selected' : ''} text-white">OVER ${game.odds.total.toFixed(1)}</button>
-                        <button onclick="setBet(${game.id}, 'ML', '${game.home}', ${game.odds.homeML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.home ? 'selected' : ''} text-white">${game.home.split(' ').pop()} ${fmtO(game.odds.homeML)}</button>
-                        <button onclick="setBet(${game.id}, 'Spread', '${game.home}', -110, ${game.odds.homeSpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.home ? 'selected' : ''} text-white">${game.home.split(' ').pop()} ${fmtL(game.odds.homeSpread)}</button>
-                        <button onclick="setBet(${game.id}, 'Total', 'Under', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Under' ? 'selected' : ''} text-white">UNDER ${game.odds.total.toFixed(1)}</button>
+                        <button onclick="setBet(${game.id}, 'ML', '${game.away}', ${game.odds.awayML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.away ? 'selected' : ''} text-white">${game.away.split(' ').pop()} ${formatOdds(game.odds.awayML)}</button>
+                        <button onclick="setBet(${game.id}, 'Spread', '${game.away}', -110, ${game.odds.awaySpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.away ? 'selected' : ''} text-white">${game.away.split(' ').pop()} ${fmtL(game.odds.awaySpread)}${formatJuice(-110)}</button>
+                        <button onclick="setBet(${game.id}, 'Total', 'Over', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Over' ? 'selected' : ''} text-white">OVER ${game.odds.total.toFixed(1)}${formatJuice(-110)}</button>
+                        <button onclick="setBet(${game.id}, 'ML', '${game.home}', ${game.odds.homeML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.home ? 'selected' : ''} text-white">${game.home.split(' ').pop()} ${formatOdds(game.odds.homeML)}</button>
+                        <button onclick="setBet(${game.id}, 'Spread', '${game.home}', -110, ${game.odds.homeSpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.home ? 'selected' : ''} text-white">${game.home.split(' ').pop()} ${fmtL(game.odds.homeSpread)}${formatJuice(-110)}</button>
+                        <button onclick="setBet(${game.id}, 'Total', 'Under', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Under' ? 'selected' : ''} text-white">UNDER ${game.odds.total.toFixed(1)}${formatJuice(-110)}</button>
                     </div>
                     <div class="flex flex-col gap-2">
                         <div class="flex gap-2">
@@ -905,7 +949,7 @@
             const y = clientY - rect.top;
             
             tooltip.style.left = `${x}px`;
-            tooltip.style.top = `${y - 56}px`;
+            tooltip.style.top = `${y - 48}px`; // Shorter graph coordinates offset
             tooltip.style.transform = 'translateX(-50%)';
         };
 
@@ -969,7 +1013,7 @@
 
         function renderBalanceChart() {
             const wrapper = document.getElementById('chart-wrapper'); if (!wrapper) return;
-            const w = wrapper.clientWidth; const h = 260; const padX = 50; const padY = 40;
+            const w = wrapper.clientWidth; const h = 180; const padX = 50; const padY = 24;
             const maxVal = Math.max(...balanceHistory, 40) * 1.1;
             
             const points = balanceHistory.map((val, i) => {
