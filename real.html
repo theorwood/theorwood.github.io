@@ -42,17 +42,126 @@
             color: #3b82f6;
         }
 
-        /* --- Modern Team Palettes --- */
-        .color-pistons { color: #C8102E; }
-        .color-cavaliers { color: #860038; }
-        .color-spurs { color: #C4CED4; }
-        .color-thunder { color: #007AC1; }
-        .color-timberwolves { color: #78BE20; }
+        /* --- 30 NBA Franchise Color Palettes --- */
+        /* Atlanta Hawks */
+        .color-hawks { color: #E31837; }
+        .bg-hawks { background-color: #C1D32F; }
 
-        .bg-pistons { background-color: #1D428A; }
+        /* Boston Celtics */
+        .color-celtics { color: #007A33; }
+        .bg-celtics { background-color: #007A33; }
+
+        /* Brooklyn Nets */
+        .color-nets { color: #FFFFFF; }
+        .bg-nets { background-color: #000000; }
+
+        /* Charlotte Hornets */
+        .color-hornets { color: #00788C; }
+        .bg-hornets { background-color: #1D1160; }
+
+        /* Chicago Bulls */
+        .color-bulls { color: #CE1141; }
+        .bg-bulls { background-color: #CE1141; }
+
+        /* Cleveland Cavaliers */
+        .color-cavaliers { color: #FDBB30; }
         .bg-cavaliers { background-color: #860038; }
-        .bg-spurs { background-color: #000000; }
+
+        /* Dallas Mavericks */
+        .color-mavericks { color: #00538C; }
+        .bg-mavericks { background-color: #002B5E; }
+
+        /* Denver Nuggets */
+        .color-nuggets { color: #FEC524; }
+        .bg-nuggets { background-color: #0E2240; }
+
+        /* Detroit Pistons */
+        .color-pistons { color: #C8102E; }
+        .bg-pistons { background-color: #1D428A; }
+
+        /* Golden State Warriors */
+        .color-warriors { color: #FFC72C; }
+        .bg-warriors { background-color: #1D428A; }
+
+        /* Houston Rockets */
+        .color-rockets { color: #CE1141; }
+        .bg-rockets { background-color: #CE1141; }
+
+        /* Indiana Pacers */
+        .color-pacers { color: #FDBB30; }
+        .bg-pacers { background-color: #002D62; }
+
+        /* LA Clippers */
+        .color-clippers { color: #C8102E; }
+        .bg-clippers { background-color: #1D428A; }
+
+        /* Los Angeles Lakers */
+        .color-lakers { color: #FDB927; }
+        .bg-lakers { background-color: #552583; }
+
+        /* Memphis Grizzlies */
+        .color-grizzlies { color: #5D76A9; }
+        .bg-grizzlies { background-color: #12173F; }
+
+        /* Miami Heat */
+        .color-heat { color: #F9A01B; }
+        .bg-heat { background-color: #98002E; }
+
+        /* Milwaukee Bucks */
+        .color-bucks { color: #EEE1C6; }
+        .bg-bucks { background-color: #00471B; }
+
+        /* Minnesota Timberwolves */
+        .color-timberwolves { color: #78BE20; }
+        .bg-timberwolves { background-color: #0C2340; }
+
+        /* New Orleans Pelicans */
+        .color-pelicans { color: #C8102E; }
+        .bg-pelicans { background-color: #0C2340; }
+
+        /* New York Knicks */
+        .color-knicks { color: #F58426; }
+        .bg-knicks { background-color: #006BB6; }
+
+        /* Oklahoma City Thunder */
+        .color-thunder { color: #F59115; }
         .bg-thunder { background-color: #007AC1; }
+
+        /* Orlando Magic */
+        .color-magic { color: #0077C0; }
+        .bg-magic { background-color: #0077C0; }
+
+        /* Philadelphia 76ers */
+        .color-76ers { color: #ED174C; }
+        .bg-76ers { background-color: #006BB6; }
+
+        /* Phoenix Suns */
+        .color-suns { color: #E56020; }
+        .bg-suns { background-color: #1D1160; }
+
+        /* Portland Trail Blazers */
+        .color-blazers { color: #E03A3E; }
+        .bg-blazers { background-color: #000000; }
+
+        /* Sacramento Kings */
+        .color-kings { color: #5A2D81; }
+        .bg-kings { background-color: #5A2D81; }
+
+        /* San Antonio Spurs */
+        .color-spurs { color: #C4CED4; }
+        .bg-spurs { background-color: #000000; }
+
+        /* Toronto Raptors */
+        .color-raptors { color: #CE1141; }
+        .bg-raptors { background-color: #CE1141; }
+
+        /* Utah Jazz */
+        .color-jazz { color: #F9A01B; }
+        .bg-jazz { background-color: #002B5C; }
+
+        /* Washington Wizards */
+        .color-wizards { color: #E31837; }
+        .bg-wizards { background-color: #002B5C; }
 
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button {
@@ -307,20 +416,20 @@
             } catch(e) { balanceHistory = [25, 25, 25, 25, 25, 25, 25]; }
         }
 
-        function saveLocalState(name) {
-            localStorage.setItem(`nba_balance_${name}`, balance);
-            localStorage.setItem(`nba_bustCount_${name}`, bustCount);
-            localStorage.setItem(`nba_bets_${name}`, JSON.stringify(bets));
-            localStorage.setItem(`nba_betHistory_${name}`, JSON.stringify(betHistory));
-            localStorage.setItem(`nba_history_${name}`, JSON.stringify(balanceHistory));
-        }
-
         // --- TEAM NAME TO CSS CLASS UTILITY ---
         function getTeamClass(name) {
             if (!name) return 'slate-400';
             const words = name.trim().split(' ');
             const nick = words[words.length - 1].toLowerCase();
             return nick;
+        }
+
+        function saveLocalState(name) {
+            localStorage.setItem(`nba_balance_${name}`, balance);
+            localStorage.setItem(`nba_bustCount_${name}`, bustCount);
+            localStorage.setItem(`nba_bets_${name}`, JSON.stringify(bets));
+            localStorage.setItem(`nba_betHistory_${name}`, JSON.stringify(betHistory));
+            localStorage.setItem(`nba_history_${name}`, JSON.stringify(balanceHistory));
         }
 
         // --- DATE RESOLVER & STANDARDIZER ---
@@ -341,6 +450,10 @@
             renderPastGames();
             updateUserNameUI();
             
+            // CRITICAL ORDER-OF-OPERATIONS FIX:
+            // Fetch game schedules and betting odds first so everything is loaded in memory
+            await fetchGameData();
+
             // Clean up and load session state correctly by username
             resetStateToDefault();
             loadLocalState(userName);
@@ -354,8 +467,6 @@
                 renderBetHistory();
                 renderBettingLines();
             }
-
-            await fetchGameData();
         }
 
         // --- BANKRUPTCY & BAILOUT LOGIC ---
