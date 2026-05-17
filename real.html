@@ -683,14 +683,6 @@
                     return (o > 0 ? '+' : '') + o;
                 };
 
-                const formatJuice = (o) => {
-                    if (oddsFormat === 'percent') {
-                        const prob = (Math.abs(o) / (Math.abs(o) + 100)) * 100;
-                        return ` (${prob.toFixed(1)}%)`;
-                    }
-                    return ''; // Keep line representation clean in american view
-                };
-
                 const fmtL = (l) => (l > 0 ? '+' : '') + l.toFixed(1);
                 
                 const wagerVal = parseFloat(s.wager) || 0;
@@ -705,16 +697,50 @@
                     `;
                 }
 
+                const awayMLSel = s.type === 'ML' && s.team === game.away;
+                const awaySpreadSel = s.type === 'Spread' && s.team === game.away;
+                const overSel = s.type === 'Total' && s.team === 'Over';
+                const homeMLSel = s.type === 'ML' && s.team === game.home;
+                const homeSpreadSel = s.type === 'Spread' && s.team === game.home;
+                const underSel = s.type === 'Total' && s.team === 'Under';
+
+                const awayNameShort = game.away.split(' ').pop();
+                const homeNameShort = game.home.split(' ').pop();
+
                 return `
                 <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
                     <div class="font-black text-sm uppercase text-white"><span class="color-cavaliers">${game.away}</span> @ <span class="color-pistons">${game.home}</span></div>
                     <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setBet(${game.id}, 'ML', '${game.away}', ${game.odds.awayML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.away ? 'selected' : ''} text-white">${game.away.split(' ').pop()} ${formatOdds(game.odds.awayML)}</button>
-                        <button onclick="setBet(${game.id}, 'Spread', '${game.away}', -110, ${game.odds.awaySpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.away ? 'selected' : ''} text-white">${game.away.split(' ').pop()} ${fmtL(game.odds.awaySpread)}${formatJuice(-110)}</button>
-                        <button onclick="setBet(${game.id}, 'Total', 'Over', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Over' ? 'selected' : ''} text-white">OVER ${game.odds.total.toFixed(1)}${formatJuice(-110)}</button>
-                        <button onclick="setBet(${game.id}, 'ML', '${game.home}', ${game.odds.homeML})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='ML' && s.team===game.home ? 'selected' : ''} text-white">${game.home.split(' ').pop()} ${formatOdds(game.odds.homeML)}</button>
-                        <button onclick="setBet(${game.id}, 'Spread', '${game.home}', -110, ${game.odds.homeSpread})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Spread' && s.team===game.home ? 'selected' : ''} text-white">${game.home.split(' ').pop()} ${fmtL(game.odds.homeSpread)}${formatJuice(-110)}</button>
-                        <button onclick="setBet(${game.id}, 'Total', 'Under', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg text-[9px] font-bold ${s.type==='Total' && s.team==='Under' ? 'selected' : ''} text-white">UNDER ${game.odds.total.toFixed(1)}${formatJuice(-110)}</button>
+                        <!-- Moneyline Away -->
+                        <button onclick="setBet(${game.id}, 'ML', '${game.away}', ${game.odds.awayML})" class="odds-btn bg-slate-800 py-2 rounded-lg ${awayMLSel ? 'selected' : ''} text-white flex flex-col items-center justify-center gap-0.5 min-h-[52px] transition-all">
+                            <span class="text-[9px] uppercase tracking-wider font-semibold opacity-75">${awayNameShort} ML</span>
+                            <span class="text-[11px] font-black">${formatOdds(game.odds.awayML)}</span>
+                        </button>
+                        <!-- Spread Away -->
+                        <button onclick="setBet(${game.id}, 'Spread', '${game.away}', -110, ${game.odds.awaySpread})" class="odds-btn bg-slate-800 py-2 rounded-lg ${awaySpreadSel ? 'selected' : ''} text-white flex flex-col items-center justify-center gap-0.5 min-h-[52px] transition-all">
+                            <span class="text-[9px] uppercase tracking-wider font-semibold opacity-75">${awayNameShort} ${fmtL(game.odds.awaySpread)}</span>
+                            <span class="text-[11px] font-black">${formatOdds(-110)}</span>
+                        </button>
+                        <!-- Over Total -->
+                        <button onclick="setBet(${game.id}, 'Total', 'Over', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg ${overSel ? 'selected' : ''} text-white flex flex-col items-center justify-center gap-0.5 min-h-[52px] transition-all">
+                            <span class="text-[9px] uppercase tracking-wider font-semibold opacity-75">OVER ${game.odds.total.toFixed(1)}</span>
+                            <span class="text-[11px] font-black">${formatOdds(-110)}</span>
+                        </button>
+                        <!-- Moneyline Home -->
+                        <button onclick="setBet(${game.id}, 'ML', '${game.home}', ${game.odds.homeML})" class="odds-btn bg-slate-800 py-2 rounded-lg ${homeMLSel ? 'selected' : ''} text-white flex flex-col items-center justify-center gap-0.5 min-h-[52px] transition-all">
+                            <span class="text-[9px] uppercase tracking-wider font-semibold opacity-75">${homeNameShort} ML</span>
+                            <span class="text-[11px] font-black">${formatOdds(game.odds.homeML)}</span>
+                        </button>
+                        <!-- Spread Home -->
+                        <button onclick="setBet(${game.id}, 'Spread', '${game.home}', -110, ${game.odds.homeSpread})" class="odds-btn bg-slate-800 py-2 rounded-lg ${homeSpreadSel ? 'selected' : ''} text-white flex flex-col items-center justify-center gap-0.5 min-h-[52px] transition-all">
+                            <span class="text-[9px] uppercase tracking-wider font-semibold opacity-75">${homeNameShort} ${fmtL(game.odds.homeSpread)}</span>
+                            <span class="text-[11px] font-black">${formatOdds(-110)}</span>
+                        </button>
+                        <!-- Under Total -->
+                        <button onclick="setBet(${game.id}, 'Total', 'Under', -110, ${game.odds.total})" class="odds-btn bg-slate-800 py-2 rounded-lg ${underSel ? 'selected' : ''} text-white flex flex-col items-center justify-center gap-0.5 min-h-[52px] transition-all">
+                            <span class="text-[9px] uppercase tracking-wider font-semibold opacity-75">UNDER ${game.odds.total.toFixed(1)}</span>
+                            <span class="text-[11px] font-black">${formatOdds(-110)}</span>
+                        </button>
                     </div>
                     <div class="flex flex-col gap-2">
                         <div class="flex gap-2">
