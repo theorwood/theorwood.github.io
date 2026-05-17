@@ -42,126 +42,17 @@
             color: #3b82f6;
         }
 
-        /* --- 30 NBA Franchise Color Palettes --- */
-        /* Atlanta Hawks */
-        .color-hawks { color: #E31837; }
-        .bg-hawks { background-color: #C1D32F; }
-
-        /* Boston Celtics */
-        .color-celtics { color: #007A33; }
-        .bg-celtics { background-color: #007A33; }
-
-        /* Brooklyn Nets */
-        .color-nets { color: #FFFFFF; }
-        .bg-nets { background-color: #000000; }
-
-        /* Charlotte Hornets */
-        .color-hornets { color: #00788C; }
-        .bg-hornets { background-color: #1D1160; }
-
-        /* Chicago Bulls */
-        .color-bulls { color: #CE1141; }
-        .bg-bulls { background-color: #CE1141; }
-
-        /* Cleveland Cavaliers */
-        .color-cavaliers { color: #FDBB30; }
-        .bg-cavaliers { background-color: #860038; }
-
-        /* Dallas Mavericks */
-        .color-mavericks { color: #00538C; }
-        .bg-mavericks { background-color: #002B5E; }
-
-        /* Denver Nuggets */
-        .color-nuggets { color: #FEC524; }
-        .bg-nuggets { background-color: #0E2240; }
-
-        /* Detroit Pistons */
+        /* --- Modern Team Palettes --- */
         .color-pistons { color: #C8102E; }
-        .bg-pistons { background-color: #1D428A; }
-
-        /* Golden State Warriors */
-        .color-warriors { color: #FFC72C; }
-        .bg-warriors { background-color: #1D428A; }
-
-        /* Houston Rockets */
-        .color-rockets { color: #CE1141; }
-        .bg-rockets { background-color: #CE1141; }
-
-        /* Indiana Pacers */
-        .color-pacers { color: #FDBB30; }
-        .bg-pacers { background-color: #002D62; }
-
-        /* LA Clippers */
-        .color-clippers { color: #C8102E; }
-        .bg-clippers { background-color: #1D428A; }
-
-        /* Los Angeles Lakers */
-        .color-lakers { color: #FDB927; }
-        .bg-lakers { background-color: #552583; }
-
-        /* Memphis Grizzlies */
-        .color-grizzlies { color: #5D76A9; }
-        .bg-grizzlies { background-color: #12173F; }
-
-        /* Miami Heat */
-        .color-heat { color: #F9A01B; }
-        .bg-heat { background-color: #98002E; }
-
-        /* Milwaukee Bucks */
-        .color-bucks { color: #EEE1C6; }
-        .bg-bucks { background-color: #00471B; }
-
-        /* Minnesota Timberwolves */
-        .color-timberwolves { color: #78BE20; }
-        .bg-timberwolves { background-color: #0C2340; }
-
-        /* New Orleans Pelicans */
-        .color-pelicans { color: #C8102E; }
-        .bg-pelicans { background-color: #0C2340; }
-
-        /* New York Knicks */
-        .color-knicks { color: #F58426; }
-        .bg-knicks { background-color: #006BB6; }
-
-        /* Oklahoma City Thunder */
-        .color-thunder { color: #F59115; }
-        .bg-thunder { background-color: #007AC1; }
-
-        /* Orlando Magic */
-        .color-magic { color: #0077C0; }
-        .bg-magic { background-color: #0077C0; }
-
-        /* Philadelphia 76ers */
-        .color-76ers { color: #ED174C; }
-        .bg-76ers { background-color: #006BB6; }
-
-        /* Phoenix Suns */
-        .color-suns { color: #E56020; }
-        .bg-suns { background-color: #1D1160; }
-
-        /* Portland Trail Blazers */
-        .color-blazers { color: #E03A3E; }
-        .bg-blazers { background-color: #000000; }
-
-        /* Sacramento Kings */
-        .color-kings { color: #5A2D81; }
-        .bg-kings { background-color: #5A2D81; }
-
-        /* San Antonio Spurs */
+        .color-cavaliers { color: #860038; }
         .color-spurs { color: #C4CED4; }
+        .color-thunder { color: #007AC1; }
+        .color-timberwolves { color: #78BE20; }
+
+        .bg-pistons { background-color: #1D428A; }
+        .bg-cavaliers { background-color: #860038; }
         .bg-spurs { background-color: #000000; }
-
-        /* Toronto Raptors */
-        .color-raptors { color: #CE1141; }
-        .bg-raptors { background-color: #CE1141; }
-
-        /* Utah Jazz */
-        .color-jazz { color: #F9A01B; }
-        .bg-jazz { background-color: #002B5C; }
-
-        /* Washington Wizards */
-        .color-wizards { color: #E31837; }
-        .bg-wizards { background-color: #002B5C; }
+        .bg-thunder { background-color: #007AC1; }
 
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button {
@@ -261,7 +152,11 @@
 
     <!-- Modals -->
     <div id="custom-modal" class="hidden fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="glass-card w-full max-w-sm md:max-w-md rounded-3xl p-6 md:p-8 border border-slate-700 space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar">
+        <div class="glass-card w-full max-w-sm md:max-w-md rounded-3xl p-6 md:p-8 border border-slate-700 space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar relative">
+            <!-- Dynamic rounded Top-Right X Close Button -->
+            <button id="modal-close-icon" onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-750 p-1.5 rounded-full transition-colors hidden" title="Close">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
             <div id="modal-content"></div>
             <div class="flex gap-3 pt-2" id="modal-actions">
                 <button onclick="closeModal()" class="flex-1 py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-slate-400">Cancel</button>
@@ -474,6 +369,10 @@
                 const modal = document.getElementById('custom-modal');
                 const content = document.getElementById('modal-content');
                 const actions = document.getElementById('modal-actions');
+                const closeIcon = document.getElementById('modal-close-icon');
+                
+                if (closeIcon) closeIcon.classList.add('hidden'); // No X close for action dialogs
+                actions.classList.remove('hidden');
                 
                 actions.innerHTML = `<button onclick="closeModal()" class="w-full py-3 bg-red-600 hover:bg-red-700 rounded-xl font-bold text-xs uppercase tracking-widest text-white transition-colors">Accept $10 Bailout</button>`;
                 content.innerHTML = `
@@ -685,6 +584,11 @@
             const modal = document.getElementById('custom-modal');
             const content = document.getElementById('modal-content');
             const actions = document.getElementById('modal-actions');
+            const closeIcon = document.getElementById('modal-close-icon');
+            
+            // Show the top-right close "X" and completely hide the bottom actions row
+            if (closeIcon) closeIcon.classList.remove('hidden');
+            if (actions) actions.classList.add('hidden');
             
             content.innerHTML = `
                 <div class="space-y-6">
@@ -735,7 +639,7 @@
                         </div>
                     </div>
                 </div>`;
-            actions.innerHTML = `<button onclick="closeModal()" class="w-full py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-white">Close View</button>`;
+                
             modal.classList.remove('hidden');
             setTimeout(() => renderMiniChart('modal-chart-wrapper', hist), 50);
         }
@@ -1186,7 +1090,12 @@
             const modal = document.getElementById('custom-modal');
             const content = document.getElementById('modal-content');
             const actions = document.getElementById('modal-actions');
-            actions.innerHTML = `<button onclick="closeModal()" class="flex-1 py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-white">Cancel</button><button id="modal-confirm-btn" class="flex-1 py-3 bg-blue-600 rounded-xl font-bold text-xs uppercase tracking-widest text-white">Confirm</button>`;
+            const closeIcon = document.getElementById('modal-close-icon');
+            
+            if (closeIcon) closeIcon.classList.add('hidden'); // Ensure close "X" is hidden for action dialogs
+            if (actions) actions.classList.remove('hidden'); // Show default Cancel/Confirm action row
+            
+            actions.innerHTML = `<button onclick="closeModal()" class="flex-1 py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-slate-400">Cancel</button><button id="modal-confirm-btn" class="flex-1 py-3 bg-blue-600 rounded-xl font-bold text-xs uppercase tracking-widest text-white">Confirm</button>`;
             content.innerHTML = `<h3 class="text-xl font-bold text-center text-white">Sync Profile</h3><input type="text" id="name-input" placeholder="User Name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 mt-4 text-sm text-white" value="${userName === 'Guest' ? '' : userName}">`;
             
             document.getElementById('modal-confirm-btn').onclick = async () => {
@@ -1204,6 +1113,11 @@
             const modal = document.getElementById('custom-modal');
             const content = document.getElementById('modal-content');
             const actions = document.getElementById('modal-actions');
+            const closeIcon = document.getElementById('modal-close-icon');
+            
+            if (closeIcon) closeIcon.classList.add('hidden'); // Ensure close "X" is hidden for action dialogs
+            if (actions) actions.classList.remove('hidden'); // Show default Cancel/Confirm action row
+            
             actions.innerHTML = `<button onclick="closeModal()" class="flex-1 py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-widest text-white">Cancel</button><button id="modal-confirm-btn" class="flex-1 py-3 bg-red-600 rounded-xl font-bold text-xs uppercase tracking-widest text-white">Delete</button>`;
             content.innerHTML = `<h3 class="text-xl font-bold text-red-500 text-center">Delete Profile?</h3><p class="text-slate-400 text-xs mt-2 text-center">Erase "${userName}" from cloud?</p>`;
             document.getElementById('modal-confirm-btn').onclick = deleteProfileFromServer;
@@ -1256,6 +1170,7 @@
             wrapper.innerHTML = svg;
         }
 
+        // --- RENDER MINI CHART GRAPH ---
         function renderMiniChart(id, hist) {
             const wrapper = document.getElementById(id); if (!wrapper) return;
             const w = wrapper.clientWidth; const h = wrapper.clientHeight;
