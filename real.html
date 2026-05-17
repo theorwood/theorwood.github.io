@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NBA Playoff Hub 2026</title>
+    <title>Theo's Sportsbook</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
@@ -112,11 +112,12 @@
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
                 <div class="bg-blue-600 p-2 rounded-lg">
-                    <svg class="w-6 h-6 md:w-8 md:h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M11 7h2v6h-2zm0 8h2v2h-2z"/></svg>
+                    <!-- Stack of bills (Cash icon) white outline style -->
+                    <svg class="w-6 h-6 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2.5"></circle><path stroke-linecap="round" d="M6 10h1M17 14h1M4 18h16a2 2 0 0 0 2-2V9M6 20h14a2 2 0 0 0 2-2v-3"></path></svg>
                 </div>
                 <div>
-                    <h1 class="text-xl md:text-2xl font-black tracking-tighter text-white">NBA PLAYOFFS <span class="text-blue-500">2026</span></h1>
-                    <div class="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest" id="current-date-display">Saturday, May 16, 2026</div>
+                    <h1 class="text-xl md:text-2xl font-black tracking-tighter text-white">THEO'S <span class="text-blue-500">SPORTSBOOK</span></h1>
+                    <div class="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest" id="current-date-display">Updating Date...</div>
                 </div>
             </div>
             
@@ -170,46 +171,48 @@
 
     <main class="max-w-6xl mx-auto p-4 md:p-6 space-y-8">
         <nav class="flex justify-between md:justify-start gap-4 md:gap-8 border-b border-slate-800 overflow-x-auto no-scrollbar whitespace-nowrap">
-            <button onclick="switchTab('today')" id="tab-today" class="nav-btn active pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0 text-slate-400">Today's Schedule</button>
+            <button onclick="switchTab('today')" id="tab-today" class="nav-btn active pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0 text-slate-400">Schedule</button>
             <button onclick="switchTab('past')" id="tab-past" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0 text-slate-400">Recent Results</button>
-            <button onclick="switchTab('schedule')" id="tab-schedule" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0 text-slate-400">Full Schedule</button>
             <button onclick="switchTab('bets')" id="tab-bets" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0 text-slate-400">Bets</button>
             <button onclick="switchTab('leaderboard')" id="tab-leaderboard" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1 md:px-0 text-slate-400">Leaderboard</button>
         </nav>
 
         <!-- Contents -->
-        <section id="section-today" class="tab-content">
-            <div class="flex items-center gap-2 mb-6">
-                <span class="live-pulse"></span>
-                <h2 class="text-xl font-bold text-white">Games for May 16</h2>
-            </div>
-            <div class="glass-card rounded-2xl p-8 md:p-12 text-center flex flex-col items-center">
-                <div class="w-16 h-16 md:w-20 md:h-20 bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                    <svg class="w-8 h-8 md:w-10 md:h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <section id="section-today" class="tab-content space-y-6">
+            <!-- Today's Games section (only shown if games are scheduled for today) -->
+            <div id="today-games-section" class="space-y-4 hidden">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="live-pulse"></span>
+                    <h2 class="text-xl font-bold text-white" id="today-games-title">Games for Today</h2>
                 </div>
-                <h3 class="text-xl md:text-2xl font-bold mb-2 text-white">No Games Scheduled Today</h3>
-                <p class="text-slate-400 text-sm md:text-base max-w-md mx-auto">The playoffs resume tomorrow with Game 7 of the Eastern Conference Semifinals.</p>
-                <button onclick="switchTab('schedule')" class="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-full font-bold transition-colors text-white">View Schedule</button>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="today-schedule-list"></div>
+            </div>
+            
+            <!-- Playoff / Upcoming Games section grouped by date headers -->
+            <div id="upcoming-games-section" class="space-y-6">
+                <div class="flex items-center gap-2 mb-2">
+                    <h2 class="text-xl font-bold text-white" id="upcoming-section-header">Playoff Schedule</h2>
+                </div>
+                <div class="space-y-6" id="upcoming-schedule-list"></div>
             </div>
         </section>
 
         <!-- Recent Results -->
         <section id="section-past" class="tab-content hidden space-y-4">
-            <h2 class="text-xl font-bold mb-6 text-white">Recent Playoff Results</h2>
-            <div class="space-y-4" id="past-games-list"></div>
-        </section>
-
-        <section id="section-schedule" class="tab-content hidden space-y-6">
-            <h2 class="text-xl font-bold mb-6 text-white">Playoff Schedule</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="schedule-list"></div>
+            <h2 class="text-xl font-bold mb-4 text-white">Recent Playoff Results</h2>
+            <div class="space-y-6" id="past-games-list"></div>
         </section>
 
         <section id="section-bets" class="tab-content hidden space-y-8">
-            <div class="glass-card rounded-2xl p-4 md:p-8 border border-slate-800">
+            <div class="glass-card rounded-2xl p-4 md:p-8 border border-slate-800 relative">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest">This Week</h3>
                 </div>
                 <div id="chart-wrapper" class="chart-container relative"></div>
+                
+                <!-- Dynamic Hover/Touch Tooltip container -->
+                <div id="chart-tooltip" class="absolute hidden bg-slate-950/95 backdrop-blur border border-blue-500 text-white font-bold text-[11px] px-3 py-2 rounded-xl shadow-2xl pointer-events-none transition-all duration-100 z-50"></div>
+
                 <div class="flex justify-between mt-4 text-[9px] font-bold text-slate-600 uppercase tracking-tighter ml-[50px]">
                     <span>May 10</span><span>May 11</span><span>May 12</span><span>May 13</span><span>May 14</span><span>May 15</span><span>Today</span>
                 </div>
@@ -261,14 +264,28 @@
         let bets = [];
         let betHistory = []; 
         let balanceHistory = [25, 25, 25, 25, 25, 25, 25];
+        let bustCount = 0; // Tracks player bankruptcies
         let userName = localStorage.getItem('nba_user_name') || 'Guest';
         let selections = {};
         let liveScheduleData = [];
         let leaderboardData = [];
         let profileExists = false;
 
+        // --- DATE RESOLVER & STANDARDIZER ---
+        function formatGameDate(date, includeYear = false) {
+            const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const formatted = `${weekdays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`;
+            return includeYear ? `${formatted}, ${date.getFullYear()}` : formatted;
+        }
+
         // --- INITIALIZATION ---
         async function init() {
+            // Setup dynamic header date displays
+            const todayDate = new Date();
+            document.getElementById('current-date-display').innerText = formatGameDate(todayDate, true);
+            document.getElementById('today-games-title').innerText = `Games for ${formatGameDate(todayDate)}`;
+
             renderPastGames();
             updateUserNameUI();
             
@@ -280,6 +297,35 @@
             }
 
             await fetchGameData();
+        }
+
+        // --- BANKRUPTCY & BAILOUT LOGIC ---
+        function checkBankruptcy() {
+            if (balance <= 0.005) {
+                bustCount++;
+                balance += 10.00;
+                updateBalanceUI();
+                
+                // Trigger a prominent customized bankruptcy alert modal on-screen
+                const modal = document.getElementById('custom-modal');
+                const content = document.getElementById('modal-content');
+                const actions = document.getElementById('modal-actions');
+                
+                actions.innerHTML = `<button onclick="closeModal()" class="w-full py-3 bg-red-600 hover:bg-red-700 rounded-xl font-bold text-xs uppercase tracking-widest text-white transition-colors">Accept $10 Bailout</button>`;
+                content.innerHTML = `
+                    <div class="text-center space-y-4">
+                        <div class="text-5xl animate-bounce">❌</div>
+                        <h3 class="text-xl font-black text-red-500 uppercase tracking-tight">Account Bankrupt!</h3>
+                        <p class="text-slate-300 text-xs leading-relaxed">
+                            Your balance hit $0.00! You have been granted a <strong class="text-green-400 font-extrabold">$10.00 Bailout Bonus</strong> to keep playing.
+                        </p>
+                        <div class="text-slate-400 text-[10px] uppercase font-black tracking-widest pt-1">
+                            Your Penalty Marks: <span class="text-red-500 font-black">${"❌".repeat(bustCount)}</span> (${bustCount})
+                        </div>
+                    </div>`;
+                
+                modal.classList.remove('hidden');
+            }
         }
 
         // --- MATH HELPERS ---
@@ -336,6 +382,7 @@
                 if (profile) {
                     profileExists = true;
                     balance = parseFloat(profile.balance) || 25.00;
+                    bustCount = parseInt(profile.bustCount) || 0; // Retrieve persistent bankruptcies
                     
                     if (profile.bets) {
                         bets = typeof profile.bets === 'string' ? JSON.parse(profile.bets) : profile.bets;
@@ -356,6 +403,7 @@
                     }
                 } else {
                     profileExists = false;
+                    bustCount = 0;
                     await saveProfileToServer();
                 }
                 userName = name;
@@ -382,6 +430,7 @@
                 const payload = {
                     name: userName,
                     balance: balance.toFixed(2),
+                    bustCount: bustCount, // Save persistent bankruptcies
                     bets: JSON.stringify(bets),
                     betHistory: JSON.stringify(betHistory),
                     history: JSON.stringify(balanceHistory)
@@ -415,15 +464,20 @@
                 leaderboardData = data ? Object.values(data) : [];
                 leaderboardData.sort((a, b) => parseFloat(b.balance) - parseFloat(a.balance));
                 
-                list.innerHTML = leaderboardData.map((user, idx) => `
+                list.innerHTML = leaderboardData.map((user, idx) => {
+                    const bCount = parseInt(user.bustCount) || 0;
+                    const xMarkString = bCount > 0 ? `<span class="ml-1 text-[11px] tracking-tight select-none" title="Bust Penalty: ${bCount} times">${"❌".repeat(bCount)}</span>` : '';
+                    
+                    return `
                     <div onclick="showUserDetail('${user.name}')" class="grid grid-cols-12 p-4 items-center hover:bg-slate-800/50 cursor-pointer transition-colors border-b border-slate-800">
                         <div class="col-span-1 text-[10px] font-black text-slate-500">${idx + 1}</div>
                         <div class="col-span-7 flex items-center gap-3">
                             <div class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white">${user.name.toString().charAt(0).toUpperCase()}</div>
-                            <span class="font-bold text-sm ${user.name === userName ? 'text-blue-400' : 'text-white'}">${user.name}</span>
+                            <span class="font-bold text-sm ${user.name === userName ? 'text-blue-400' : 'text-white'}">${user.name}${xMarkString}</span>
                         </div>
                         <div class="col-span-4 text-right font-black text-xs text-green-400">$${parseFloat(user.balance).toFixed(2)}</div>
-                    </div>`).join('');
+                    </div>`;
+                }).join('');
             } catch (e) { list.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs">Error loading standings.</div>`; }
         }
 
@@ -445,6 +499,9 @@
             if (user.bets) {
                 activeBets = typeof user.bets === 'string' ? JSON.parse(user.bets) : user.bets;
             }
+
+            const bCount = parseInt(user.bustCount) || 0;
+            const xMarkString = bCount > 0 ? `<span class="ml-1 text-xs select-none" title="Bust Penalty: ${bCount} times">${"❌".repeat(bCount)}</span>` : '';
             
             const modal = document.getElementById('custom-modal');
             const content = document.getElementById('modal-content');
@@ -454,7 +511,7 @@
                 <div class="space-y-6">
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-lg font-black text-white">${user.name.toString().charAt(0).toUpperCase()}</div>
-                        <div><h3 class="text-xl font-bold text-white">${user.name}</h3><p class="text-green-400 font-black text-sm">$${parseFloat(user.balance).toFixed(2)}</p></div>
+                        <div><h3 class="text-xl font-bold text-white">${user.name}${xMarkString}</h3><p class="text-green-400 font-black text-sm">$${parseFloat(user.balance).toFixed(2)}</p></div>
                     </div>
                     <div id="modal-chart-wrapper" class="h-40 w-full glass-card rounded-xl p-2 relative"></div>
                     
@@ -507,11 +564,12 @@
         // --- ODDS & SCHEDULE ---
         async function fetchGameData() {
             try {
-                // Official 2026 Odds
+                // FIXED CALENDAR WINDOW WITH PACIFIC TIMES
                 liveScheduleData = [
-                    { id: 201, home: 'Pistons', away: 'Cavaliers', date: 'Sunday, May 17', time: '8:00 PM ET', odds: { homeML: -180, awayML: 150, homeSpread: -4.5, awaySpread: 4.5, total: 206.5 } },
-                    { id: 202, home: 'Thunder', away: 'Spurs', date: 'Monday, May 18', time: '8:30 PM ET', odds: { homeML: -265, awayML: 215, homeSpread: -6.5, awaySpread: 6.5, total: 218.5 } }
+                    { id: 201, home: 'Pistons', away: 'Cavaliers', date: 'Sunday, May 17', time: '5:00 PM PT', odds: { homeML: -180, awayML: 150, homeSpread: -4.5, awaySpread: 4.5, total: 206.5 } },
+                    { id: 202, home: 'Thunder', away: 'Spurs', date: 'Monday, May 18', time: '5:30 PM PT', odds: { homeML: -265, awayML: 215, homeSpread: -6.5, awaySpread: 6.5, total: 218.5 } }
                 ];
+
                 renderSchedule(); renderBettingLines(); renderActiveBets(); renderBetHistory(); renderBalanceChart();
             } catch (e) { console.error(e); }
         }
@@ -556,6 +614,10 @@
             const amt = parseFloat(document.getElementById(`wager-${gameId}`).value);
             if (isNaN(amt) || amt <= 0 || amt > balance) return;
             balance -= amt;
+            
+            // Check for bankruptcy before updating the server database and Redrawing balance charts
+            checkBankruptcy();
+
             bets.push({ gameId, type: sel.type, team: sel.team, line: sel.line, amount: amt, originalOdds: sel.odds, time: new Date().toISOString() });
             updateBalanceUI(); await saveProfileToServer(btn);
             delete selections[gameId]; renderActiveBets(); renderBettingLines();
@@ -656,6 +718,7 @@
                 }).join('')}`;
         }
 
+        // --- RECORD PREVIOUS BET HISTORIES ---
         function renderBetHistory() {
             const container = document.getElementById('bet-history-container');
             if (!container) return;
@@ -680,27 +743,91 @@
 
         function renderPastGames() {
             const list = document.getElementById('past-games-list');
+            if (!list) return;
+
+            // Past 7 Days of Games grouped descending
             const results = [
-                { date: 'May 15', away: 'Cavaliers', home: 'Pistons', score: [94, 115], awayCol: 'color-cavaliers', homeCol: 'color-pistons' },
-                { date: 'May 15', away: 'Spurs', home: 'Timberwolves', score: [139, 109], awayCol: 'color-spurs', homeCol: 'color-timberwolves' },
-                { date: 'May 13', away: 'Pistons', home: 'Cavaliers', score: [113, 117], awayCol: 'color-pistons', homeCol: 'color-cavaliers' },
-                { date: 'May 12', away: 'Timberwolves', home: 'Spurs', score: [97, 126], awayCol: 'color-timberwolves', homeCol: 'color-spurs' }
+                { date: 'Friday, May 15', away: 'Cavaliers', home: 'Pistons', score: [94, 115], awayCol: 'color-cavaliers', homeCol: 'color-pistons' },
+                { date: 'Friday, May 15', away: 'Spurs', home: 'Timberwolves', score: [139, 109], awayCol: 'color-spurs', homeCol: 'color-timberwolves' },
+                { date: 'Thursday, May 14', away: 'Thunder', home: 'Spurs', score: [112, 105], awayCol: 'color-thunder', homeCol: 'color-spurs' },
+                { date: 'Wednesday, May 13', away: 'Pistons', home: 'Cavaliers', score: [113, 117], awayCol: 'color-pistons', homeCol: 'color-cavaliers' },
+                { date: 'Tuesday, May 12', away: 'Timberwolves', home: 'Spurs', score: [97, 126], awayCol: 'color-timberwolves', homeCol: 'color-spurs' },
+                { date: 'Monday, May 11', away: 'Cavaliers', home: 'Pistons', score: [101, 108], awayCol: 'color-cavaliers', homeCol: 'color-pistons' },
+                { date: 'Sunday, May 10', away: 'Spurs', home: 'Thunder', score: [114, 120], awayCol: 'color-spurs', homeCol: 'color-thunder' }
             ];
-            list.innerHTML = results.map(r => `
-                <div class="glass-card rounded-xl p-4 flex justify-between items-center">
-                    <div class="flex flex-col">
-                        <span class="text-[9px] text-slate-500 uppercase font-black mb-1">${r.date}</span>
-                        <span class="text-sm font-bold text-white">${r.away} @ ${r.home}</span>
-                    </div>
-                    <span class="text-2xl font-black tracking-tighter">
-                        <span class="${r.awayCol}">${r.score[0]}</span><span class="text-slate-700">-</span><span class="${r.homeCol}">${r.score[1]}</span>
-                    </span>
-                </div>`).join('');
+
+            // Group games by date header
+            const groups = {};
+            results.forEach(r => {
+                if (!groups[r.date]) {
+                    groups[r.date] = [];
+                }
+                groups[r.date].push(r);
+            });
+
+            let html = '';
+            for (const date in groups) {
+                html += `
+                <div class="space-y-3">
+                    <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-6 mb-2 border-b border-slate-800 pb-1">${date}</div>
+                `;
+                
+                groups[date].forEach(r => {
+                    const awayWon = r.score[0] > r.score[1];
+                    const homeWon = r.score[1] > r.score[0];
+                    
+                    // Format team names (bold winner, regular loser)
+                    const awayTeamHTML = awayWon 
+                        ? `<span class="${r.awayCol} font-black text-white">${r.away}</span>` 
+                        : `<span class="text-slate-400 font-normal">${r.away}</span>`;
+                    
+                    const homeTeamHTML = homeWon 
+                        ? `<span class="${r.homeCol} font-black text-white">${r.home}</span>` 
+                        : `<span class="text-slate-400 font-normal">${r.home}</span>`;
+
+                    // Format scores (bold winner, substantial and visible but styled loser)
+                    const awayScoreHTML = awayWon
+                        ? `<span class="${r.awayCol} font-black text-2xl tracking-tighter">${r.score[0]}</span>`
+                        : `<span class="${r.awayCol} font-bold text-xl opacity-60 tracking-tighter">${r.score[0]}</span>`;
+
+                    const homeScoreHTML = homeWon
+                        ? `<span class="${r.homeCol} font-black text-2xl tracking-tighter">${r.score[1]}</span>`
+                        : `<span class="${r.homeCol} font-bold text-xl opacity-60 tracking-tighter">${r.score[1]}</span>`;
+
+                    html += `
+                    <div class="glass-card rounded-xl p-4 flex justify-between items-center transition-colors hover:bg-slate-800/30">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold text-white">
+                                ${awayTeamHTML} <span class="text-slate-600 font-normal mx-1">@</span> ${homeTeamHTML}
+                            </span>
+                        </div>
+                        <span class="flex items-center gap-1">
+                            ${awayScoreHTML}
+                            <span class="text-slate-700 mx-1 font-bold">-</span>
+                            ${homeScoreHTML}
+                        </span>
+                    </div>`;
+                });
+
+                html += `</div>`;
+            }
+
+            list.innerHTML = html;
         }
 
         function renderSchedule() {
-            const list = document.getElementById('schedule-list');
-            list.innerHTML = liveScheduleData.map(g => `
+            const today = new Date();
+            const todayDateStr = formatGameDate(today);
+            
+            const todayGames = liveScheduleData.filter(g => g.date === todayDateStr);
+            const upcomingGames = liveScheduleData.filter(g => g.date !== todayDateStr);
+            
+            const todaySec = document.getElementById('today-games-section');
+            const todayList = document.getElementById('today-schedule-list');
+            const upcomingList = document.getElementById('upcoming-schedule-list');
+            const upcomingHeader = document.getElementById('upcoming-section-header');
+
+            const cardHTML = g => `
                 <div class="glass-card rounded-xl p-5 border border-slate-800">
                     <div class="flex justify-between items-start mb-2">
                         <div class="font-black text-sm text-white">${g.away} @ ${g.home}</div>
@@ -712,8 +839,92 @@
                             <span class="${'color-'+g.away.toLowerCase()}">0</span>-<span class="${'color-'+g.home.toLowerCase()}">0</span>
                         </span>
                     </div>
-                </div>`).join('');
+                </div>`;
+
+            // Handle Today's Games Section
+            if (todayGames.length > 0) {
+                todaySec.classList.remove('hidden');
+                if (todayList) todayList.innerHTML = todayGames.map(cardHTML).join('');
+                if (upcomingHeader) upcomingHeader.innerText = "Upcoming Games";
+            } else {
+                todaySec.classList.add('hidden');
+                if (upcomingHeader) upcomingHeader.innerText = "Playoff Schedule";
+            }
+
+            // Group Upcoming Games by Day (like past results)
+            if (upcomingList) {
+                const groups = {};
+                upcomingGames.forEach(g => {
+                    if (!groups[g.date]) {
+                        groups[g.date] = [];
+                    }
+                    groups[g.date].push(g);
+                });
+
+                let upcomingHTML = '';
+                for (const date in groups) {
+                    upcomingHTML += `
+                    <div class="space-y-3">
+                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-4 mb-2 border-b border-slate-800 pb-1">${date}</div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            ${groups[date].map(cardHTML).join('')}
+                        </div>
+                    </div>`;
+                }
+                upcomingList.innerHTML = upcomingHTML || `<div class="text-slate-500 text-xs italic text-center py-6">No upcoming games scheduled.</div>`;
+            }
         }
+
+        // --- HARDWARE TOOLTIP OVERLAY GRAPH LOGIC (TOUCH COMPATIBLE) ---
+        window.showChartTooltip = function(e, val, dayIdx) {
+            const tooltip = document.getElementById('chart-tooltip');
+            if (!tooltip) return;
+            const days = ['May 10', 'May 11', 'May 12', 'May 13', 'May 14', 'May 15', 'Today'];
+            const dayLabel = days[dayIdx] || '';
+            
+            tooltip.innerHTML = `
+                <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">${dayLabel}</div>
+                <div class="text-xs text-blue-400 font-black">$${val.toFixed(2)}</div>
+            `;
+            tooltip.classList.remove('hidden');
+            
+            // Resolve correct viewport scaling on mobile zoom states
+            const wrapper = document.getElementById('chart-wrapper');
+            const rect = wrapper.getBoundingClientRect();
+            
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+            
+            tooltip.style.left = `${x}px`;
+            tooltip.style.top = `${y - 56}px`;
+            tooltip.style.transform = 'translateX(-50%)';
+        };
+
+        window.hideChartTooltip = function() {
+            const tooltip = document.getElementById('chart-tooltip');
+            if (tooltip) tooltip.classList.add('hidden');
+        };
+
+        // Tap-away dynamic dismiss handler for mobile
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('g') && !e.target.closest('#chart-tooltip')) {
+                hideChartTooltip();
+            }
+        });
+        document.addEventListener('touchstart', function(e) {
+            if (!e.target.closest('g') && !e.target.closest('#chart-tooltip')) {
+                hideChartTooltip();
+            }
+        }, { passive: true });
 
         window.switchTab = function(id) {
             document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
@@ -780,17 +991,18 @@
             svg += `<path d="M ${padX},${h-padY} L ${polyPoints} L ${w},${h-padY} Z" fill="#3b82f6" opacity="0.1" />`;
             svg += `<polyline fill="none" stroke="#3b82f6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" points="${polyPoints}" />`;
             
-            points.forEach(p => {
+            points.forEach((p, idx) => {
                 svg += `
-                <g class="group cursor-pointer">
-                    <!-- Invisible larger touch & hover zone boundary -->
-                    <circle cx="${p.x}" cy="${p.y}" r="16" fill="transparent" class="pointer-events-auto" />
-                    <!-- Visual indicator plot point dot -->
-                    <circle cx="${p.x}" cy="${p.y}" r="4.5" fill="#3b82f6" stroke="#0f172a" stroke-width="2" class="group-hover:fill-blue-400 group-hover:r-6 transition-all duration-150" />
-                    <!-- Tooltip Pill Shape Background -->
-                    <rect x="${p.x - 34}" y="${p.y - 30}" width="68" height="18" rx="4" fill="#1e293b" stroke="#3b82f6" stroke-width="1" class="opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none" />
-                    <!-- Tooltip balance text details -->
-                    <text x="${p.x}" y="${p.y - 18}" fill="#f8fafc" font-size="9" font-weight="900" text-anchor="middle" class="opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">$${p.val.toFixed(2)}</text>
+                <g class="cursor-pointer" 
+                   onmouseenter="showChartTooltip(event, ${p.val}, ${idx})"
+                   onmousemove="showChartTooltip(event, ${p.val}, ${idx})"
+                   onmouseleave="hideChartTooltip()"
+                   ontouchstart="showChartTooltip(event, ${p.val}, ${idx})"
+                   ontouchend="hideChartTooltip()">
+                    <!-- Expanded touch & mouse tap bounding targets -->
+                    <circle cx="${p.x}" cy="${p.y}" r="22" fill="transparent" class="pointer-events-auto" />
+                    <!-- Visual indicator point markers -->
+                    <circle cx="${p.x}" cy="${p.y}" r="5" fill="#3b82f6" stroke="#0f172a" stroke-width="2.5" />
                 </g>`;
             });
             svg += `</svg>`;
