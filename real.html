@@ -580,7 +580,7 @@
                     <div class="space-y-4">
                         <div>
                             <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Pending Bets</h4>
-                            <div class="space-y-2 max-h-32 overflow-y-auto no-scrollbar">
+                            <div class="space-y-2">
                                 ${activeBets.length === 0 ? '<p class="text-slate-600 text-[10px] italic">No active wagers</p>' : activeBets.map(b => {
                                     const details = calculatePayoutAndProfit(b.amount, b.originalOdds);
                                     return `
@@ -599,7 +599,7 @@
                         </div>
                         <div>
                             <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Full History</h4>
-                            <div class="max-h-48 overflow-y-auto no-scrollbar space-y-2">
+                            <div class="space-y-2">
                                 ${bHistory.length === 0 ? '<p class="text-slate-600 text-[10px] italic">No archived bets</p>' : bHistory.map(b => {
                                     const netProfit = b.payout - b.amount;
                                     return `
