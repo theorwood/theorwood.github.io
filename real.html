@@ -276,6 +276,41 @@
         let profileExists = false;
         let oddsFormat = 'american'; // Tracks odds format option: 'american' or 'percent'
 
+        // --- STATE RESET & LOCAL STORAGE SEPARATION ---
+        function resetStateToDefault() {
+            balance = 25.00;
+            bets = [];
+            betHistory = []; 
+            balanceHistory = [25, 25, 25, 25, 25, 25, 25];
+            bustCount = 0;
+            selections = {};
+        }
+
+        function loadLocalState(name) {
+            balance = parseFloat(localStorage.getItem(`nba_balance_${name}`)) || 25.00;
+            bustCount = parseInt(localStorage.getItem(`nba_bustCount_${name}`)) || 0;
+            
+            try {
+                bets = JSON.parse(localStorage.getItem(`nba_bets_${name}`)) || [];
+            } catch(e) { bets = []; }
+            
+            try {
+                betHistory = JSON.parse(localStorage.getItem(`nba_betHistory_${name}`)) || [];
+            } catch(e) { betHistory = []; }
+            
+            try {
+                balanceHistory = JSON.parse(localStorage.getItem(`nba_history_${name}`)) || [25, 25, 25, 25, 25, 25, 25];
+            } catch(e) { balanceHistory = [25, 25, 25, 25, 25, 25, 25]; }
+        }
+
+        function saveLocalState(name) {
+            localStorage.setItem(`nba_balance_${name}`, balance);
+            localStorage.setItem(`nba_bustCount_${name}`, bustCount);
+            localStorage.setItem(`nba_bets_${name}`, JSON.stringify(bets));
+            localStorage.setItem(`nba_betHistory_${name}`, JSON.stringify(betHistory));
+            localStorage.setItem(`nba_history_${name}`, JSON.stringify(balanceHistory));
+        }
+
         // --- DATE RESOLVER & STANDARDIZER ---
         function formatGameDate(date, includeYear = false) {
             const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -294,11 +329,18 @@
             renderPastGames();
             updateUserNameUI();
             
+            // Clean up and load session state correctly by username
+            resetStateToDefault();
+            loadLocalState(userName);
+            
             if (userName !== 'Guest') {
                 await syncProfileFromServer(userName);
                 document.getElementById('delete-profile-btn').classList.remove('hidden');
             } else {
                 updateBalanceUI();
+                renderActiveBets();
+                renderBetHistory();
+                renderBettingLines();
             }
 
             await fetchGameData();
@@ -381,6 +423,10 @@
             if (!FIREBASE_DB_URL || FIREBASE_DB_URL.includes("PASTE_YOUR")) return;
             showOverlay(`Syncing Profile: ${name}...`);
             try {
+                // Instantly scrub shared memory defaults & pre-load localized cached data of the target user
+                resetStateToDefault();
+                loadLocalState(name);
+
                 const response = await fetch(`${FIREBASE_DB_URL}/users/${encodeURIComponent(name)}.json`);
                 const profile = await response.json();
                 
@@ -406,9 +452,11 @@
                     } else {
                         balanceHistory = [25, 25, 25, 25, 25, 25, 25];
                     }
+                    saveLocalState(name);
                 } else {
                     profileExists = false;
-                    bustCount = 0;
+                    resetStateToDefault();
+                    saveLocalState(name);
                     await saveProfileToServer();
                 }
                 userName = name;
@@ -429,6 +477,7 @@
         }
 
         async function saveProfileToServer(btnElement = null) {
+            saveLocalState(userName);
             if (userName === 'Guest' || !FIREBASE_DB_URL || FIREBASE_DB_URL.includes("PASTE_YOUR")) return;
             if (btnElement) btnElement.classList.add('btn-loading');
             try {
@@ -455,6 +504,14 @@
             showOverlay("Purging Profile...");
             try {
                 await fetch(`${FIREBASE_DB_URL}/users/${encodeURIComponent(userName)}.json`, { method: 'DELETE' });
+                
+                // Erase local persistent storage keys completely
+                localStorage.removeItem(`nba_balance_${userName}`);
+                localStorage.removeItem(`nba_bustCount_${userName}`);
+                localStorage.removeItem(`nba_bets_${userName}`);
+                localStorage.removeItem(`nba_betHistory_${userName}`);
+                localStorage.removeItem(`nba_history_${userName}`);
+
                 localStorage.removeItem('nba_user_name');
                 location.reload();
             } catch (e) { console.error(e); hideOverlay(); }
