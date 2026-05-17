@@ -731,11 +731,11 @@
             list.innerHTML = liveScheduleData.map(game => {
                 const s = selections[game.id] || {};
                 
-                // Helper formatting calculations for American or Implied % views
+                // Helper formatting calculations for American or Implied % views (Rounded with no decimal places)
                 const formatOdds = (o) => {
                     if (oddsFormat === 'percent') {
                         const prob = o > 0 ? (100 / (o + 100)) * 100 : (Math.abs(o) / (Math.abs(o) + 100)) * 100;
-                        return prob.toFixed(1) + '%';
+                        return Math.round(prob) + '%';
                     }
                     return (o > 0 ? '+' : '') + o;
                 };
@@ -942,6 +942,7 @@
             list.innerHTML = html;
         }
 
+        // --- RENDER DYNAMIC SCHEDULE ---
         function renderSchedule() {
             const today = new Date();
             const todayDateStr = formatGameDate(today);
