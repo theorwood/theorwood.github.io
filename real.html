@@ -319,16 +319,15 @@
         <section id="section-bets" class="tab-content hidden space-y-8">
             <div class="glass-card rounded-2xl p-4 md:p-5 border border-slate-800 relative">
                 <div class="flex justify-between items-center mb-2">
-                    <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest">This Week</h3>
+                    <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest">Balance Performance</h3>
                 </div>
                 <div id="chart-wrapper" class="chart-container relative"></div>
                 
                 <!-- Dynamic Hover/Touch Tooltip container -->
                 <div id="chart-tooltip" class="absolute hidden bg-slate-950/95 backdrop-blur border border-blue-500 text-white font-bold text-[11px] px-3 py-2 rounded-xl shadow-2xl pointer-events-none transition-all duration-100 z-50"></div>
 
-                <div class="flex justify-between mt-1.5 text-[9px] font-bold text-slate-600 uppercase tracking-tighter ml-[50px]">
-                    <span>May 10</span><span>May 11</span><span>May 12</span><span>May 13</span><span>May 14</span><span>May 15</span><span>Today</span>
-                </div>
+                <!-- Dynamic Labels Row -->
+                <div id="chart-labels" class="flex justify-between mt-1.5 text-[9px] font-bold text-slate-600 uppercase tracking-tighter ml-[50px] mr-2"></div>
             </div>
             <div>
                 <div class="flex justify-between items-center mb-6 gap-4">
@@ -380,7 +379,7 @@
         let balance = 25.00;
         let bets = [];
         let betHistory = []; 
-        let balanceHistory = [25, 25, 25, 25, 25, 25, 25];
+        let balanceHistory = [{ time: Date.now(), val: 25.00 }]; // Dynamic transaction snapshots since creation
         let bustCount = 0; // Tracks player bankruptcies
         let userName = localStorage.getItem('nba_user_name') || 'Guest';
         let selections = {};
@@ -394,7 +393,7 @@
             balance = 25.00;
             bets = [];
             betHistory = []; 
-            balanceHistory = [25, 25, 25, 25, 25, 25, 25];
+            balanceHistory = [{ time: Date.now(), val: 25.00 }];
             bustCount = 0;
             selections = {};
         }
@@ -412,8 +411,28 @@
             } catch(e) { betHistory = []; }
             
             try {
-                balanceHistory = JSON.parse(localStorage.getItem(`nba_history_${name}`)) || [25, 25, 25, 25, 25, 25, 25];
-            } catch(e) { balanceHistory = [25, 25, 25, 25, 25, 25, 25]; }
+                const parsedHist = JSON.parse(localStorage.getItem(`nba_history_${name}`));
+                if (parsedHist) {
+                    balanceHistory = migrateHistoryFormat(parsedHist);
+                } else {
+                    balanceHistory = [{ time: Date.now(), val: 25.00 }];
+                }
+            } catch(e) { balanceHistory = [{ time: Date.now(), val: 25.00 }]; }
+        }
+
+        // Migrates old hardcoded number arrays to new date-anchored objects safely
+        function migrateHistoryFormat(hist) {
+            if (Array.isArray(hist)) {
+                if (typeof hist[0] === 'number') {
+                    const now = Date.now();
+                    return hist.map((val, idx) => {
+                        const time = now - (hist.length - 1 - idx) * 24 * 60 * 60 * 1000;
+                        return { time, val };
+                    });
+                }
+                return hist;
+            }
+            return [{ time: Date.now(), val: 25.00 }];
         }
 
         // --- TEAM NAME TO CSS CLASS UTILITY ---
@@ -430,6 +449,18 @@
             localStorage.setItem(`nba_bets_${name}`, JSON.stringify(bets));
             localStorage.setItem(`nba_betHistory_${name}`, JSON.stringify(betHistory));
             localStorage.setItem(`nba_history_${name}`, JSON.stringify(balanceHistory));
+        }
+
+        // Record a balance snapshot milestone when balance fluctuates
+        function recordBalanceSnapshot() {
+            const now = Date.now();
+            balanceHistory.push({ time: now, val: balance });
+            // Cap history rolling window to 25 items to keep trend visualization pristine
+            if (balanceHistory.length > 25) {
+                balanceHistory.shift();
+            }
+            saveProfileToServer();
+            renderBalanceChart();
         }
 
         // --- DATE RESOLVER & STANDARDIZER ---
@@ -592,21 +623,26 @@
                     bustCount = parseInt(profile.bustCount) || 0; // Retrieve persistent bankruptcies
                     
                     if (profile.bets) {
-                        bets = typeof profile.bets === 'string' ? JSON.parse(profile.bets) : profile.bets;
+                        try { bets = typeof profile.bets === 'string' ? JSON.parse(profile.bets) : profile.bets; } catch(e) { bets = []; }
                     } else {
                         bets = [];
                     }
                     
                     if (profile.betHistory) {
-                        betHistory = typeof profile.betHistory === 'string' ? JSON.parse(profile.betHistory) : profile.betHistory;
+                        try { betHistory = typeof profile.betHistory === 'string' ? JSON.parse(profile.betHistory) : profile.betHistory; } catch(e) { betHistory = []; }
                     } else {
                         betHistory = [];
                     }
                     
                     if (profile.history) {
-                        balanceHistory = typeof profile.history === 'string' ? JSON.parse(profile.history) : profile.history;
+                        try {
+                            const rawHist = typeof profile.history === 'string' ? JSON.parse(profile.history) : profile.history;
+                            balanceHistory = migrateHistoryFormat(rawHist);
+                        } catch(e) {
+                            balanceHistory = [{ time: Date.now(), val: 25.00 }];
+                        }
                     } else {
-                        balanceHistory = [25, 25, 25, 25, 25, 25, 25];
+                        balanceHistory = [{ time: Date.now(), val: 25.00 }];
                     }
                     saveLocalState(name);
                 } else {
@@ -701,19 +737,24 @@
             const user = leaderboardData.find(u => u.name === name);
             if (!user) return;
             
-            let hist = [25, 25, 25, 25, 25, 25, 25];
+            let hist = [{ time: Date.now(), val: 25.00 }];
             if (user.history) {
-                hist = typeof user.history === 'string' ? JSON.parse(user.history) : user.history;
+                try {
+                    const rawHist = typeof user.history === 'string' ? JSON.parse(user.history) : user.history;
+                    hist = migrateHistoryFormat(rawHist);
+                } catch(e) {
+                    hist = [{ time: Date.now(), val: 25.00 }];
+                }
             }
             
             let bHistory = [];
             if (user.betHistory) {
-                bHistory = typeof user.betHistory === 'string' ? JSON.parse(user.betHistory) : user.betHistory;
+                try { bHistory = typeof user.betHistory === 'string' ? JSON.parse(user.betHistory) : user.betHistory; } catch(e) { bHistory = []; }
             }
             
             let activeBets = [];
             if (user.bets) {
-                activeBets = typeof user.bets === 'string' ? JSON.parse(user.bets) : user.bets;
+                try { activeBets = typeof user.bets === 'string' ? JSON.parse(user.bets) : user.bets; } catch(e) { activeBets = []; }
             }
 
             const bCount = parseInt(user.bustCount) || 0;
@@ -1017,21 +1058,25 @@
             checkBankruptcy();
 
             bets.push({ gameId, type: sel.type, team: sel.team, line: sel.line, amount: amt, originalOdds: sel.odds, time: new Date().toISOString() });
-            updateBalanceUI(); await saveProfileToServer(btn);
+            updateBalanceUI(); 
+            recordBalanceSnapshot();
+            await saveProfileToServer(btn);
             delete selections[gameId]; renderActiveBets(); renderBettingLines();
         };
 
         window.cashOutBet = async function(idx, value, btn) {
             if (!confirm(`Confirm Cash Out for $${value.toFixed(2)}?`)) return;
             balance += value; betHistory.unshift({ ...bets[idx], payout: value, closed: new Date().toISOString() });
-            bets.splice(idx, 1); updateBalanceUI(); await saveProfileToServer(btn);
+            bets.splice(idx, 1); 
+            updateBalanceUI(); 
+            recordBalanceSnapshot();
+            await saveProfileToServer(btn);
             renderActiveBets(); renderBetHistory(); renderBettingLines();
         };
 
         // --- UI HELPERS ---
         function updateBalanceUI() {
             document.getElementById('user-balance').innerText = `$${balance.toFixed(2)}`;
-            balanceHistory[6] = balance;
             renderBalanceChart();
         }
         function updateUserNameUI() {
@@ -1310,14 +1355,18 @@
         }
 
         // --- HARDWARE TOOLTIP OVERLAY GRAPH LOGIC (TOUCH COMPATIBLE) ---
-        window.showChartTooltip = function(e, val, dayIdx) {
+        window.showChartTooltip = function(e, val, timestamp) {
             const tooltip = document.getElementById('chart-tooltip');
             if (!tooltip) return;
-            const days = ['May 10', 'May 11', 'May 12', 'May 13', 'May 14', 'May 15', 'Today'];
-            const dayLabel = days[dayIdx] || '';
+            const formattedTime = new Date(timestamp).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
             
             tooltip.innerHTML = `
-                <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">${dayLabel}</div>
+                <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">${formattedTime}</div>
                 <div class="text-xs text-blue-400 font-black">$${val.toFixed(2)}</div>
             `;
             tooltip.classList.remove('hidden');
@@ -1336,7 +1385,7 @@
             }
             
             const x = clientX - rect.left;
-            const y = clientY - top;
+            const y = clientY - rect.top;
             
             tooltip.style.left = `${x}px`;
             tooltip.style.top = `${y - 48}px`; // Shorter graph coordinates offset
@@ -1413,13 +1462,18 @@
 
         function renderBalanceChart() {
             const wrapper = document.getElementById('chart-wrapper'); if (!wrapper) return;
+            const labelContainer = document.getElementById('chart-labels');
             const w = wrapper.clientWidth; const h = 180; const padX = 50; const padY = 24;
-            const maxVal = Math.max(...balanceHistory, 40) * 1.1;
             
-            const points = balanceHistory.map((val, i) => {
-                const px = padX + (i * ((w - padX) / 6));
-                const py = h - padY - ((val / maxVal) * (h - 2 * padY));
-                return {x: px, y: py, val: val};
+            // Clean dynamic structures
+            let pointsData = Array.isArray(balanceHistory) ? balanceHistory : [{ time: Date.now(), val: 25.00 }];
+            
+            const maxVal = Math.max(...pointsData.map(p => p.val), 40) * 1.1;
+            
+            const points = pointsData.map((p, i) => {
+                const px = pointsData.length === 1 ? (w + padX) / 2 : padX + (i * ((w - padX) / (pointsData.length - 1)));
+                const py = h - padY - ((p.val / maxVal) * (h - 2 * padY));
+                return { x: px, y: py, val: p.val, time: p.time };
             });
 
             const polyPoints = points.map(p => `${p.x},${p.y}`).join(' ');
@@ -1432,16 +1486,21 @@
                 svg += `<line x1="${padX}" y1="${yPos}" x2="${w}" y2="${yPos}" stroke="#334155" stroke-dasharray="4" />`;
             }
 
-            svg += `<path d="M ${padX},${h-padY} L ${polyPoints} L ${w},${h-padY} Z" fill="#3b82f6" opacity="0.1" />`;
-            svg += `<polyline fill="none" stroke="#3b82f6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" points="${polyPoints}" />`;
+            if (points.length > 1) {
+                svg += `<path d="M ${padX},${h-padY} L ${polyPoints} L ${w},${h-padY} Z" fill="#3b82f6" opacity="0.1" />`;
+                svg += `<polyline fill="none" stroke="#3b82f6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" points="${polyPoints}" />`;
+            } else if (points.length === 1) {
+                // If there's only 1 point, draw a clean flat line representing starting balance
+                svg += `<line x1="${padX}" y1="${points[0].y}" x2="${w}" y2="${points[0].y}" stroke="#3b82f6" stroke-width="3" stroke-dasharray="5 5" opacity="0.6" />`;
+            }
             
             points.forEach((p, idx) => {
                 svg += `
                 <g class="cursor-pointer" 
-                   onmouseenter="showChartTooltip(event, ${p.val}, ${idx})"
-                   onmousemove="showChartTooltip(event, ${p.val}, ${idx})"
+                   onmouseenter="showChartTooltip(event, ${p.val}, ${p.time})"
+                   onmousemove="showChartTooltip(event, ${p.val}, ${p.time})"
                    onmouseleave="hideChartTooltip()"
-                   ontouchstart="showChartTooltip(event, ${p.val}, ${idx})"
+                   ontouchstart="showChartTooltip(event, ${p.val}, ${p.time})"
                    ontouchend="hideChartTooltip()">
                     <!-- Expanded touch & mouse tap bounding targets -->
                     <circle cx="${p.x}" cy="${p.y}" r="22" fill="transparent" class="pointer-events-auto" />
@@ -1451,17 +1510,42 @@
             });
             svg += `</svg>`;
             wrapper.innerHTML = svg;
+
+            // Render matching time labels dynamically
+            if (labelContainer) {
+                labelContainer.innerHTML = pointsData.map(p => {
+                    const formattedDate = new Date(p.time).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                    return `<span>${formattedDate}</span>`;
+                }).join('');
+            }
         }
 
         // --- RENDER MINI CHART GRAPH ---
         function renderMiniChart(id, hist) {
             const wrapper = document.getElementById(id); if (!wrapper) return;
             const w = wrapper.clientWidth; const h = wrapper.clientHeight;
-            const pad = 20; const maxVal = Math.max(...hist, 30) * 1.1;
-            const points = hist.map((val, i) => ({x: i * (w / 6), y: h - pad - ((val / maxVal) * (h - 2 * pad)), val: val}));
-            const polyPoints = points.map(p => `${p.x},${p.y}`).join(' ');
+            const pad = 20;
+            
+            let pointsData = Array.isArray(hist) ? migrateHistoryFormat(hist) : [{ time: Date.now(), val: 25.00 }];
+            
+            const maxVal = Math.max(...pointsData.map(p => p.val), 30) * 1.1;
+            const points = pointsData.map((p, i) => {
+                const x = pointsData.length === 1 ? w / 2 : i * (w / (pointsData.length - 1));
+                const y = h - pad - ((p.val / maxVal) * (h - 2 * pad));
+                return { x, y, val: p.val };
+            });
+
             let svg = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}">`;
-            svg += `<polyline fill="none" stroke="#3b82f6" stroke-width="2" points="${polyPoints}" />`;
+            if (points.length > 1) {
+                const polyPoints = points.map(p => `${p.x},${p.y}`).join(' ');
+                svg += `<polyline fill="none" stroke="#3b82f6" stroke-width="2" points="${polyPoints}" />`;
+            } else if (points.length === 1) {
+                svg += `<line x1="0" y1="${points[0].y}" x2="${w}" y2="${points[0].y}" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.5" />`;
+            }
+
             points.forEach(p => {
                 svg += `<circle cx="${p.x}" cy="${p.y}" r="2" fill="#3b82f6" />`;
                 svg += `<text x="${p.x}" y="${p.y - 6}" fill="#94a3b8" font-size="8" font-weight="700" text-anchor="middle">$${p.val.toFixed(0)}</text>`;
