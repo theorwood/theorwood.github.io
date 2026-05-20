@@ -3,1314 +3,1303 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Theo's NBA Predictor & Streak Challenge</title>
+    <title>Theo's Picks</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;600;700;800&display=swap');
-        
+        :root {
+            --bg: #080c14;
+            --surface: #0f1825;
+            --surface2: #162033;
+            --border: rgba(255,255,255,0.07);
+            --border-bright: rgba(255,255,255,0.15);
+            --text: #e8f0fe;
+            --muted: #5a7090;
+            --accent: #2563eb;
+            --accent2: #3b82f6;
+            --green: #10b981;
+            --gold: #f59e0b;
+            --red: #ef4444;
+        }
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0b0f19;
-            color: #f8fafc;
+            font-family: 'Barlow', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
         }
-
-        .glass-card {
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+        h1, h2, h3, .label, .stat-num {
+            font-family: 'Barlow Condensed', sans-serif;
         }
-
-        .live-pulse {
-            width: 8px;
-            height: 8px;
-            background-color: #ef4444;
+        .glass {
+            background: var(--surface);
+            border: 1px solid var(--border);
+        }
+        .glass2 {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+        }
+        /* NAV */
+        .nav-btn.active {
+            color: white;
+            border-bottom: 2px solid var(--accent2);
+        }
+        /* GAME CARD */
+        .pick-btn {
+            transition: all 0.15s ease;
+            border: 2px solid transparent;
+        }
+        .pick-btn:hover { border-color: var(--border-bright); background: var(--surface2); }
+        .pick-btn.selected-home { border-color: #10b981 !important; background: rgba(16,185,129,0.12) !important; }
+        .pick-btn.selected-away { border-color: #3b82f6 !important; background: rgba(59,130,246,0.12) !important; }
+        /* VOTE BAR */
+        .vote-bar-track { height: 6px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; }
+        .vote-bar-fill { height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+        /* STREAK BADGE */
+        .streak-badge {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+        }
+        /* WAGER PANEL */
+        .wager-panel {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        .wager-panel.open { max-height: 200px; }
+        /* PULSE */
+        .live-dot {
+            width: 7px; height: 7px;
+            background: #ef4444;
             border-radius: 50%;
             display: inline-block;
-            box-shadow: 0 0 0 rgba(239, 68, 68, 0.4);
-            animation: pulse 2s infinite;
+            animation: pulse 1.8s infinite;
         }
-
         @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+            100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
         }
-
-        .nav-btn.active {
-            border-bottom: 3px solid #3b82f6;
-            color: #3b82f6;
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+        /* MODALS */
+        .modal-bg { background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); }
+        /* LOADING */
+        .spin { animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        /* POINTS BADGE */
+        .points-pill {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 11px;
             font-weight: 800;
+            letter-spacing: 0.05em;
+            padding: 2px 7px;
+            border-radius: 999px;
         }
+        /* TEAM COLORS */
+        .tc-hawks{color:#E31837} .tc-celtics{color:#007A33} .tc-nets{color:#AAAAAA}
+        .tc-hornets{color:#00788C} .tc-bulls{color:#CE1141} .tc-cavaliers{color:#FDBB30}
+        .tc-mavericks{color:#00538C} .tc-nuggets{color:#FEC524} .tc-pistons{color:#C8102E}
+        .tc-warriors{color:#FFC72C} .tc-rockets{color:#CE1141} .tc-pacers{color:#FDBB30}
+        .tc-clippers{color:#C8102E} .tc-lakers{color:#FDB927} .tc-grizzlies{color:#5D76A9}
+        .tc-heat{color:#F9A01B} .tc-bucks{color:#00471B} .tc-timberwolves{color:#78BE20}
+        .tc-pelicans{color:#C8102E} .tc-knicks{color:#F58426} .tc-thunder{color:#007AC1}
+        .tc-magic{color:#0077C0} .tc-76ers{color:#ED174C} .tc-suns{color:#E56020}
+        .tc-blazers{color:#E03A3E} .tc-kings{color:#5A2D81} .tc-spurs{color:#C4CED4}
+        .tc-raptors{color:#CE1141} .tc-jazz{color:#F9A01B} .tc-wizards{color:#E31837}
+        /* BG variants */
+        .bg-hawks{background:#E31837} .bg-celtics{background:#007A33} .bg-nets{background:#888}
+        .bg-cavaliers{background:#860038} .bg-pistons{background:#C8102E} .bg-thunder{background:#007AC1}
+        .bg-warriors{background:#FFC72C} .bg-lakers{background:#552583} .bg-heat{background:#98002E}
+        .bg-knicks{background:#006BB6} .bg-timberwolves{background:#0C2340} .bg-spurs{background:#555}
 
-        /* --- 30 NBA Franchise Color Palettes --- */
-        .color-hawks { color: #E31837; }
-        .color-celtics { color: #007A33; }
-        .color-nets { color: #FFFFFF; }
-        .color-hornets { color: #00788C; }
-        .color-bulls { color: #CE1141; }
-        .color-cavaliers { color: #FDBB30; }
-        .color-mavericks { color: #00538C; }
-        .color-nuggets { color: #FEC524; }
-        .color-pistons { color: #C8102E; }
-        .color-warriors { color: #FFC72C; }
-        .color-rockets { color: #CE1141; }
-        .color-pacers { color: #FDBB30; }
-        .color-clippers { color: #C8102E; }
-        .color-lakers { color: #FDB927; }
-        .color-grizzlies { color: #5D76A9; }
-        .color-heat { color: #F9A01B; }
-        .color-bucks { color: #EEE1C6; }
-        .color-timberwolves { color: #78BE20; }
-        .color-pelicans { color: #C8102E; }
-        .color-knicks { color: #F58426; }
-        .color-thunder { color: #F59115; }
-        .color-magic { color: #0077C0; }
-        .color-76ers { color: #ED174C; }
-        .color-suns { color: #E56020; }
-        .color-blazers { color: #E03A3E; }
-        .color-kings { color: #5A2D81; }
-        .color-spurs { color: #C4CED4; }
-        .color-raptors { color: #CE1141; }
-        .color-jazz { color: #F9A01B; }
-        .color-wizards { color: #E31837; }
+        /* CHART */
+        #points-chart-wrapper { height: 140px; width: 100%; }
 
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+        .info-btn {
+            position: absolute; top: 10px; right: 10px;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            background: rgba(59,130,246,0.2);
+            border: 1px solid rgba(59,130,246,0.4);
+            font-size: 11px; font-weight: 800;
+            color: #93c5fd;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            transition: background 0.15s;
+            z-index: 10;
         }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        .info-btn:hover { background: rgba(59,130,246,0.4); }
     </style>
 </head>
-<body class="min-h-screen pb-16 bg-[#090d16]">
+<body class="pb-16">
 
-    <!-- Header -->
-    <header class="p-4 md:p-6 bg-[#0f172a]/90 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md">
-        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3">
-                <div class="bg-gradient-to-tr from-blue-600 to-indigo-600 p-2.5 rounded-xl shadow-lg">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="text-xl md:text-2xl font-black tracking-tighter text-white">THEO'S <span class="text-blue-500">STREAK CHALLENGE</span></h1>
-                    <div class="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest" id="current-date-display">Updating Date...</div>
-                </div>
+<!-- HEADER -->
+<header class="sticky top-0 z-50 border-b" style="background:rgba(8,12,20,0.97);border-color:var(--border);backdrop-filter:blur(12px)">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+            <div class="rounded-lg p-1.5" style="background:var(--accent)">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
             </div>
-            
-            <div class="flex items-center gap-2 md:gap-4 w-full md:w-auto justify-between md:justify-end">
-                <!-- User Profile Session info -->
-                <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-full shadow-md flex-1 md:flex-none">
-                    <div onclick="showProfileModal()" class="flex items-center gap-3 cursor-pointer hover:text-blue-400 transition-colors">
-                        <div class="bg-blue-500/10 p-1.5 rounded-full shrink-0">
-                            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                        </div>
-                        <div>
-                            <span class="text-slate-500 text-[8px] font-extrabold uppercase block leading-none mb-0.5">Player</span>
-                            <span class="text-white font-extrabold text-xs truncate max-w-[90px] sm:max-w-none" id="user-name-display">Guest</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Points Balance display -->
-                <div class="bg-slate-900 border border-slate-800 px-4 py-2 rounded-full flex items-center gap-3 shadow-md flex-1 md:flex-none">
-                    <div class="bg-emerald-500/10 p-1.5 rounded-full shrink-0">
-                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    </div>
-                    <div>
-                        <span class="text-slate-500 text-[8px] font-extrabold uppercase block leading-none mb-0.5">Points</span>
-                        <span class="text-white font-black text-xs md:text-sm" id="user-points">0 PTS</span>
-                    </div>
-                </div>
-
-                <!-- Active Streak display -->
-                <div class="bg-slate-900 border border-slate-800 px-4 py-2 rounded-full flex items-center gap-3 shadow-md flex-1 md:flex-none">
-                    <div class="bg-amber-500/10 p-1.5 rounded-full shrink-0">
-                        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                    </div>
-                    <div>
-                        <span class="text-slate-500 text-[8px] font-extrabold uppercase block leading-none mb-0.5">Streak</span>
-                        <span class="text-white font-black text-xs md:text-sm" id="user-streak">0 WINS</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Global Modals (Profile Sync, Info Voters & Wage Options) -->
-    <div id="custom-modal" class="hidden fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="glass-card w-full max-w-sm md:max-w-md rounded-2xl p-6 border border-slate-800 space-y-5 max-h-[90vh] overflow-y-auto no-scrollbar relative">
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 p-1.5 rounded-full transition-colors" title="Close">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-            <div id="modal-content"></div>
-            <div class="flex gap-3 pt-2" id="modal-actions">
-                <button onclick="closeModal()" class="flex-1 py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-wider text-slate-400">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Live Sync Alert Layer -->
-    <div id="sync-overlay" class="hidden fixed inset-0 z-[110] bg-[#0b0f19]/90 backdrop-blur-md flex items-center justify-center">
-        <div class="text-center space-y-4">
-            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-            <h3 class="text-lg font-bold tracking-tight text-white" id="sync-message">Syncing Database...</h3>
-        </div>
-    </div>
-
-    <main class="max-w-6xl mx-auto p-4 md:p-6 space-y-8">
-        <!-- Navigation Menu Tabs (Modeled directly after original real.html) -->
-        <nav class="flex justify-between md:justify-start gap-4 md:gap-8 border-b border-slate-800 overflow-x-auto no-scrollbar whitespace-nowrap">
-            <button onclick="switchTab('today')" id="tab-today" class="nav-btn active pb-4 font-semibold transition-all text-xs md:text-base px-1">Schedule</button>
-            <button onclick="switchTab('mypicks')" id="tab-mypicks" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1">My Picks</button>
-            <button onclick="switchTab('leaderboard')" id="tab-leaderboard" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1">Leaderboard</button>
-            <button onclick="switchTab('past')" id="tab-past" class="nav-btn pb-4 font-semibold transition-all text-xs md:text-base px-1">Recent Results</button>
-        </nav>
-
-        <!-- Prediction Schedule Section -->
-        <section id="section-today" class="tab-content space-y-6">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-800/80">
-                <div>
-                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                        <span class="live-pulse"></span>
-                        NBA Playoff Schedule
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-0.5">Tap on any team to pick them as the winner. Tap again to wager points from your balance!</p>
-                </div>
-            </div>
-
-            <!-- "Games for Today" Section (Modeled exactly on original uploaded layout structure) -->
-            <div id="today-games-section" class="space-y-4 hidden">
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="live-pulse"></span>
-                    <h2 class="text-lg font-bold text-white">Games for Today</h2>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="today-schedule-list"></div>
-            </div>
-
-            <!-- "Playoff Schedule" Section -->
-            <div id="upcoming-games-section" class="space-y-4">
-                <h2 class="text-lg font-bold text-white" id="upcoming-section-header">Playoff Schedule</h2>
-                <div class="space-y-6" id="upcoming-schedule-list">
-                    <div class="p-12 text-center">
-                        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto mb-2"></div>
-                        <p class="text-slate-400 text-sm font-semibold">Loading live matchups from ESPN scoreboard...</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- My Picks & History Section -->
-        <section id="section-mypicks" class="tab-content hidden space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Current Active Picks and Wagers -->
-                <div class="glass-card rounded-2xl p-5 border border-slate-800">
-                    <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Pending Predictions</h3>
-                    <div id="active-picks-list" class="space-y-3">
-                        <p class="text-slate-500 text-xs italic">No pending predictions. Tap on teams inside the Schedule page to pick!</p>
-                    </div>
-                </div>
-
-                <!-- Prediction History Logs -->
-                <div class="glass-card rounded-2xl p-5 border border-slate-800">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest">Prediction History</h3>
-                        <span class="text-[10px] bg-slate-800 px-2.5 py-1 rounded text-slate-300 font-bold" id="total-accuracy-label">Accuracy: 0%</span>
-                    </div>
-                    <div id="picks-history-list" class="space-y-3">
-                        <p class="text-slate-500 text-xs italic">Graded matches will be recorded here automatically upon final score confirmation.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Real-Time Leaderboards -->
-        <section id="section-leaderboard" class="tab-content hidden space-y-6">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h2 class="text-xl font-bold text-white">Theo's Playoff Leaderboard</h2>
-                    <p class="text-xs text-slate-400">Rankings of community challenge participants by points balance</p>
-                </div>
-                <button onclick="fetchLeaderboard()" class="text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-blue-300 transition-colors bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20">Sync Standings</button>
-            </div>
-            
-            <div class="glass-card rounded-2xl overflow-hidden border border-slate-800">
-                <div class="grid grid-cols-12 bg-slate-900/80 p-4 border-b border-slate-800 text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                    <div class="col-span-1">Rank</div>
-                    <div class="col-span-5">Player</div>
-                    <div class="col-span-3 text-center">Active Streak</div>
-                    <div class="col-span-3 text-right">Points Balance</div>
-                </div>
-                <div id="leaderboard-list" class="divide-y divide-slate-800/60">
-                    <!-- Loaded dynamically from Firestore -->
-                </div>
-            </div>
-        </section>
-
-        <!-- Recent Playoff Results (Modeled directly on uploaded file layout, now using Live ESPN Scores) -->
-        <section id="section-past" class="tab-content hidden space-y-6">
             <div>
-                <h2 class="text-xl font-bold text-white">Recent Playoff Results</h2>
-                <p class="text-xs text-slate-400 mt-1">Confirmed final match scores retrieved live from ESPN's Open Sports API</p>
+                <div class="text-white font-black text-lg tracking-tight" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:-0.01em">THEO'S <span style="color:var(--accent2)">PICKS</span></div>
+                <div class="text-xs font-medium" style="color:var(--muted);font-size:9px;letter-spacing:0.08em;text-transform:uppercase" id="header-date">NBA Playoffs 2025</div>
             </div>
-            <div class="space-y-6" id="past-games-list">
-                <!-- Dynamically resolved completed games render here -->
+        </div>
+        <div class="flex items-center gap-2">
+            <!-- Points -->
+            <div class="flex items-center gap-2 rounded-full px-3 py-1.5 cursor-pointer" style="background:var(--surface);border:1px solid var(--border-bright)" onclick="showProfileModal()">
+                <div class="rounded-full p-1" style="background:rgba(245,158,11,0.15)">
+                    <svg class="w-3.5 h-3.5" style="color:var(--gold)" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a5 5 0 100 10A5 5 0 0012 2zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z"/></svg>
+                </div>
+                <div>
+                    <div class="text-white font-semibold text-xs leading-none" id="user-name-display">Guest</div>
+                    <div class="text-xs leading-none mt-0.5" style="color:var(--muted);font-size:9px">tap to sign in</div>
+                </div>
             </div>
-        </section>
-    </main>
+            <div class="flex items-center gap-1.5 rounded-full px-3 py-1.5" style="background:var(--surface);border:1px solid var(--border-bright)">
+                <svg class="w-3.5 h-3.5" style="color:var(--gold)" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2l2.39 4.84L18 7.63l-4 3.9.94 5.47L10 14.27l-4.94 2.73L6 11.53 2 7.63l5.61-.79L10 2z"/></svg>
+                <span class="font-black text-white text-sm" style="font-family:'Barlow Condensed',sans-serif" id="user-points-display">0</span>
+                <span class="text-xs font-semibold" style="color:var(--muted);font-size:9px;text-transform:uppercase">pts</span>
+            </div>
+            <div id="delete-profile-btn" class="hidden rounded-full p-1.5 cursor-pointer transition-all" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2)" onclick="showDeleteModal()">
+                <svg class="w-3.5 h-3.5" style="color:var(--red)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </div>
+        </div>
+    </div>
+    <!-- Streak indicator -->
+    <div id="streak-banner" class="hidden max-w-5xl mx-auto px-4 pb-2">
+        <div class="rounded-lg px-3 py-1.5 flex items-center gap-2 text-xs font-bold" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25)">
+            <span style="color:var(--gold)">🔥</span>
+            <span id="streak-banner-text" style="color:var(--gold);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800"></span>
+        </div>
+    </div>
+</header>
 
-    <!-- Firebase Scripts -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, doc, setDoc, getDoc, getDocs, collection, query, onSnapshot, updateDoc, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+<!-- MODALS -->
+<div id="custom-modal" class="hidden fixed inset-0 z-[100] modal-bg flex items-center justify-center p-4">
+    <div class="w-full max-w-sm rounded-2xl p-6 relative" style="background:var(--surface);border:1px solid var(--border-bright);max-height:90vh;overflow-y:auto">
+        <button id="modal-close-icon" onclick="closeModal()" class="hidden absolute top-4 right-4 rounded-full p-1.5 transition-colors" style="background:var(--surface2);color:var(--muted)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        <div id="modal-content"></div>
+        <div class="flex gap-3 mt-5" id="modal-actions">
+            <button onclick="closeModal()" class="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-widest" style="background:var(--surface2);color:var(--muted)">Cancel</button>
+            <button id="modal-confirm-btn" class="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-widest text-white" style="background:var(--accent)">Confirm</button>
+        </div>
+    </div>
+</div>
 
-        // --- GLOBAL ENVIRONMENT FALLBACKS ---
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : {
-                apiKey: "",
-                authDomain: "real-16bde.firebaseapp.com",
-                databaseURL: "https://real-16bde-default-rtdb.firebaseio.com",
-                projectId: "real-16bde",
-                storageBucket: "real-16bde.appspot.com",
-                messagingSenderId: "565576882173",
-                appId: "1:565576882173:web:5ee105ffdf1fdf3b050cf9"
-            };
+<!-- SYNC OVERLAY -->
+<div id="sync-overlay" class="hidden fixed inset-0 z-[110] modal-bg flex items-center justify-center">
+    <div class="text-center space-y-3">
+        <div class="spin w-10 h-10 rounded-full border-2 mx-auto" style="border-color:var(--accent);border-top-color:transparent"></div>
+        <div class="font-bold text-white text-sm" style="font-family:'Barlow Condensed',sans-serif" id="sync-message">Syncing...</div>
+    </div>
+</div>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-nba-streak';
+<!-- VOTERS MODAL -->
+<div id="voters-modal" class="hidden fixed inset-0 z-[100] modal-bg flex items-center justify-center p-4">
+    <div class="w-full max-w-xs rounded-2xl p-5 relative" style="background:var(--surface);border:1px solid var(--border-bright)">
+        <button onclick="closeVotersModal()" class="absolute top-4 right-4 rounded-full p-1.5" style="background:var(--surface2);color:var(--muted)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        <div id="voters-modal-content"></div>
+    </div>
+</div>
 
-        // --- APPLICATION STATE ---
-        let pointsBalance = 0; // Players start with 0 points
-        let activeStreak = 0;
-        let userName = localStorage.getItem('nba_streak_user') || 'Guest';
-        let userPicks = {}; // GameId -> { pick: 'home'/'away', wager: Number, predictorOdds: Number }
-        let pickHistory = []; // list of graded completed picks
-        let liveScheduleData = []; // Combined live data (Upcoming + Completed)
-        let globalVotersData = {}; // GameId -> { homeUsers: [], awayUsers: [] }
-        let leaderboardData = [];
-        let authUser = null;
+<!-- MAIN -->
+<main class="max-w-5xl mx-auto px-4 pt-5 space-y-6">
+    <nav class="flex gap-6 border-b pb-0" style="border-color:var(--border)">
+        <button onclick="switchTab('schedule')" id="tab-schedule" class="nav-btn active pb-3 font-semibold text-sm transition-all" style="color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:15px;letter-spacing:0.04em;text-transform:uppercase">Schedule</button>
+        <button onclick="switchTab('picks')" id="tab-picks" class="nav-btn pb-3 font-semibold text-sm transition-all" style="color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:15px;letter-spacing:0.04em;text-transform:uppercase">My Picks</button>
+        <button onclick="switchTab('leaderboard')" id="tab-leaderboard" class="nav-btn pb-3 font-semibold text-sm transition-all" style="color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:15px;letter-spacing:0.04em;text-transform:uppercase">Leaderboard</button>
+        <button onclick="switchTab('results')" id="tab-results" class="nav-btn pb-3 font-semibold text-sm transition-all" style="color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:15px;letter-spacing:0.04em;text-transform:uppercase">Results</button>
+    </nav>
 
-        // --- COLOR MAPS ---
-        const getTeamClass = (name) => {
-            if (!name) return 'slate-400';
-            const words = name.trim().split(' ');
-            return words[words.length - 1].toLowerCase();
-        };
+    <!-- SCHEDULE TAB -->
+    <section id="section-schedule" class="tab-content active space-y-6">
+        <div id="today-section" class="hidden space-y-3">
+            <div class="flex items-center gap-2">
+                <span class="live-dot"></span>
+                <span class="font-black text-white" style="font-family:'Barlow Condensed',sans-serif;font-size:18px;letter-spacing:0.02em" id="today-title">TODAY'S GAMES</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="today-cards"></div>
+        </div>
+        <div id="upcoming-section" class="space-y-6">
+            <div id="upcoming-cards"></div>
+        </div>
+    </section>
 
-        // --- INITIAL AUTHENTICATION (RULE 3) ---
-        const initAuthentication = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                try {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } catch(e) {
-                    await signInAnonymously(auth);
-                }
-            } else {
-                await signInAnonymously(auth);
-            }
-        };
-
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                authUser = user;
-                await loadUserProfile();
-                await syncGlobalPredictionsListener();
-                await fetchLeaderboard();
-            }
-        });
-
-        // --- USER PROFILE STORAGE MANAGEMENT (RULE 1) ---
-        async function loadUserProfile() {
-            if (!authUser) return;
-            const userDocRef = doc(db, 'artifacts', appId, 'users', authUser.uid, 'profile', 'state');
-            try {
-                const snap = await getDoc(userDocRef);
-                if (snap.exists()) {
-                    const data = snap.data();
-                    pointsBalance = data.pointsBalance !== undefined ? data.pointsBalance : 0;
-                    activeStreak = data.activeStreak || 0;
-                    userPicks = data.userPicks || {};
-                    pickHistory = data.pickHistory || [];
-                    if (data.userName) {
-                        userName = data.userName;
-                        localStorage.setItem('nba_streak_user', userName);
-                    }
-                } else {
-                    // Create default starting state with 0 points
-                    await setDoc(userDocRef, {
-                        userName: userName,
-                        pointsBalance: 0,
-                        activeStreak: 0,
-                        userPicks: {},
-                        pickHistory: []
-                    });
-                }
-            } catch (e) {
-                console.error("Error loading user state from Firestore:", e);
-            }
-            updateHeaderUI();
-            renderAllSections();
-        }
-
-        async function saveUserProfileToServer() {
-            if (!authUser) return;
-            const userDocRef = doc(db, 'artifacts', appId, 'users', authUser.uid, 'profile', 'state');
-            const publicDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', authUser.uid);
-            try {
-                const profilePayload = {
-                    userName,
-                    pointsBalance,
-                    activeStreak,
-                    userPicks,
-                    pickHistory
-                };
-                await setDoc(userDocRef, profilePayload, { merge: true });
-
-                // Write public score metrics to safe leaderboard path complying with RULE 1
-                await setDoc(publicDocRef, {
-                    name: userName,
-                    pointsBalance: pointsBalance,
-                    activeStreak: activeStreak,
-                    updatedAt: Date.now()
-                });
-            } catch (e) {
-                console.error("Error saving profile to Firestore:", e);
-            }
-            updateHeaderUI();
-        }
-
-        // --- SYNC GLOBAL MULTIPLAYER USER VOTES (RULE 1 & 2) ---
-        function syncGlobalPredictionsListener() {
-            const votesCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'votes');
-            
-            onSnapshot(votesCollectionRef, (snapshot) => {
-                globalVotersData = {};
-                snapshot.forEach((doc) => {
-                    globalVotersData[doc.id] = doc.data();
-                });
-                renderScheduleAndPredictors();
-            }, (error) => {
-                console.error("Error receiving public votes snapshot:", error);
-            });
-        }
-
-        // Register Vote on community cloud (RULE 1)
-        async function registerGlobalVoteOnServer(gameId, pickedSide, previousPickSide) {
-            if (!authUser) return;
-            const voteDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'votes', gameId.toString());
-            
-            try {
-                // Remove previous pick if existing
-                if (previousPickSide) {
-                    const removeField = previousPickSide === 'home' ? 'homeUsers' : 'awayUsers';
-                    await updateDoc(voteDocRef, {
-                        [removeField]: arrayRemove(userName)
-                    }).catch(() => {});
-                }
-
-                if (pickedSide) {
-                    // Add new pick
-                    const addField = pickedSide === 'home' ? 'homeUsers' : 'awayUsers';
-                    const currentSnap = await getDoc(voteDocRef);
-                    if (!currentSnap.exists()) {
-                        await setDoc(voteDocRef, {
-                            homeUsers: pickedSide === 'home' ? [userName] : [],
-                            awayUsers: pickedSide === 'away' ? [userName] : []
-                        });
-                    } else {
-                        await updateDoc(voteDocRef, {
-                            [addField]: arrayUnion(userName)
-                        });
-                    }
-                }
-            } catch(e) {
-                console.error("Error registering global community vote:", e);
-            }
-        }
-
-        // Migrates user's cast community votes from old name to new name
-        async function migrateVotesToNewName(oldName, newName) {
-            if (!oldName || oldName === newName) return;
-            for (const gameId in userPicks) {
-                const pick = userPicks[gameId];
-                if (pick && pick.pick) {
-                    const voteDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'votes', gameId.toString());
-                    const field = pick.pick === 'home' ? 'homeUsers' : 'awayUsers';
-                    try {
-                        await updateDoc(voteDocRef, {
-                            [field]: arrayRemove(oldName)
-                        });
-                        await updateDoc(voteDocRef, {
-                            [field]: arrayUnion(newName)
-                        });
-                    } catch (e) {
-                        console.error("Error migrating voter name:", e);
-                    }
-                }
-            }
-        }
-
-        // --- FETCH DYNAMIC TIME WINDOW FROM ESPN API ---
-        async function fetchESPNGameData() {
-            try {
-                // Query standard scoreboard first
-                const baseResp = await fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard");
-                const baseData = await baseResp.json();
-                
-                let realDate = new Date();
-                if (baseData.day && baseData.day.date) {
-                    realDate = new Date(baseData.day.date);
-                }
-
-                // Get completed results (past 4 days) & upcoming matches (next 10 days)
-                const startDate = new Date(realDate);
-                startDate.setDate(realDate.getDate() - 4);
-                const endDate = new Date(realDate);
-                endDate.setDate(realDate.getDate() + 10);
-                
-                const formatYMD = (d) => {
-                    const y = d.getFullYear();
-                    const m = String(d.getMonth() + 1).padStart(2, '0');
-                    const day = String(d.getDate()).padStart(2, '0');
-                    return `${y}${m}${day}`;
-                };
-
-                const apiUrl = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${formatYMD(startDate)}-${formatYMD(endDate)}`;
-                const response = await fetch(apiUrl);
-                const data = await response.json();
-
-                if (data && data.events && data.events.length > 0) {
-                    const parsedMatches = [];
-                    data.events.forEach(ev => {
-                        const comp = ev.competitions[0];
-                        if (!comp) return;
-
-                        const homeComp = comp.competitors.find(c => c.homeAway === 'home');
-                        const awayComp = comp.competitors.find(c => c.homeAway === 'away');
-                        if (!homeComp || !awayComp) return;
-
-                        const getNickname = (teamObj) => {
-                            if (!teamObj || !teamObj.team) return "TBD";
-                            return teamObj.team.shortDisplayName || teamObj.team.name || "TBD";
-                        };
-
-                        const homeNick = getNickname(homeComp);
-                        const awayNick = getNickname(awayComp);
-
-                        if (homeNick === "TBD" && awayNick === "TBD") return;
-
-                        // Grab/Calculate Predictor Probabilities
-                        let homePredictionPercent = 50; 
-                        let awayPredictionPercent = 50;
-
-                        if (comp.odds && comp.odds.length > 0) {
-                            const oddsDetails = comp.odds[0];
-                            if (oddsDetails.details && oddsDetails.details.toUpperCase() !== "EVEN") {
-                                const parts = oddsDetails.details.split(' ');
-                                if (parts.length >= 2) {
-                                    const spread = parseFloat(parts[1]);
-                                    if (!isNaN(spread)) {
-                                        const homeIsFav = homeComp.team.abbreviation === parts[0];
-                                        const calcProb = Math.min(Math.max(50 + (Math.abs(spread) * 3.3), 52), 95);
-                                        homePredictionPercent = homeIsFav ? Math.round(calcProb) : Math.round(100 - calcProb);
-                                        awayPredictionPercent = 100 - homePredictionPercent;
-                                    }
-                                }
-                            }
-                        }
-
-                        if (homePredictionPercent === 50 && awayPredictionPercent === 50) {
-                            const randomSeed = (parseInt(ev.id) % 25) + 38;
-                            homePredictionPercent = randomSeed;
-                            awayPredictionPercent = 100 - randomSeed;
-                        }
-
-                        const dateObj = new Date(ev.date);
-                        const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-                        const timeStr = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) + ' PT';
-
-                        parsedMatches.push({
-                            id: ev.id,
-                            home: homeNick,
-                            away: awayNick,
-                            date: dateStr,
-                            time: timeStr,
-                            status: ev.status.type.state, // 'pre', 'in', or 'post'
-                            homePrediction: homePredictionPercent,
-                            awayPrediction: awayPredictionPercent,
-                            homeScore: parseInt(homeComp.score) || 0,
-                            awayScore: parseInt(awayComp.score) || 0
-                        });
-                    });
-
-                    if (parsedMatches.length > 0) {
-                        liveScheduleData = parsedMatches;
-                        await autoGradeCompletedPredictions();
-                        renderScheduleAndPredictors();
-                        renderPastResults();
-                        return;
-                    }
-                }
-            } catch(e) {
-                console.warn("ESPN Predictor API query offline, using historical simulation backups.", e);
-            }
-
-            // High Fidelity Fallback Backup Schedules if ESPN API fails
-            const t = new Date();
-            const formatOffsetDate = (offset) => {
-                const d = new Date(t);
-                d.setDate(t.getDate() + offset);
-                return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-            };
-
-            liveScheduleData = [
-                { id: "1001", home: "Celtics", away: "Cavaliers", date: formatOffsetDate(0), time: "4:30 PM PT", status: "pre", homePrediction: 72, awayPrediction: 28 },
-                { id: "1002", home: "Thunder", away: "Mavericks", date: formatOffsetDate(1), time: "6:00 PM PT", status: "pre", homePrediction: 55, awayPrediction: 45 },
-                { id: "1003", home: "Nuggets", away: "Timberwolves", date: formatOffsetDate(2), time: "5:30 PM PT", status: "pre", homePrediction: 61, awayPrediction: 39 },
-                { id: "1004", home: "Knicks", away: "Pacers", date: formatOffsetDate(3), time: "7:00 PM PT", status: "pre", homePrediction: 48, awayPrediction: 52 },
-                // Backdated mock completed game to show past scores & grading
-                { id: "1005", home: "Lakers", away: "Warriors", date: formatOffsetDate(-1), time: "Completed", status: "post", homePrediction: 50, awayPrediction: 50, homeScore: 112, awayScore: 104 }
-            ];
-            await autoGradeCompletedPredictions();
-            renderScheduleAndPredictors();
-            renderPastResults();
-        }
-
-        // --- AUTOMATIC RESOLVER FOR COMPLETED ESPN GAMES ---
-        async function autoGradeCompletedPredictions() {
-            if (!authUser) return;
-            let profileChanged = false;
-            let gradingNotifications = [];
-
-            // Filter out completed matches from live list
-            const completedESPNMatches = liveScheduleData.filter(g => g.status === 'post' || g.status === 'post-event');
-
-            for (const gameId in userPicks) {
-                const activePickObj = userPicks[gameId];
-                const completedMatch = completedESPNMatches.find(g => g.id.toString() === gameId.toString());
-
-                if (completedMatch) {
-                    const homeWinner = completedMatch.homeScore > completedMatch.awayScore;
-                    const actualWinnerSide = homeWinner ? 'home' : 'away';
-                    
-                    const isWinner = activePickObj.pick === actualWinnerSide;
-                    const pickedTeamName = activePickObj.pick === 'home' ? completedMatch.home : completedMatch.away;
-                    const opponentTeamName = activePickObj.pick === 'home' ? completedMatch.away : completedMatch.home;
-                    
-                    let rewardEarned = 0;
-
-                    if (isWinner) {
-                        activeStreak += 1; // Increment streak first
-                        
-                        // Compute streak reward points (compounding scale)
-                        rewardEarned += Math.min(activeStreak, 5);
-
-                        // If point wager was placed, add wagering yields
-                        if (activePickObj.wager > 0) {
-                            const multiplier = 100 / activePickObj.predictorOdds;
-                            rewardEarned += Math.round(activePickObj.wager * multiplier);
-                        }
-
-                        pointsBalance += rewardEarned;
-                    } else {
-                        activeStreak = 0; // Streak reset to 0
-                    }
-
-                    // Append entry to graded pick history log
-                    pickHistory.unshift({
-                        gameId,
-                        pickedTeam: pickedTeamName,
-                        opponent: opponentTeamName,
-                        result: isWinner ? 'WIN' : 'LOSS',
-                        rewardEarned: rewardEarned,
-                        currentStreakAtTime: activeStreak,
-                        date: completedMatch.date
-                    });
-
-                    // Clear pick from active list
-                    delete userPicks[gameId];
-                    profileChanged = true;
-
-                    gradingNotifications.push({
-                        team: pickedTeamName,
-                        outcome: isWinner ? 'WON' : 'LOST',
-                        reward: rewardEarned,
-                        streak: activeStreak
-                    });
-                }
-            }
-
-            if (profileChanged) {
-                await saveUserProfileToServer();
-                renderActiveAndCompletedPicks();
-                if (gradingNotifications.length > 0) {
-                    displayGradingReceiptModal(gradingNotifications);
-                }
-            }
-        }
-
-        // Display results alert summary when picks get graded
-        function displayGradingReceiptModal(results) {
-            const modal = document.getElementById('custom-modal');
-            const content = document.getElementById('modal-content');
-            const actions = document.getElementById('modal-actions');
-            
-            content.innerHTML = `
-                <div class="space-y-4">
-                    <div class="text-center">
-                        <div class="text-4xl">🏆</div>
-                        <h4 class="text-base font-black text-white mt-1">Predictions Finalized</h4>
-                        <p class="text-[11px] text-slate-400">ESPN scoreboard has updated. Your streak has been calculated!</p>
-                    </div>
-                    <div class="space-y-2 max-h-60 overflow-y-auto no-scrollbar">
-                        ${results.map(r => `
-                            <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
-                                <div>
-                                    <span class="font-bold text-slate-200">${r.team}</span>
-                                    <span class="block text-[10px] ${r.outcome === 'WON' ? 'text-emerald-400' : 'text-red-400'} font-extrabold uppercase mt-0.5">${r.outcome}</span>
-                                </div>
-                                <div class="text-right">
-                                    <span class="text-emerald-400 font-extrabold block">+${r.reward} PTS</span>
-                                    <span class="text-[9px] text-slate-500 font-semibold block">Streak: ${r.streak} W</span>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
+    <!-- MY PICKS TAB -->
+    <section id="section-picks" class="tab-content space-y-6">
+        <!-- Points chart -->
+        <div class="rounded-2xl p-4" style="background:var(--surface);border:1px solid var(--border)">
+            <div class="flex justify-between items-center mb-3">
+                <div class="font-black text-white text-base" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.03em">POINTS HISTORY</div>
+                <div class="flex items-center gap-1.5 rounded-full px-3 py-1" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25)">
+                    <svg class="w-3 h-3" style="color:var(--gold)" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2l2.39 4.84L18 7.63l-4 3.9.94 5.47L10 14.27l-4.94 2.73L6 11.53 2 7.63l5.61-.79L10 2z"/></svg>
+                    <span class="font-black text-sm" id="chart-pts-label" style="font-family:'Barlow Condensed',sans-serif;color:var(--gold)">0</span>
+                    <span class="text-xs font-semibold" style="color:var(--muted);font-size:9px;text-transform:uppercase">total pts</span>
                 </div>
-            `;
-            actions.innerHTML = `
-                <button onclick="closeModal()" class="w-full py-3 bg-blue-600 rounded-xl font-bold text-xs uppercase tracking-wider text-white">Accept & Close</button>
-            `;
-            modal.classList.remove('hidden');
+            </div>
+            <div id="points-chart-wrapper"></div>
+        </div>
+
+        <!-- Streak info -->
+        <div class="rounded-xl p-4 flex items-center justify-between" style="background:var(--surface);border:1px solid var(--border)">
+            <div>
+                <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color:var(--muted)">Current Streak</div>
+                <div class="font-black text-2xl text-white" style="font-family:'Barlow Condensed',sans-serif" id="streak-display">0</div>
+            </div>
+            <div>
+                <div class="text-xs font-semibold uppercase tracking-wider mb-1 text-right" style="color:var(--muted)">Next Pick Worth</div>
+                <div class="font-black text-2xl text-right" style="font-family:'Barlow Condensed',sans-serif;color:var(--gold)" id="next-pts-display">1 pt</div>
+            </div>
+            <div>
+                <div class="text-xs font-semibold uppercase tracking-wider mb-1 text-right" style="color:var(--muted)">Correct / Total</div>
+                <div class="font-black text-2xl text-right text-white" style="font-family:'Barlow Condensed',sans-serif" id="record-display">0 / 0</div>
+            </div>
+        </div>
+
+        <!-- Active picks -->
+        <div>
+            <div class="font-black text-white mb-3" style="font-family:'Barlow Condensed',sans-serif;font-size:17px;letter-spacing:0.03em">ACTIVE PICKS</div>
+            <div id="active-picks-list" class="space-y-3"></div>
+        </div>
+
+        <!-- Pick history -->
+        <div class="pt-4" style="border-top:1px solid var(--border)">
+            <div class="font-black text-white mb-3" style="font-family:'Barlow Condensed',sans-serif;font-size:17px;letter-spacing:0.03em">PICK HISTORY</div>
+            <div id="pick-history-list" class="space-y-2"></div>
+        </div>
+    </section>
+
+    <!-- LEADERBOARD TAB -->
+    <section id="section-leaderboard" class="tab-content space-y-4">
+        <div class="flex justify-between items-center">
+            <div class="font-black text-white" style="font-family:'Barlow Condensed',sans-serif;font-size:18px;letter-spacing:0.02em">LEADERBOARD</div>
+            <button onclick="fetchLeaderboard()" class="text-xs font-bold uppercase tracking-wider" style="color:var(--accent2)">Refresh</button>
+        </div>
+        <div class="rounded-2xl overflow-hidden" style="background:var(--surface);border:1px solid var(--border)">
+            <div class="grid grid-cols-12 px-4 py-3" style="background:var(--surface2);border-bottom:1px solid var(--border)">
+                <div class="col-span-1 text-xs font-black uppercase tracking-wider" style="color:var(--muted)">#</div>
+                <div class="col-span-7 text-xs font-black uppercase tracking-wider" style="color:var(--muted)">Player</div>
+                <div class="col-span-2 text-xs font-black uppercase tracking-wider text-center" style="color:var(--muted)">W/L</div>
+                <div class="col-span-2 text-xs font-black uppercase tracking-wider text-right" style="color:var(--muted)">Pts</div>
+            </div>
+            <div id="leaderboard-list"></div>
+        </div>
+    </section>
+
+    <!-- RESULTS TAB -->
+    <section id="section-results" class="tab-content space-y-4">
+        <div class="font-black text-white" style="font-family:'Barlow Condensed',sans-serif;font-size:18px;letter-spacing:0.02em">RECENT RESULTS</div>
+        <div id="results-list" class="space-y-6"></div>
+    </section>
+</main>
+
+<script>
+// ─── FIREBASE CONFIG ───────────────────────────────────────────────
+const FIREBASE_DB_URL = "https://real-16bde-default-rtdb.firebaseio.com/";
+
+// ─── GLOBAL STATE ──────────────────────────────────────────────────
+let userName = localStorage.getItem('theo_user_name') || 'Guest';
+let userPoints = 0;
+let currentStreak = 0;   // consecutive correct picks
+let totalCorrect = 0;
+let totalPicks = 0;
+let pointsHistory = [];  // [{time, val}]
+let activePicks = [];    // [{gameId, team, wager, wageredPoints, espnOdds, placedAt}]
+let pickHistory = [];    // [{gameId, team, result:'win'|'loss', pointsEarned, wager, wageredPoints, espnOdds, settledAt}]
+let liveScheduleData = [];
+let leaderboardData = [];
+let gameVotes = {};      // gameId -> {home:[names], away:[names]}  (loaded from firebase)
+
+// ─── STREAK → POINTS CALCULATION ───────────────────────────────────
+// 1st correct = 1pt, 2nd = 2, 3rd = 3, 4th = 4, 5th+ = 5
+function streakToPoints(streak) {
+    if (streak <= 0) return 1;
+    if (streak === 1) return 2;
+    if (streak === 2) return 3;
+    if (streak === 3) return 4;
+    return 5;
+}
+
+// Next pick value = what you'd earn at current streak + 1
+function nextPickValue() {
+    return streakToPoints(currentStreak);
+}
+
+// ─── ESPN ODDS → point multiplier for wagers ───────────────────────
+// ML odds from ESPN: convert to decimal multiplier for wager return
+function mlToMultiplier(ml) {
+    if (!ml || ml === 0) return 2.0;
+    if (ml > 0) return 1 + (ml / 100);
+    return 1 + (100 / Math.abs(ml));
+}
+
+function mlToImpliedProb(ml) {
+    if (!ml) return 0.5;
+    if (ml > 0) return 100 / (ml + 100);
+    return Math.abs(ml) / (Math.abs(ml) + 100);
+}
+
+// ─── TEAM CLASS HELPER ──────────────────────────────────────────────
+function teamClass(name) {
+    if (!name) return '';
+    return name.trim().split(' ').pop().toLowerCase();
+}
+
+// ─── DATE HELPERS ───────────────────────────────────────────────────
+function formatGameDate(d) {
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
+}
+function formatYMD(d) {
+    return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
+function formatShortDate(d) {
+    return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+// ─── FIREBASE HELPERS ───────────────────────────────────────────────
+async function dbGet(path) {
+    const r = await fetch(`${FIREBASE_DB_URL}${path}.json`);
+    return await r.json();
+}
+async function dbPut(path, data) {
+    await fetch(`${FIREBASE_DB_URL}${path}.json`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+    });
+}
+async function dbPatch(path, data) {
+    await fetch(`${FIREBASE_DB_URL}${path}.json`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+    });
+}
+async function dbDelete(path) {
+    await fetch(`${FIREBASE_DB_URL}${path}.json`, {method:'DELETE'});
+}
+
+// ─── SAVE/LOAD PROFILE ─────────────────────────────────────────────
+async function saveProfile() {
+    if (userName === 'Guest' || !FIREBASE_DB_URL) return;
+    const payload = {
+        name: userName,
+        points: userPoints,
+        currentStreak,
+        totalCorrect,
+        totalPicks,
+        pointsHistory: JSON.stringify(pointsHistory),
+        activePicks: JSON.stringify(activePicks),
+        pickHistory: JSON.stringify(pickHistory)
+    };
+    await dbPut(`/users/${encodeURIComponent(userName)}`, payload);
+}
+
+async function loadProfile(name) {
+    if (name === 'Guest' || !FIREBASE_DB_URL) {
+        resetUserState();
+        return;
+    }
+    try {
+        const profile = await dbGet(`/users/${encodeURIComponent(name)}`);
+        if (profile && profile.name) {
+            userPoints = parseFloat(profile.points) || 0;
+            currentStreak = parseInt(profile.currentStreak) || 0;
+            totalCorrect = parseInt(profile.totalCorrect) || 0;
+            totalPicks = parseInt(profile.totalPicks) || 0;
+            try { pointsHistory = JSON.parse(profile.pointsHistory) || []; } catch(e) { pointsHistory = []; }
+            try { activePicks = JSON.parse(profile.activePicks) || []; } catch(e) { activePicks = []; }
+            try { pickHistory = JSON.parse(profile.pickHistory) || []; } catch(e) { pickHistory = []; }
+        } else {
+            // New user - start fresh and save
+            resetUserState();
+            await saveProfile();
         }
+    } catch(e) {
+        console.error('Profile load error:', e);
+        resetUserState();
+    }
+}
 
-        // --- RENDER DYNAMIC GAME PREDICTOR SCHEDULE CARDS ---
-        function renderScheduleAndPredictors() {
-            const todayGamesSection = document.getElementById('today-games-section');
-            const todayScheduleList = document.getElementById('today-schedule-list');
-            const upcomingScheduleList = document.getElementById('upcoming-schedule-list');
+function resetUserState() {
+    userPoints = 0;
+    currentStreak = 0;
+    totalCorrect = 0;
+    totalPicks = 0;
+    pointsHistory = [{ time: Date.now(), val: 0 }];
+    activePicks = [];
+    pickHistory = [];
+}
 
-            if (!upcomingScheduleList) return;
+// ─── VOTES: read from firebase ─────────────────────────────────────
+async function loadVotesForGame(gameId) {
+    try {
+        const data = await dbGet(`/votes/${gameId}`);
+        gameVotes[gameId] = data || { home: {}, away: {} };
+    } catch(e) {
+        gameVotes[gameId] = { home: {}, away: {} };
+    }
+}
 
-            // Gather today's date label to match games for today
-            const todayDateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+async function castVote(gameId, side /* 'home' | 'away' */, team) {
+    if (userName === 'Guest') { showProfileModal(); return; }
+    
+    // Load current votes for this game
+    await loadVotesForGame(gameId);
+    const votes = gameVotes[gameId] || { home: {}, away: {} };
 
-            const activeMatches = liveScheduleData.filter(g => g.status === 'pre' || g.status === 'in');
+    // Remove from both sides first (user might be changing vote)
+    delete votes.home[encodeKey(userName)];
+    delete votes.away[encodeKey(userName)];
 
-            if (activeMatches.length === 0) {
-                upcomingScheduleList.innerHTML = `
-                <div class="glass-card rounded-2xl p-8 text-center border border-slate-800">
-                    <p class="text-slate-400 text-sm font-semibold">No active games scheduled on the slate.</p>
-                </div>`;
-                todayGamesSection.classList.add('hidden');
-                return;
-            }
+    // Add to chosen side
+    votes[side][encodeKey(userName)] = userName;
+    gameVotes[gameId] = votes;
 
-            // Split active games into Today vs Upcoming
-            const todayMatches = activeMatches.filter(g => g.date === todayDateStr);
-            const upcomingMatches = activeMatches.filter(g => g.date !== todayDateStr);
+    // Save to firebase
+    await dbPut(`/votes/${gameId}`, votes);
+}
 
-            const compileGameCardHTML = (game) => {
-                const userPick = userPicks[game.id];
-                const selectedSide = userPick ? userPick.pick : null;
-                const wagerAmount = userPick ? userPick.wager || 0 : 0;
+function encodeKey(name) {
+    // Firebase keys can't have . / [ ] #
+    return name.replace(/[./#\[\]]/g, '_');
+}
 
-                const votes = globalVotersData[game.id] || { homeUsers: [], awayUsers: [] };
-                const totalVotes = (votes.homeUsers?.length || 0) + (votes.awayUsers?.length || 0);
-                let homePollPercent = 50;
-                let awayPollPercent = 50;
-                if (totalVotes > 0) {
-                    homePollPercent = Math.round(((votes.homeUsers?.length || 0) / totalVotes) * 100);
-                    awayPollPercent = 100 - homePollPercent;
+function getVoteCounts(gameId) {
+    const v = gameVotes[gameId] || {};
+    const homeVoters = Object.values(v.home || {});
+    const awayVoters = Object.values(v.away || {});
+    return { homeVoters, awayVoters, homeCount: homeVoters.length, awayCount: awayVoters.length };
+}
+
+function getUserVoteSide(gameId) {
+    const v = gameVotes[gameId] || {};
+    const key = encodeKey(userName);
+    if ((v.home || {})[key]) return 'home';
+    if ((v.away || {})[key]) return 'away';
+    return null;
+}
+
+// ─── CHECK IF USER ALREADY HAS AN ACTIVE PICK FOR GAME ─────────────
+function getUserPickForGame(gameId) {
+    return activePicks.find(p => p.gameId === gameId) || null;
+}
+
+// ─── PLACE A PICK ──────────────────────────────────────────────────
+async function placePick(gameId, side, team, wagerPoints, espnML) {
+    if (userName === 'Guest') { showProfileModal(); return; }
+
+    // Remove existing pick for this game
+    activePicks = activePicks.filter(p => p.gameId !== gameId);
+
+    const pick = {
+        gameId,
+        side,       // 'home' or 'away'
+        team,
+        wagerPoints: wagerPoints || 0,
+        espnML: espnML || null,
+        placedAt: Date.now()
+    };
+    activePicks.push(pick);
+
+    // Cast vote
+    await castVote(gameId, side, team);
+    await saveProfile();
+
+    renderSchedule();
+    renderPicks();
+    updatePointsUI();
+}
+
+// ─── CANCEL A PICK ─────────────────────────────────────────────────
+async function cancelPick(gameId) {
+    activePicks = activePicks.filter(p => p.gameId !== gameId);
+    // Remove vote
+    if (userName !== 'Guest') {
+        await loadVotesForGame(gameId);
+        const votes = gameVotes[gameId] || { home: {}, away: {} };
+        const key = encodeKey(userName);
+        delete votes.home[key];
+        delete votes.away[key];
+        gameVotes[gameId] = votes;
+        await dbPut(`/votes/${gameId}`, votes);
+    }
+    await saveProfile();
+    renderSchedule();
+    renderPicks();
+}
+
+// ─── SETTLE PICKS (admin/manual for now - button in results) ───────
+// In production you'd do this server-side. Here users can manually mark results.
+// We expose it so testing works.
+async function settlePick(gameId, winningTeam) {
+    const pickIdx = activePicks.findIndex(p => p.gameId === gameId);
+    if (pickIdx === -1) return;
+    const pick = activePicks[pickIdx];
+
+    const won = pick.team === winningTeam;
+    let pointsEarned = 0;
+
+    if (won) {
+        const basePoints = nextPickValue(); // Based on current streak BEFORE this pick
+        if (pick.wagerPoints > 0) {
+            // Wager return: base points + wager * multiplier (based on ESPN odds)
+            const mult = mlToMultiplier(pick.espnML);
+            const wagerReturn = Math.round(pick.wagerPoints * mult);
+            pointsEarned = basePoints + wagerReturn;
+        } else {
+            pointsEarned = basePoints;
+        }
+        currentStreak++;
+        totalCorrect++;
+        userPoints += pointsEarned;
+    } else {
+        // Lose wager if one was placed
+        if (pick.wagerPoints > 0) {
+            userPoints = Math.max(0, userPoints - pick.wagerPoints);
+        }
+        currentStreak = 0;
+        pointsEarned = pick.wagerPoints > 0 ? -pick.wagerPoints : 0;
+    }
+
+    totalPicks++;
+    pointsHistory.push({ time: Date.now(), val: userPoints });
+    if (pointsHistory.length > 30) pointsHistory.shift();
+
+    const histEntry = {
+        gameId,
+        team: pick.team,
+        side: pick.side,
+        result: won ? 'win' : 'loss',
+        pointsEarned,
+        wagerPoints: pick.wagerPoints,
+        espnML: pick.espnML,
+        settledAt: Date.now()
+    };
+    pickHistory.unshift(histEntry);
+
+    // Remove from active
+    activePicks.splice(pickIdx, 1);
+
+    await saveProfile();
+    updatePointsUI();
+    renderSchedule();
+    renderPicks();
+}
+
+// ─── ESPN DATA FETCH ───────────────────────────────────────────────
+async function fetchGameData() {
+    try {
+        const baseResp = await fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard");
+        const baseData = await baseResp.json();
+        let realDate = new Date();
+        if (baseData.day && baseData.day.date) realDate = new Date(baseData.day.date);
+
+        const nextWeek = new Date(realDate);
+        nextWeek.setDate(realDate.getDate() + 14);
+        const apiUrl = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${formatYMD(realDate)}-${formatYMD(nextWeek)}`;
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+
+        if (data && data.events && data.events.length > 0) {
+            const parsed = [];
+            for (const ev of data.events) {
+                if (ev.status.type.state === 'post') continue;
+                const comp = ev.competitions[0];
+                if (!comp) continue;
+                const homeComp = comp.competitors.find(c => c.homeAway === 'home');
+                const awayComp = comp.competitors.find(c => c.homeAway === 'away');
+                if (!homeComp || !awayComp) continue;
+
+                const getNick = t => {
+                    if (!t || !t.team) return 'TBD';
+                    const name = t.team.shortDisplayName || t.team.name || 'TBD';
+                    if (name.toUpperCase() === 'TBD') return 'TBD';
+                    const parts = name.trim().split(' ');
+                    return parts[parts.length - 1];
+                };
+                const homeNick = getNick(homeComp);
+                const awayNick = getNick(awayComp);
+                if (homeNick === 'TBD' && awayNick === 'TBD') continue;
+
+                const dateObj = new Date(ev.date);
+                const timeStr = dateObj.toLocaleTimeString('en-US', {
+                    timeZone: 'America/Los_Angeles', hour: 'numeric', minute: '2-digit', hour12: true
+                }) + ' PT';
+
+                // Parse ESPN odds
+                let homeML = null, awayML = null;
+                if (comp.odds && comp.odds.length > 0) {
+                    const odds = comp.odds[0];
+                    if (odds.homeTeamOdds?.moneyLine !== undefined) homeML = odds.homeTeamOdds.moneyLine;
+                    if (odds.awayTeamOdds?.moneyLine !== undefined) awayML = odds.awayTeamOdds.moneyLine;
                 }
 
-                const multiplierHome = (100 / game.homePrediction).toFixed(2);
-                const multiplierAway = (100 / game.awayPrediction).toFixed(2);
+                // Load votes
+                await loadVotesForGame(parseInt(ev.id));
 
-                const awayClass = getTeamClass(game.away);
-                const homeClass = getTeamClass(game.home);
-
-                return `
-                <div class="glass-card rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all duration-300 relative overflow-hidden ${selectedSide ? 'ring-1 ring-blue-500/40' : ''}">
-                    <!-- Card Header -->
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="text-[9px] text-slate-400 uppercase font-extrabold tracking-wider bg-slate-900 px-2.5 py-1 rounded">
-                            ${game.time}
-                        </span>
-                        
-                        <div class="flex items-center gap-2">
-                            <button onclick="showCommunityVoters('${game.id}', '${game.away}', '${game.home}')" class="text-slate-400 hover:text-blue-400 transition-colors bg-slate-900 hover:bg-slate-800 p-1 rounded-full border border-slate-800" title="Community Vote Analysis">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Teams Matchup -->
-                    <div class="grid grid-cols-2 gap-3 relative z-10">
-                        <div onclick="clickPickTeam('${game.id}', 'away', ${game.awayPrediction})" class="cursor-pointer group rounded-xl p-3 border ${selectedSide === 'away' ? 'bg-gradient-to-br from-blue-600/30 to-indigo-600/10 border-blue-500' : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'} transition-all text-center">
-                            <span class="text-xs font-bold block ${selectedSide === 'away' ? 'text-blue-400' : 'text-slate-400'} uppercase">Away</span>
-                            <span class="text-base font-black text-white block truncate color-${awayClass}">${game.away}</span>
-                            <div class="mt-2 text-[10px] text-slate-500 flex justify-between px-1 border-t border-slate-800 pt-1">
-                                <span>Prob: <strong class="text-slate-300">${game.awayPrediction}%</strong></span>
-                                <span>Mult: <strong class="text-emerald-400">${multiplierAway}x</strong></span>
-                            </div>
-                        </div>
-
-                        <div onclick="clickPickTeam('${game.id}', 'home', ${game.homePrediction})" class="cursor-pointer group rounded-xl p-3 border ${selectedSide === 'home' ? 'bg-gradient-to-br from-blue-600/30 to-indigo-600/10 border-blue-500' : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'} transition-all text-center">
-                            <span class="text-xs font-bold block ${selectedSide === 'home' ? 'text-blue-400' : 'text-slate-400'} uppercase">Home</span>
-                            <span class="text-base font-black text-white block truncate color-${homeClass}">${game.home}</span>
-                            <div class="mt-2 text-[10px] text-slate-500 flex justify-between px-1 border-t border-slate-800 pt-1">
-                                <span>Prob: <strong class="text-slate-300">${game.homePrediction}%</strong></span>
-                                <span>Mult: <strong class="text-emerald-400">${multiplierHome}x</strong></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Community Polling Percent Bar -->
-                    <div class="mt-4 space-y-1 relative z-10">
-                        <div class="flex justify-between text-[9px] uppercase font-black tracking-widest text-slate-400">
-                            <span>COMMUNITY POLL</span>
-                            <span class="text-blue-400">${totalVotes} total votes</span>
-                        </div>
-                        <div class="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden flex border border-slate-800">
-                            <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-full transition-all duration-500" style="width: ${awayPollPercent}%"></div>
-                            <div class="bg-gradient-to-r from-blue-400 to-blue-500 h-full transition-all duration-500" style="width: ${homePollPercent}%"></div>
-                        </div>
-                        <div class="flex justify-between text-[9.5px] font-extrabold text-slate-500">
-                            <span>${game.away}: <strong class="text-slate-300">${awayPollPercent}%</strong></span>
-                            <span>${game.home}: <strong class="text-slate-300">${homePollPercent}%</strong></span>
-                        </div>
-                    </div>
-
-                    <!-- Wager Point Adjustments -->
-                    ${selectedSide ? `
-                    <div class="mt-4 bg-[#0f172a]/90 p-3 rounded-xl border border-blue-500/20 space-y-2">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                                Selected: <strong class="text-blue-400">${selectedSide === 'home' ? game.home : game.away}</strong>
-                            </span>
-                            <span class="text-[9px] bg-blue-500/20 text-blue-400 font-extrabold px-2 py-0.5 rounded">
-                                ${wagerAmount > 0 ? `WAGER: ${wagerAmount} PTS` : 'DEFAULT PLAY'}
-                            </span>
-                        </div>
-                        <div class="flex gap-2">
-                            <input type="number" id="input-wager-${game.id}" placeholder="Points to wager..." value="${wagerAmount > 0 ? wagerAmount : ''}" class="bg-slate-900 border border-slate-800 rounded px-2.5 py-1 text-xs w-full text-white" min="0" max="${pointsBalance + wagerAmount}">
-                            <button onclick="setPointWager('${game.id}')" class="bg-blue-600 hover:bg-blue-500 transition-colors rounded px-3 text-[10px] font-bold uppercase text-white shrink-0">
-                                Update Wager
-                            </button>
-                        </div>
-                        <div class="flex justify-between text-[9px] text-slate-500">
-                            <span>Potential Yield: <strong class="text-emerald-400">${(wagerAmount * (100 / (selectedSide === 'home' ? game.homePrediction : game.awayPrediction))).toFixed(0)} PTS</strong></span>
-                            <span class="cursor-pointer text-slate-400 hover:text-white underline" onclick="clearPick('${game.id}')">Remove Pick</span>
-                        </div>
-                    </div>
-                    ` : ''}
-                </div>`;
-            };
-
-            // Today matches rendering
-            if (todayMatches.length > 0) {
-                todayGamesSection.classList.remove('hidden');
-                todayScheduleList.innerHTML = todayMatches.map(compileGameCardHTML).join('');
-            } else {
-                todayGamesSection.classList.add('hidden');
-            }
-
-            // Group upcoming schedules
-            const groups = {};
-            upcomingMatches.forEach(g => {
-                if (!groups[g.date]) groups[g.date] = [];
-                groups[g.date].push(g);
-            });
-
-            let upcomingHTML = '';
-            for (const date in groups) {
-                upcomingHTML += `
-                <div class="space-y-3">
-                    <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-4 mb-2 border-b border-slate-800 pb-1">${date}</div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        ${groups[date].map(compileGameCardHTML).join('')}
-                    </div>
-                </div>`;
-            }
-            upcomingScheduleList.innerHTML = upcomingHTML || `<div class="text-slate-500 text-xs italic text-center py-6">No upcoming playoff games are listed.</div>`;
-        }
-
-        // --- INTERACTIVE COMMUNITY VOTING VIEWS ---
-        window.showCommunityVoters = function(gameId, awayName, homeName) {
-            const votes = globalVotersData[gameId] || { homeUsers: [], awayUsers: [] };
-            const homeVoters = votes.homeUsers || [];
-            const awayVoters = votes.awayUsers || [];
-
-            const modal = document.getElementById('custom-modal');
-            const content = document.getElementById('modal-content');
-            
-            content.innerHTML = `
-                <div class="space-y-4">
-                    <div class="text-center">
-                        <h4 class="text-base font-black text-white">Matchup Voters Overview</h4>
-                        <p class="text-[11px] text-slate-400 mt-1">${awayName} @ ${homeName}</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 pt-2">
-                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-                            <h5 class="text-xs font-black text-indigo-400 border-b border-slate-800 pb-1.5 mb-2 flex justify-between items-center">
-                                <span>${awayName}</span>
-                                <span class="bg-slate-800 text-[10px] px-2 py-0.5 rounded text-white">${awayVoters.length}</span>
-                            </h5>
-                            <ul class="space-y-1.5 max-h-40 overflow-y-auto no-scrollbar">
-                                ${awayVoters.length === 0 ? '<li class="text-[10px] text-slate-600 italic">No voters registered</li>' : awayVoters.map(u => `
-                                    <li class="text-[11px] text-slate-300 flex items-center gap-1.5 font-semibold truncate">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                                        ${u}
-                                    </li>
-                                `).join('')}
-                            </ul>
-                        </div>
-                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-                            <h5 class="text-xs font-black text-blue-400 border-b border-slate-800 pb-1.5 mb-2 flex justify-between items-center">
-                                <span>${homeName}</span>
-                                <span class="bg-slate-800 text-[10px] px-2 py-0.5 rounded text-white">${homeVoters.length}</span>
-                            </h5>
-                            <ul class="space-y-1.5 max-h-40 overflow-y-auto no-scrollbar">
-                                ${homeVoters.length === 0 ? '<li class="text-[10px] text-slate-600 italic">No voters registered</li>' : homeVoters.map(u => `
-                                    <li class="text-[11px] text-slate-300 flex items-center gap-1.5 font-semibold truncate">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                                        ${u}
-                                    </li>
-                                `).join('')}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            `;
-            modal.classList.remove('hidden');
-        };
-
-        // --- PREDICTOR PICK SELECTION ACTIONS ---
-        window.clickPickTeam = async function(gameId, pickedSide, probabilityPercent) {
-            const previousPick = userPicks[gameId];
-            const prevSide = previousPick ? previousPick.pick : null;
-
-            if (prevSide === pickedSide) {
-                const inputEl = document.getElementById(`input-wager-${gameId}`);
-                if (inputEl) inputEl.focus();
-                return;
-            }
-
-            userPicks[gameId] = {
-                pick: pickedSide,
-                wager: 0,
-                predictorOdds: probabilityPercent
-            };
-
-            await saveUserProfileToServer();
-            await registerGlobalVoteOnServer(gameId, pickedSide, prevSide);
-            renderScheduleAndPredictors();
-            renderActiveAndCompletedPicks();
-        };
-
-        window.clearPick = async function(gameId) {
-            const currentPick = userPicks[gameId];
-            if (!currentPick) return;
-
-            if (currentPick.wager > 0) {
-                pointsBalance += currentPick.wager; // Return wager points back to wallet
-            }
-
-            const prevSide = currentPick.pick;
-            delete userPicks[gameId];
-
-            await saveUserProfileToServer();
-            await registerGlobalVoteOnServer(gameId, null, prevSide);
-            renderScheduleAndPredictors();
-            renderActiveAndCompletedPicks();
-        };
-
-        window.setPointWager = async function(gameId) {
-            const pick = userPicks[gameId];
-            if (!pick) return;
-
-            const inputWager = parseInt(document.getElementById(`input-wager-${gameId}`).value);
-            if (isNaN(inputWager) || inputWager < 0) {
-                showModalAlert("Wager Error", "Please input a valid positive integer number for your point wager.");
-                return;
-            }
-
-            const currentAllocated = pick.wager || 0;
-            const absoluteAvailable = pointsBalance + currentAllocated;
-
-            if (inputWager > absoluteAvailable) {
-                showModalAlert("Insufficient points", `You cannot exceed your total point budget of ${absoluteAvailable} PTS.`);
-                return;
-            }
-
-            pointsBalance = absoluteAvailable - inputWager;
-            pick.wager = inputWager;
-
-            await saveUserProfileToServer();
-            renderScheduleAndPredictors();
-            renderActiveAndCompletedPicks();
-        };
-
-        // --- RENDERING HISTORICAL RECENT RESULTS (MODELED DIRECTLY AFTER EXCEL LAYOUT) ---
-        function renderPastResults() {
-            const list = document.getElementById('past-games-list');
-            if (!list) return;
-
-            const completedMatches = liveScheduleData.filter(g => g.status === 'post' || g.status === 'post-event');
-
-            if (completedMatches.length === 0) {
-                list.innerHTML = `
-                <div class="glass-card rounded-2xl p-8 text-center border border-slate-800">
-                    <p class="text-slate-400 text-sm font-semibold">No finished games recovered in this timeframe.</p>
-                </div>`;
-                return;
-            }
-
-            // Group scores by dates
-            const dateGroups = {};
-            completedMatches.forEach(g => {
-                if (!dateGroups[g.date]) dateGroups[g.date] = [];
-                dateGroups[g.date].push(g);
-            });
-
-            let html = '';
-            for (const date in dateGroups) {
-                html += `
-                <div class="space-y-3">
-                    <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-6 mb-2 border-b border-slate-800 pb-1">${date}</div>
-                `;
-
-                dateGroups[date].forEach(r => {
-                    const awayWon = r.awayScore > r.homeScore;
-                    const homeWon = r.homeScore > r.awayScore;
-                    const awayClass = getTeamClass(r.away);
-                    const homeClass = getTeamClass(r.home);
-
-                    const awayTeamHTML = awayWon 
-                        ? `<span class="color-${awayClass} font-black text-white">${r.away}</span>` 
-                        : `<span class="text-slate-400 font-normal">${r.away}</span>`;
-                    
-                    const homeTeamHTML = homeWon 
-                        ? `<span class="color-${homeClass} font-black text-white">${r.home}</span>` 
-                        : `<span class="text-slate-400 font-normal">${r.home}</span>`;
-
-                    const awayScoreHTML = awayWon
-                        ? `<span class="color-${awayClass} font-black text-2xl tracking-tighter">${r.awayScore}</span>`
-                        : `<span class="color-${awayClass} font-bold text-xl opacity-60 tracking-tighter">${r.awayScore}</span>`;
-
-                    const homeScoreHTML = homeWon
-                        ? `<span class="color-${homeClass} font-black text-2xl tracking-tighter">${r.homeScore}</span>`
-                        : `<span class="color-${homeClass} font-bold text-xl opacity-60 tracking-tighter">${r.homeScore}</span>`;
-
-                    html += `
-                    <div class="glass-card rounded-xl p-4 flex justify-between items-center transition-colors hover:bg-slate-800/30">
-                        <div class="flex flex-col">
-                            <span class="text-sm font-semibold text-white">
-                                ${awayTeamHTML} <span class="text-slate-600 font-normal mx-1">@</span> ${homeTeamHTML}
-                            </span>
-                        </div>
-                        <span class="flex items-center gap-1">
-                            ${awayScoreHTML}
-                            <span class="text-slate-700 mx-1 font-bold">-</span>
-                            ${homeScoreHTML}
-                        </span>
-                    </div>`;
+                parsed.push({
+                    id: parseInt(ev.id),
+                    home: homeNick, away: awayNick,
+                    homeAbbr: homeComp.team.abbreviation,
+                    awayAbbr: awayComp.team.abbreviation,
+                    date: formatGameDate(dateObj),
+                    time: timeStr,
+                    dateObj,
+                    odds: { homeML, awayML }
                 });
-
-                html += `</div>`;
             }
-
-            list.innerHTML = html;
-        }
-
-        // --- COMPILATION FOR MY PICKS SCREEN ---
-        function renderActiveAndCompletedPicks() {
-            const activeList = document.getElementById('active-picks-list');
-            const historyList = document.getElementById('picks-history-list');
-            const accuracyLabel = document.getElementById('total-accuracy-label');
-
-            const pendingGameIds = Object.keys(userPicks);
-            if (pendingGameIds.length === 0) {
-                activeList.innerHTML = `<p class="text-slate-500 text-xs italic text-center py-6">No active predictions made. Tap on team nodes in the Schedule page to start!</p>`;
-            } else {
-                activeList.innerHTML = pendingGameIds.map(gameId => {
-                    const pick = userPicks[gameId];
-                    const game = liveScheduleData.find(g => g.id.toString() === gameId.toString());
-                    if (!game) return '';
-
-                    const selectedTeamName = pick.pick === 'home' ? game.home : game.away;
-                    const opponentTeamName = pick.pick === 'home' ? game.away : game.home;
-                    const returnMultiplier = (100 / pick.predictorOdds).toFixed(2);
-                    const isWagerActive = pick.wager > 0;
-
-                    return `
-                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 flex justify-between items-center hover:border-slate-700 transition-colors">
-                        <div>
-                            <span class="text-[9px] font-black text-blue-400 uppercase tracking-widest block">Pending Prediction</span>
-                            <h4 class="text-sm font-black text-white mt-0.5">${selectedTeamName}</h4>
-                            <p class="text-[10px] text-slate-500 font-semibold mt-0.5">Opponent: ${opponentTeamName} • Mult: ${returnMultiplier}x</p>
-                        </div>
-                        <div class="text-right">
-                            ${isWagerActive ? `
-                                <span class="text-emerald-400 font-black text-sm block">${pick.wager} PTS</span>
-                                <span class="text-[8.5px] text-slate-400 font-extrabold block">Yield: ${(pick.wager * returnMultiplier).toFixed(0)} PTS</span>
-                            ` : `
-                                <span class="text-slate-400 font-bold text-xs block">Default Play</span>
-                                <span class="text-[8.5px] text-amber-500 font-black block">Streak Rewards Active</span>
-                            `}
-                            <button onclick="clearPick('${gameId}')" class="text-[9px] text-red-400 hover:text-red-300 underline mt-1.5 font-bold block ml-auto">Cancel Pick</button>
-                        </div>
-                    </div>`;
-                }).join('');
-            }
-
-            if (!pickHistory || pickHistory.length === 0) {
-                historyList.innerHTML = `<p class="text-slate-500 text-xs italic text-center py-6">Your finalized graded predictions will display here.</p>`;
-                accuracyLabel.innerText = "Accuracy: 0%";
-            } else {
-                let correctCount = 0;
-                const historyHTML = pickHistory.map(hist => {
-                    const isCorrect = hist.result === 'WIN';
-                    if (isCorrect) correctCount++;
-
-                    return `
-                    <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800/80 flex justify-between items-center">
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-[9px] font-black uppercase tracking-widest ${isCorrect ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'} px-2 py-0.5 rounded">
-                                    ${isCorrect ? 'Correct Pick' : 'Incorrect'}
-                                </span>
-                                <span class="text-[9px] text-slate-500 font-bold">${hist.date || 'Completed'}</span>
-                            </div>
-                            <h4 class="text-xs font-black text-white mt-1.5">${hist.pickedTeam} <span class="text-slate-500 font-normal">vs</span> ${hist.opponent}</h4>
-                            <p class="text-[10px] text-slate-400 mt-1">
-                                Points Gained: <strong class="${isCorrect ? 'text-emerald-400' : 'text-slate-400'}">${isCorrect ? '+' + hist.rewardEarned + ' PTS' : '0 PTS'}</strong>
-                            </p>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-xs text-slate-400 font-extrabold">Streak at completion: ${hist.currentStreakAtTime || 0} Wins</span>
-                        </div>
-                    </div>`;
-                }).join('');
-
-                historyList.innerHTML = historyHTML;
-                const accPercent = Math.round((correctCount / pickHistory.length) * 100);
-                accuracyLabel.innerText = `Accuracy: ${accPercent}% (${correctCount}/${pickHistory.length})`;
+            if (parsed.length > 0) {
+                liveScheduleData = parsed;
+                renderSchedule();
+                return;
             }
         }
+    } catch(e) {
+        console.warn('ESPN fetch failed, using fallback', e);
+    }
 
-        // --- FIRESTORE LEADERBOARD ALGORITHMS (RULE 1 & 2) ---
-        window.fetchLeaderboard = async function() {
-            const list = document.getElementById('leaderboard-list');
-            if (!list) return;
+    // Fallback data
+    const today = new Date();
+    const tm1 = new Date(today); tm1.setDate(today.getDate() + 1);
+    const tm2 = new Date(today); tm2.setDate(today.getDate() + 2);
+    liveScheduleData = [
+        { id: 201, home: 'Cavaliers', away: 'Celtics', date: formatGameDate(tm1), time: '5:00 PM PT', dateObj: tm1, odds: { homeML: -180, awayML: 150 } },
+        { id: 202, home: 'Thunder', away: 'Timberwolves', date: formatGameDate(tm1), time: '7:30 PM PT', dateObj: tm1, odds: { homeML: -265, awayML: 215 } },
+        { id: 203, home: 'Knicks', away: 'Pacers', date: formatGameDate(tm2), time: '5:00 PM PT', dateObj: tm2, odds: { homeML: -150, awayML: 120 } },
+        { id: 204, home: 'Warriors', away: 'Rockets', date: formatGameDate(tm2), time: '7:30 PM PT', dateObj: tm2, odds: { homeML: -200, awayML: 160 } }
+    ];
+    // Load votes for fallback games
+    for (const g of liveScheduleData) await loadVotesForGame(g.id);
+    renderSchedule();
+}
 
-            list.innerHTML = `
-            <div class="p-8 text-center">
-                <div class="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+// ─── RENDER SCHEDULE ────────────────────────────────────────────────
+function renderSchedule() {
+    const now = new Date();
+    const todayStr = formatGameDate(now);
+    const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
+    const tomorrowStr = formatGameDate(tomorrow);
+
+    const todayGames = liveScheduleData.filter(g => g.date === todayStr);
+    const tomorrowGames = liveScheduleData.filter(g => g.date === tomorrowStr);
+
+    const todaySec = document.getElementById('today-section');
+    const todayCards = document.getElementById('today-cards');
+    const upcomingCards = document.getElementById('upcoming-cards');
+
+    if (todayGames.length > 0) {
+        todaySec.classList.remove('hidden');
+        todayCards.innerHTML = todayGames.map(gameCard).join('');
+    } else {
+        todaySec.classList.add('hidden');
+    }
+
+    // Tomorrow section
+    if (tomorrowGames.length > 0) {
+        upcomingCards.innerHTML = `
+        <div class="space-y-3">
+            <div class="text-xs font-black uppercase tracking-widest py-1 border-b" style="color:var(--muted);border-color:var(--border)">${tomorrowStr}</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                ${tomorrowGames.map(gameCard).join('')}
+            </div>
+        </div>`;
+    } else {
+        upcomingCards.innerHTML = `<div class="text-sm text-center py-10" style="color:var(--muted)">No games scheduled tomorrow.</div>`;
+    }
+}
+
+function gameCard(g) {
+    const { homeCount, awayCount, homeVoters, awayVoters } = getVoteCounts(g.id);
+    const total = homeCount + awayCount;
+    const homePct = total > 0 ? Math.round((homeCount / total) * 100) : 50;
+    const awayPct = total > 0 ? Math.round((awayCount / total) * 100) : 50;
+
+    const userPick = getUserPickForGame(g.id);
+    const voteSide = getUserVoteSide(g.id);
+    const homeML = g.odds?.homeML;
+    const awayML = g.odds?.awayML;
+    const hasOdds = homeML !== null && awayML !== null;
+
+    const homeSelected = userPick?.side === 'home';
+    const awaySelected = userPick?.side === 'away';
+    const hasWager = userPick?.wagerPoints > 0;
+
+    const awayTc = teamClass(g.away);
+    const homeTc = teamClass(g.home);
+
+    // Wager panel state
+    const wagerOpen = (userPick && !hasWager) ? false : false; // only open when explicitly triggered
+
+    return `
+    <div class="rounded-2xl p-4 relative" style="background:var(--surface);border:1px solid var(--border)">
+        <!-- Info button -->
+        <button class="info-btn" onclick="showVoters(${g.id}, '${g.away}', '${g.home}')" title="See who picked what">i</button>
+
+        <!-- Game header -->
+        <div class="flex justify-between items-start mb-4 pr-6">
+            <div>
+                <div class="font-semibold text-lg text-white" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:-0.01em;font-weight:600">
+                    <span class="tc-${awayTc}">${g.away}</span>
+                    <span style="color:var(--muted);font-size:14px"> @ </span>
+                    <span class="tc-${homeTc}">${g.home}</span>
+                </div>
+                <div class="text-xs font-semibold mt-0.5" style="color:var(--muted)">${g.time}</div>
+            </div>
+            ${hasOdds ? `
+            <div class="text-right text-xs" style="color:var(--muted)">
+                <div class="font-semibold">${g.away} <span style="color:${awayML >= 0 ? '#10b981' : '#ef4444'}">${awayML >= 0 ? '+' : ''}${awayML}</span></div>
+                <div class="font-semibold">${g.home} <span style="color:${homeML >= 0 ? '#10b981' : '#ef4444'}">${homeML >= 0 ? '+' : ''}${homeML}</span></div>
+            </div>` : ''}
+        </div>
+
+        <!-- Pick buttons -->
+        <div class="grid grid-cols-2 gap-2 mb-3">
+            <!-- Away -->
+            <button onclick="handlePickClick(${g.id}, 'away', '${g.away}', ${awayML})"
+                class="pick-btn rounded-xl px-3 py-3 text-left transition-all ${awaySelected ? 'selected-away' : ''}"
+                style="background:var(--surface2)">
+                <div class="font-black text-sm text-white" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.01em">
+                    ${awaySelected ? '✓ ' : ''}${g.away}
+                </div>
+                <div class="text-xs mt-0.5 font-semibold" style="color:var(--muted)">Away · ${awayPct}% of picks</div>
+                ${awaySelected && hasWager ? `<div class="mt-1"><span class="points-pill" style="background:rgba(245,158,11,0.15);color:var(--gold);border:1px solid rgba(245,158,11,0.3)">+${userPick.wagerPoints} pts wagered</span></div>` : ''}
+            </button>
+            <!-- Home -->
+            <button onclick="handlePickClick(${g.id}, 'home', '${g.home}', ${homeML})"
+                class="pick-btn rounded-xl px-3 py-3 text-left transition-all ${homeSelected ? 'selected-home' : ''}"
+                style="background:var(--surface2)">
+                <div class="font-black text-sm text-white" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.01em">
+                    ${homeSelected ? '✓ ' : ''}${g.home}
+                </div>
+                <div class="text-xs mt-0.5 font-semibold" style="color:var(--muted)">Home · ${homePct}% of picks</div>
+                ${homeSelected && hasWager ? `<div class="mt-1"><span class="points-pill" style="background:rgba(245,158,11,0.15);color:var(--gold);border:1px solid rgba(245,158,11,0.3)">+${userPick.wagerPoints} pts wagered</span></div>` : ''}
+            </button>
+        </div>
+
+        <!-- Community vote bar -->
+        <div class="mb-3">
+            <div class="flex justify-between text-xs font-bold mb-1" style="color:var(--muted)">
+                <span>${g.away} ${awayPct}%</span>
+                <span>${total} vote${total !== 1 ? 's' : ''}</span>
+                <span>${homePct}% ${g.home}</span>
+            </div>
+            <div class="vote-bar-track flex">
+                <div class="vote-bar-fill" style="width:${awayPct}%;background:var(--accent2)"></div>
+                <div class="vote-bar-fill" style="width:${homePct}%;background:var(--green)"></div>
+            </div>
+        </div>
+
+        <!-- Wager panel -->
+        ${userPick && !hasWager ? `
+        <div class="rounded-xl p-3" style="background:var(--surface2);border:1px solid rgba(245,158,11,0.2)">
+            <div class="text-xs font-black uppercase tracking-wider mb-2" style="color:var(--gold);font-family:'Barlow Condensed',sans-serif">Wager Extra Points?</div>
+            <div class="text-xs mb-2" style="color:var(--muted)">You have <strong style="color:white">${userPoints} pts</strong>. Wager to multiply return based on ESPN odds. Tap pick again to skip.</div>
+            <div class="flex gap-2">
+                <input type="number" id="wager-input-${g.id}" placeholder="0" min="1" max="${userPoints}"
+                    class="flex-1 rounded-lg px-3 py-2 text-sm text-white font-bold"
+                    style="background:var(--surface);border:1px solid var(--border-bright);outline:none"
+                    oninput="updateWagerPreview(${g.id}, ${awaySelected ? awayML : homeML})">
+                <button onclick="confirmWager(${g.id}, ${awaySelected ? awayML : homeML})" 
+                    class="px-4 py-2 rounded-lg text-xs font-black uppercase text-white tracking-wider"
+                    style="background:var(--gold);color:#000">Wager</button>
+                <button onclick="skipWager(${g.id})" 
+                    class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider"
+                    style="background:var(--surface);border:1px solid var(--border-bright);color:var(--muted)">Skip</button>
+            </div>
+            <div id="wager-preview-${g.id}" class="text-xs mt-2" style="color:var(--muted)"></div>
+        </div>
+        ` : ''}
+
+        <!-- Cancel pick -->
+        ${userPick ? `
+        <div class="mt-2 flex justify-between items-center">
+            <span class="text-xs font-bold" style="color:var(--green)">✓ Picked ${userPick.team}</span>
+            <button onclick="cancelPick(${g.id})" class="text-xs font-semibold hover:opacity-80" style="color:var(--muted)">Remove pick</button>
+        </div>` : `
+        <div class="text-xs text-center" style="color:var(--muted)">Tap a team to pick the winner${userPoints > 0 ? ' — then optionally wager points' : ''}</div>
+        `}
+    </div>`;
+}
+
+// ─── WAGER HELPERS ─────────────────────────────────────────────────
+window.updateWagerPreview = function(gameId, ml) {
+    const input = document.getElementById(`wager-input-${gameId}`);
+    const preview = document.getElementById(`wager-preview-${gameId}`);
+    if (!input || !preview) return;
+    const wager = parseInt(input.value) || 0;
+    if (wager <= 0) { preview.innerHTML = ''; return; }
+    if (wager > userPoints) { preview.innerHTML = `<span style="color:var(--red)">Not enough points</span>`; return; }
+    const mult = mlToMultiplier(ml);
+    const baseReturn = nextPickValue();
+    const wagerReturn = Math.round(wager * mult);
+    preview.innerHTML = `If correct: base <strong style="color:white">${baseReturn} pt</strong> + wager returns <strong style="color:var(--gold)">${wagerReturn} pts</strong> = <strong style="color:var(--green)">${baseReturn + wagerReturn} pts total</strong>`;
+};
+
+window.confirmWager = async function(gameId, ml) {
+    const input = document.getElementById(`wager-input-${gameId}`);
+    if (!input) return;
+    const wager = parseInt(input.value) || 0;
+    if (wager <= 0 || wager > userPoints) return;
+    const pick = getUserPickForGame(gameId);
+    if (!pick) return;
+    pick.wagerPoints = wager;
+    pick.espnML = ml;
+    await saveProfile();
+    renderSchedule();
+    renderPicks();
+    updatePointsUI();
+};
+
+window.skipWager = async function(gameId) {
+    const pick = getUserPickForGame(gameId);
+    if (!pick) return;
+    pick.wagerPoints = 0;
+    pick.skipWager = true;
+    await saveProfile();
+    renderSchedule();
+    renderPicks();
+};
+
+// ─── HANDLE PICK CLICK ─────────────────────────────────────────────
+// First click: place pick (no wager, shows wager prompt)
+// Second click on same team: removes pick
+// Clicking different team: switches pick
+window.handlePickClick = async function(gameId, side, team, ml) {
+    if (userName === 'Guest') { showProfileModal(); return; }
+    const existing = getUserPickForGame(gameId);
+
+    if (existing) {
+        if (existing.side === side) {
+            // Second click same team → remove
+            await cancelPick(gameId);
+        } else {
+            // Clicked other team → switch pick
+            await placePick(gameId, side, team, 0, ml);
+        }
+    } else {
+        // First pick
+        await placePick(gameId, side, team, 0, ml);
+    }
+};
+
+// ─── VOTERS MODAL ──────────────────────────────────────────────────
+window.showVoters = function(gameId, awayTeam, homeTeam) {
+    const { homeVoters, awayVoters, homeCount, awayCount } = getVoteCounts(gameId);
+    const total = homeCount + awayCount;
+    const modal = document.getElementById('voters-modal');
+    const content = document.getElementById('voters-modal-content');
+
+    content.innerHTML = `
+        <h3 class="font-black text-white text-lg mb-4 pr-6" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.03em">COMMUNITY PICKS</h3>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <div class="font-black text-sm mb-2" style="font-family:'Barlow Condensed',sans-serif;color:var(--accent2)">${awayTeam} (${awayCount})</div>
+                ${awayVoters.length === 0 
+                    ? `<div class="text-xs italic" style="color:var(--muted)">No picks yet</div>`
+                    : awayVoters.map(n => `<div class="text-xs font-semibold py-1" style="color:var(--text)">${n}</div>`).join('')}
+            </div>
+            <div>
+                <div class="font-black text-sm mb-2" style="font-family:'Barlow Condensed',sans-serif;color:var(--green)">${homeTeam} (${homeCount})</div>
+                ${homeVoters.length === 0
+                    ? `<div class="text-xs italic" style="color:var(--muted)">No picks yet</div>`
+                    : homeVoters.map(n => `<div class="text-xs font-semibold py-1" style="color:var(--text)">${n}</div>`).join('')}
+            </div>
+        </div>
+        <div class="mt-4 text-xs font-semibold text-center" style="color:var(--muted)">${total} total pick${total !== 1 ? 's' : ''}</div>`;
+    modal.classList.remove('hidden');
+};
+window.closeVotersModal = function() {
+    document.getElementById('voters-modal').classList.add('hidden');
+};
+
+// ─── RENDER PICKS TAB ──────────────────────────────────────────────
+function renderPicks() {
+    // Active picks
+    const activeContainer = document.getElementById('active-picks-list');
+    if (activePicks.length === 0) {
+        activeContainer.innerHTML = `<div class="text-sm text-center py-6 italic" style="color:var(--muted)">No active picks</div>`;
+    } else {
+        activeContainer.innerHTML = activePicks.map(p => {
+            const game = liveScheduleData.find(g => g.id === p.gameId);
+            const opponent = game ? (p.side === 'home' ? game.away : game.home) : '?';
+            const tc = teamClass(p.team);
+            const baseVal = nextPickValue();
+            return `
+            <div class="rounded-xl p-3 flex justify-between items-center" style="background:var(--surface);border:1px solid var(--border)">
+                <div>
+                    <div class="font-black text-sm text-white" style="font-family:'Barlow Condensed',sans-serif">
+                        <span class="tc-${tc}">${p.team}</span>
+                        <span style="color:var(--muted);font-size:12px"> vs ${opponent}</span>
+                    </div>
+                    <div class="text-xs mt-0.5" style="color:var(--muted)">${game ? game.time + ' · ' + game.date : 'Upcoming'}</div>
+                    ${p.wagerPoints > 0 ? `<div class="mt-1"><span class="points-pill" style="background:rgba(245,158,11,0.1);color:var(--gold);border:1px solid rgba(245,158,11,0.25)">${p.wagerPoints} pts wagered</span></div>` : ''}
+                </div>
+                <div class="text-right">
+                    <div class="font-black text-sm" style="font-family:'Barlow Condensed',sans-serif;color:var(--gold)">+${baseVal} pt${baseVal > 1 ? 's' : ''}</div>
+                    <div class="text-xs" style="color:var(--muted)">if correct</div>
+                </div>
             </div>`;
+        }).join('');
+    }
 
-            try {
-                // Rule 1: Read leaderboard snapshots from: /artifacts/{appId}/public/data/leaderboard
-                // Rule 2: Fetch all profiles and perform client-side sorting in Javascript memory
-                const leaderboardCollection = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
-                const snap = await getDocs(leaderboardCollection);
-                
-                let communityParticipants = [];
-                snap.forEach((doc) => {
-                    const data = doc.data();
-                    if (data && data.name) {
-                        communityParticipants.push({
-                            name: data.name,
-                            pointsBalance: parseInt(data.pointsBalance) || 0,
-                            activeStreak: parseInt(data.activeStreak) || 0
-                        });
-                    }
-                });
+    // Pick history
+    const histContainer = document.getElementById('pick-history-list');
+    if (pickHistory.length === 0) {
+        histContainer.innerHTML = `<div class="text-sm text-center py-6 italic" style="color:var(--muted)">No history yet</div>`;
+    } else {
+        histContainer.innerHTML = pickHistory.map(p => {
+            const game = liveScheduleData.find(g => g.id === p.gameId);
+            const tc = teamClass(p.team);
+            const won = p.result === 'win';
+            return `
+            <div class="rounded-xl p-3 flex justify-between items-center border-l-2" style="background:var(--surface);border-color:${won ? 'var(--green)' : 'var(--red)'}">
+                <div>
+                    <div class="font-black text-sm text-white" style="font-family:'Barlow Condensed',sans-serif">
+                        ${won ? '✓' : '✗'} <span class="tc-${tc}">${p.team}</span>
+                    </div>
+                    <div class="text-xs mt-0.5" style="color:var(--muted)">${formatShortDate(p.settledAt)}</div>
+                </div>
+                <div class="text-right">
+                    <div class="font-black text-sm" style="font-family:'Barlow Condensed',sans-serif;color:${won ? 'var(--green)' : 'var(--red)'}">
+                        ${p.pointsEarned >= 0 ? '+' : ''}${p.pointsEarned} pts
+                    </div>
+                    ${p.wagerPoints > 0 ? `<div class="text-xs" style="color:var(--muted)">${p.wagerPoints} wagered</div>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+    }
 
-                // Make sure current active player state is updated or appended to memory
-                if (!communityParticipants.some(c => c.name === userName)) {
-                    communityParticipants.push({
-                        name: userName,
-                        pointsBalance: pointsBalance,
-                        activeStreak: activeStreak
-                    });
-                } else {
-                    const idx = communityParticipants.findIndex(c => c.name === userName);
-                    communityParticipants[idx].pointsBalance = pointsBalance;
-                    communityParticipants[idx].activeStreak = activeStreak;
-                }
+    // Points chart
+    renderPointsChart();
 
-                // Filter out unique player objects
-                const filteredList = communityParticipants.filter((val, index, self) =>
-                    index === self.findIndex((t) => t.name === val.name)
-                );
+    // Streak & stats
+    document.getElementById('streak-display').textContent = currentStreak;
+    document.getElementById('next-pts-display').textContent = `${nextPickValue()} pt${nextPickValue() > 1 ? 's' : ''}`;
+    document.getElementById('record-display').textContent = `${totalCorrect} / ${totalPicks}`;
+    document.getElementById('chart-pts-label').textContent = userPoints;
 
-                // Sort player nodes descending by point balance
-                filteredList.sort((a, b) => b.pointsBalance - a.pointsBalance);
+    // Streak banner
+    const banner = document.getElementById('streak-banner');
+    if (currentStreak >= 2) {
+        banner.classList.remove('hidden');
+        document.getElementById('streak-banner-text').textContent = `🔥 ${currentStreak}-PICK STREAK — NEXT CORRECT WORTH ${nextPickValue()} PTS`;
+    } else {
+        banner.classList.add('hidden');
+    }
+}
 
-                if (filteredList.length === 0) {
-                    list.innerHTML = `
-                    <div class="p-8 text-center text-slate-500 text-xs">
-                        No active players registered on the leaderboard yet.
-                    </div>`;
-                    return;
-                }
+function renderPointsChart() {
+    const wrapper = document.getElementById('points-chart-wrapper');
+    if (!wrapper) return;
+    const w = wrapper.clientWidth || 400;
+    const h = 140;
+    const padX = 40, padY = 20;
 
-                list.innerHTML = filteredList.map((player, idx) => {
-                    const highlightClass = player.name === userName ? 'text-blue-400 font-extrabold' : 'text-slate-300';
-                    const activeStreakStr = player.activeStreak > 0 ? `🔥 ${player.activeStreak} WINS` : 'None';
-                    
-                    return `
-                    <div class="grid grid-cols-12 p-4 items-center hover:bg-slate-900/40 transition-colors border-b border-slate-800/60 text-xs">
-                        <div class="col-span-1 text-slate-500 font-extrabold">${idx + 1}</div>
-                        <div class="col-span-5 flex items-center gap-3">
-                            <div class="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center font-bold text-[10px] text-white shrink-0">
-                                ${player.name.charAt(0).toUpperCase()}
-                            </div>
-                            <span class="font-extrabold truncate ${highlightClass}">${player.name}</span>
-                        </div>
-                        <div class="col-span-3 text-center text-amber-500 font-black">${activeStreakStr}</div>
-                        <div class="col-span-3 text-right font-black text-emerald-400">${player.pointsBalance} PTS</div>
-                    </div>`;
-                }).join('');
+    let pts = pointsHistory.length > 0 ? pointsHistory : [{ time: Date.now(), val: 0 }];
+    if (pts.length === 1) pts = [{ time: pts[0].time - 86400000, val: 0 }, pts[0]];
 
-            } catch(e) {
-                console.error("Leaderboard loading issue:", e);
-                list.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs">Error compiling live standings.</div>`;
-            }
-        };
+    const maxVal = Math.max(...pts.map(p => p.val), 10) * 1.15;
+    const points = pts.map((p, i) => ({
+        x: padX + (i / (pts.length - 1)) * (w - padX - 10),
+        y: h - padY - ((p.val / maxVal) * (h - 2 * padY)),
+        val: p.val
+    }));
+    const poly = points.map(p => `${p.x},${p.y}`).join(' ');
 
-        // --- GLOBAL UI UPDATE CONTROLLERS ---
-        function updateHeaderUI() {
-            document.getElementById('user-points').innerText = `${pointsBalance} PTS`;
-            document.getElementById('user-streak').innerText = `${activeStreak} WINS`;
-            document.getElementById('user-name-display').innerText = userName;
+    let svg = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}">`;
+    // Grid lines
+    for (let i = 0; i <= 3; i++) {
+        const yVal = (maxVal / 3) * i;
+        const yPos = h - padY - ((yVal / maxVal) * (h - 2 * padY));
+        svg += `<line x1="${padX}" y1="${yPos}" x2="${w - 5}" y2="${yPos}" stroke="rgba(255,255,255,0.05)" stroke-dasharray="3"/>`;
+        svg += `<text x="4" y="${yPos + 4}" fill="#5a7090" font-size="9" font-weight="700" font-family="Barlow Condensed">${Math.round(yVal)}</text>`;
+    }
+    // Area fill
+    svg += `<path d="M ${points[0].x},${h - padY} ${poly} ${points[points.length-1].x},${h - padY} Z" fill="rgba(245,158,11,0.08)"/>`;
+    // Line
+    svg += `<polyline fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="${poly}"/>`;
+    // Dots
+    points.forEach(p => {
+        svg += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#f59e0b" stroke="var(--bg)" stroke-width="2"/>`;
+    });
+    svg += `</svg>`;
+    wrapper.innerHTML = svg;
+}
+
+// ─── LEADERBOARD ───────────────────────────────────────────────────
+async function fetchLeaderboard() {
+    const list = document.getElementById('leaderboard-list');
+    list.innerHTML = `<div class="p-8 text-center"><div class="spin w-6 h-6 rounded-full border-2 mx-auto" style="border-color:var(--accent);border-top-color:transparent"></div></div>`;
+    try {
+        const data = await dbGet('/users');
+        leaderboardData = data ? Object.values(data) : [];
+        leaderboardData.sort((a, b) => (parseFloat(b.points) || 0) - (parseFloat(a.points) || 0));
+
+        if (leaderboardData.length === 0) {
+            list.innerHTML = `<div class="p-8 text-center text-sm italic" style="color:var(--muted)">No players yet. Be the first!</div>`;
+            return;
         }
 
-        // Render functions
-        function renderAllSections() {
-            renderScheduleAndPredictors();
-            renderActiveAndCompletedPicks();
-            renderPastResults();
-        }
-
-        // --- MODAL ALERT ACTIONS ---
-        window.showProfileModal = function() {
-            const modal = document.getElementById('custom-modal');
-            const content = document.getElementById('modal-content');
-            const actions = document.getElementById('modal-actions');
-            
-            content.innerHTML = `
-                <div class="space-y-4">
-                    <h3 class="text-lg font-black text-center text-white">Update Player Name</h3>
-                    <p class="text-[11px] text-slate-400 text-center">Sync your point balance and compete live on the community scoreboard!</p>
-                    <input type="text" id="name-input" placeholder="Change name..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white" value="${userName === 'Guest' ? '' : userName}">
+        list.innerHTML = leaderboardData.map((user, idx) => {
+            const pts = parseFloat(user.points) || 0;
+            const tc = parseInt(user.totalCorrect) || 0;
+            const tp = parseInt(user.totalPicks) || 0;
+            const streak = parseInt(user.currentStreak) || 0;
+            const isMe = user.name === userName;
+            const medals = ['🥇','🥈','🥉'];
+            return `
+            <div onclick="showUserDetail('${user.name}')" class="grid grid-cols-12 px-4 py-3 items-center cursor-pointer transition-colors hover:opacity-80" style="${isMe ? 'background:rgba(37,99,235,0.08)' : ''}">
+                <div class="col-span-1 font-black text-xs" style="font-family:'Barlow Condensed',sans-serif;color:var(--muted)">${idx < 3 ? medals[idx] : idx + 1}</div>
+                <div class="col-span-7 flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white" style="background:${isMe ? 'var(--accent)' : 'var(--surface2)'}">${(user.name || '?').charAt(0).toUpperCase()}</div>
+                    <div>
+                        <div class="font-bold text-sm ${isMe ? 'text-blue-400' : 'text-white'}">${user.name}</div>
+                        ${streak >= 2 ? `<div class="text-xs" style="color:var(--gold)">🔥 ${streak} streak</div>` : ''}
+                    </div>
                 </div>
-            `;
-            
-            actions.innerHTML = `
-                <button onclick="closeModal()" class="flex-1 py-3 bg-slate-800 rounded-xl font-bold text-xs uppercase tracking-wider text-slate-400">Cancel</button>
-                <button id="modal-confirm-btn" class="flex-1 py-3 bg-blue-600 rounded-xl font-bold text-xs uppercase tracking-wider text-white">Save Changes</button>
-            `;
+                <div class="col-span-2 text-center text-xs font-semibold" style="color:var(--muted)">${tc}/${tp}</div>
+                <div class="col-span-2 text-right font-black text-sm" style="font-family:'Barlow Condensed',sans-serif;color:var(--gold)">${Math.round(pts)}</div>
+            </div>`;
+        }).join('');
+    } catch(e) {
+        list.innerHTML = `<div class="p-8 text-center text-sm" style="color:var(--muted)">Error loading standings.</div>`;
+    }
+}
 
-            document.getElementById('modal-confirm-btn').onclick = async () => {
-                const newName = document.getElementById('name-input').value.trim();
-                if (newName) {
-                    const oldName = userName;
-                    userName = newName;
-                    localStorage.setItem('nba_streak_user', newName);
-                    closeModal();
-                    
-                    // Show live saving layer loader
-                    const syncOverlay = document.getElementById('sync-overlay');
-                    const syncMessage = document.getElementById('sync-message');
-                    if (syncOverlay) {
-                        syncMessage.innerText = "Registering Profile Stats...";
-                        syncOverlay.classList.remove('hidden');
-                    }
+function showUserDetail(name) {
+    const user = leaderboardData.find(u => u.name === name);
+    if (!user) return;
 
-                    // Save state under the same auth user ID
-                    await saveUserProfileToServer();
+    let pHistory = [{ time: Date.now(), val: 0 }];
+    try { pHistory = JSON.parse(user.pointsHistory) || pHistory; } catch(e) {}
+    let pHist = [];
+    try { pHist = JSON.parse(user.pickHistory) || []; } catch(e) {}
 
-                    // Migrate user's old name on any active predictions/votes so the poll results match immediately!
-                    await migrateVotesToNewName(oldName, newName);
+    const modal = document.getElementById('custom-modal');
+    const content = document.getElementById('modal-content');
+    const actions = document.getElementById('modal-actions');
+    const closeIcon = document.getElementById('modal-close-icon');
 
-                    // Re-sync components & hide loader
-                    await fetchLeaderboard();
-                    if (syncOverlay) {
-                        syncOverlay.classList.add('hidden');
-                    }
-                }
-            };
-            modal.classList.remove('hidden');
-        };
+    closeIcon.classList.remove('hidden');
+    actions.classList.add('hidden');
 
-        window.showModalAlert = function(title, text) {
-            const modal = document.getElementById('custom-modal');
-            const content = document.getElementById('modal-content');
-            const actions = document.getElementById('modal-actions');
-            
-            content.innerHTML = `
-                <div class="text-center space-y-3">
-                    <div class="text-4xl">⚡</div>
-                    <h3 class="text-lg font-black text-white">${title}</h3>
-                    <p class="text-xs text-slate-400 leading-relaxed">${text}</p>
+    content.innerHTML = `
+        <div class="space-y-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl font-black text-white" style="background:var(--accent)">${(user.name || '?').charAt(0).toUpperCase()}</div>
+                <div>
+                    <div class="font-black text-xl text-white" style="font-family:'Barlow Condensed',sans-serif">${user.name}</div>
+                    <div class="font-black text-base" style="color:var(--gold)">${Math.round(parseFloat(user.points) || 0)} pts</div>
                 </div>
-            `;
-            actions.innerHTML = `
-                <button onclick="closeModal()" class="w-full py-3 bg-blue-600 rounded-xl font-bold text-xs uppercase tracking-wider text-white">Got it</button>
-            `;
-            modal.classList.remove('hidden');
-        };
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <div class="rounded-xl p-3 text-center" style="background:var(--surface2)">
+                    <div class="font-black text-lg text-white" style="font-family:'Barlow Condensed',sans-serif">${user.totalCorrect || 0}</div>
+                    <div class="text-xs" style="color:var(--muted)">Correct</div>
+                </div>
+                <div class="rounded-xl p-3 text-center" style="background:var(--surface2)">
+                    <div class="font-black text-lg text-white" style="font-family:'Barlow Condensed',sans-serif">${user.totalPicks || 0}</div>
+                    <div class="text-xs" style="color:var(--muted)">Total</div>
+                </div>
+                <div class="rounded-xl p-3 text-center" style="background:var(--surface2)">
+                    <div class="font-black text-lg" style="font-family:'Barlow Condensed',sans-serif;color:var(--gold)">${user.currentStreak || 0}</div>
+                    <div class="text-xs" style="color:var(--muted)">Streak</div>
+                </div>
+            </div>
+            <div>
+                <div class="text-xs font-black uppercase tracking-wider mb-2" style="color:var(--muted)">Recent Picks</div>
+                <div class="space-y-1 max-h-40 overflow-y-auto">
+                    ${pHist.slice(0, 8).map(p => `
+                    <div class="flex justify-between items-center text-xs py-1 border-b" style="border-color:var(--border)">
+                        <span class="${p.result === 'win' ? 'text-green-400' : 'text-red-400'} font-bold">${p.result === 'win' ? '✓' : '✗'} ${p.team}</span>
+                        <span style="color:var(--gold);font-weight:700">${p.pointsEarned >= 0 ? '+' : ''}${p.pointsEarned} pts</span>
+                    </div>`).join('') || `<div class="text-xs italic" style="color:var(--muted)">No history yet</div>`}
+                </div>
+            </div>
+        </div>`;
+    modal.classList.remove('hidden');
+}
 
-        window.closeModal = () => document.getElementById('custom-modal').classList.add('hidden');
+// ─── RESULTS TAB ───────────────────────────────────────────────────
+function renderResults() {
+    const list = document.getElementById('results-list');
+    const results = [
+        { date: 'Friday, May 16', away: 'Cavaliers', home: 'Celtics', score: [94, 115] },
+        { date: 'Friday, May 16', away: 'Thunder', home: 'Timberwolves', score: [112, 109] },
+        { date: 'Thursday, May 15', away: 'Knicks', home: 'Pacers', score: [105, 98] },
+        { date: 'Wednesday, May 14', away: 'Warriors', home: 'Rockets', score: [101, 113] },
+        { date: 'Tuesday, May 13', away: 'Celtics', home: 'Cavaliers', score: [97, 108] }
+    ];
 
-        // Navigation tab click switching
-        window.switchTab = function(id) {
-            document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
-            document.getElementById('section-' + id).classList.remove('hidden');
-            
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + id).classList.add('active');
+    const groups = {};
+    results.forEach(r => {
+        if (!groups[r.date]) groups[r.date] = [];
+        groups[r.date].push(r);
+    });
 
-            if (id === 'leaderboard') fetchLeaderboard();
-            if (id === 'mypicks') renderActiveAndCompletedPicks();
-            if (id === 'past') renderPastResults();
-        };
+    let html = '';
+    for (const date in groups) {
+        html += `<div class="space-y-2">
+            <div class="text-xs font-black uppercase tracking-widest py-1 border-b" style="color:var(--muted);border-color:var(--border)">${date}</div>`;
+        groups[date].forEach(r => {
+            const awayWon = r.score[0] > r.score[1];
+            const homeWon = !awayWon;
+            const awayTc = teamClass(r.away);
+            const homeTc = teamClass(r.home);
+            html += `
+            <div class="rounded-xl p-4 flex justify-between items-center" style="background:var(--surface);border:1px solid var(--border)">
+                <div class="font-black text-base" style="font-family:'Barlow Condensed',sans-serif">
+                    <span class="${awayWon ? `tc-${awayTc} text-white` : ''}" style="${!awayWon ? 'color:var(--muted)' : ''}">${r.away}</span>
+                    <span style="color:var(--border-bright)"> @ </span>
+                    <span class="${homeWon ? `tc-${homeTc} text-white` : ''}" style="${!homeWon ? 'color:var(--muted)' : ''}">${r.home}</span>
+                </div>
+                <div class="font-black text-xl" style="font-family:'Barlow Condensed',sans-serif">
+                    <span class="${awayWon ? 'text-white' : ''}" style="${!awayWon ? 'color:var(--muted)' : ''}">${r.score[0]}</span>
+                    <span style="color:var(--border-bright)">–</span>
+                    <span class="${homeWon ? 'text-white' : ''}" style="${!homeWon ? 'color:var(--muted)' : ''}">${r.score[1]}</span>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+    list.innerHTML = html;
+}
 
-        // --- ONLOAD INITIALIZATION PROCESS ---
-        const init = async () => {
-            const dateDisplay = document.getElementById('current-date-display');
-            if (dateDisplay) {
-                dateDisplay.innerText = new Date().toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-            }
-            
-            await initAuthentication();
-            await fetchESPNGameData();
-        };
+// ─── UI HELPERS ────────────────────────────────────────────────────
+function updatePointsUI() {
+    document.getElementById('user-points-display').textContent = userPoints;
+    if (document.getElementById('section-picks').classList.contains('active')) {
+        renderPicks();
+    }
+}
 
-        window.onload = init;
-    </script>
+function switchTab(id) {
+    document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+    document.getElementById('section-' + id).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    if (id === 'picks') { renderPicks(); }
+    if (id === 'leaderboard') { fetchLeaderboard(); }
+    if (id === 'results') { renderResults(); }
+}
+window.switchTab = switchTab;
+
+// ─── PROFILE MODAL ─────────────────────────────────────────────────
+window.showProfileModal = function() {
+    const modal = document.getElementById('custom-modal');
+    const content = document.getElementById('modal-content');
+    const actions = document.getElementById('modal-actions');
+    const closeIcon = document.getElementById('modal-close-icon');
+    closeIcon.classList.add('hidden');
+    actions.classList.remove('hidden');
+    actions.innerHTML = `
+        <button onclick="closeModal()" class="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-widest" style="background:var(--surface2);color:var(--muted)">Cancel</button>
+        <button id="modal-confirm-btn" class="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-widest text-white" style="background:var(--accent)">Sign In</button>`;
+    content.innerHTML = `
+        <h3 class="font-black text-xl text-white mb-1 text-center" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.03em">JOIN THE PICKS</h3>
+        <p class="text-xs text-center mb-4" style="color:var(--muted)">Enter a username to track picks & compete</p>
+        <input type="text" id="name-input" placeholder="Your username" maxlength="20"
+            class="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white outline-none"
+            style="background:var(--surface2);border:1px solid var(--border-bright)"
+            value="${userName === 'Guest' ? '' : userName}">`;
+    document.getElementById('modal-confirm-btn').onclick = async () => {
+        const n = document.getElementById('name-input').value.trim();
+        if (!n) return;
+        closeModal();
+        showOverlay('Loading profile...');
+        userName = n;
+        localStorage.setItem('theo_user_name', n);
+        await loadProfile(n);
+        updateUserNameUI();
+        updatePointsUI();
+        renderSchedule();
+        renderPicks();
+        hideOverlay();
+        document.getElementById('delete-profile-btn').classList.remove('hidden');
+    };
+    modal.classList.remove('hidden');
+    setTimeout(() => document.getElementById('name-input')?.focus(), 50);
+};
+
+window.showDeleteModal = function() {
+    const modal = document.getElementById('custom-modal');
+    const content = document.getElementById('modal-content');
+    const actions = document.getElementById('modal-actions');
+    const closeIcon = document.getElementById('modal-close-icon');
+    closeIcon.classList.add('hidden');
+    actions.classList.remove('hidden');
+    actions.innerHTML = `
+        <button onclick="closeModal()" class="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-widest" style="background:var(--surface2);color:white">Cancel</button>
+        <button id="modal-confirm-btn" class="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-widest text-white" style="background:var(--red)">Delete</button>`;
+    content.innerHTML = `
+        <h3 class="font-black text-xl text-red-400 text-center mb-2" style="font-family:'Barlow Condensed',sans-serif">DELETE PROFILE?</h3>
+        <p class="text-xs text-center" style="color:var(--muted)">This will erase "${userName}" and all pick history.</p>`;
+    document.getElementById('modal-confirm-btn').onclick = async () => {
+        closeModal();
+        await dbDelete(`/users/${encodeURIComponent(userName)}`);
+        localStorage.removeItem('theo_user_name');
+        location.reload();
+    };
+    modal.classList.remove('hidden');
+};
+
+window.closeModal = () => {
+    document.getElementById('custom-modal').classList.add('hidden');
+};
+
+function updateUserNameUI() {
+    document.getElementById('user-name-display').textContent = userName;
+    const del = document.getElementById('delete-profile-btn');
+    if (userName !== 'Guest') del.classList.remove('hidden');
+    else del.classList.add('hidden');
+}
+
+function showOverlay(m) {
+    document.getElementById('sync-overlay').classList.remove('hidden');
+    document.getElementById('sync-message').textContent = m;
+}
+function hideOverlay() {
+    document.getElementById('sync-overlay').classList.add('hidden');
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────
+async function init() {
+    document.getElementById('header-date').textContent = formatGameDate(new Date(), true) + ' · NBA PLAYOFFS';
+    updateUserNameUI();
+
+    if (userName !== 'Guest') {
+        showOverlay('Syncing profile...');
+        await loadProfile(userName);
+        hideOverlay();
+    } else {
+        resetUserState();
+    }
+
+    updatePointsUI();
+    await fetchGameData();
+}
+
+window.onload = init;
+</script>
 </body>
 </html>
