@@ -728,6 +728,34 @@ function renderSchedule() {
     }
 }
 
+// Parse "7:30 PM PT" + a dateObj to get an absolute JS timestamp
+function gameStartMs(g) {
+    try {
+        // g.dateObj is already a Date from ESPN fetch; use its calendar date
+        const base = g.dateObj ? new Date(g.dateObj) : new Date();
+        const timeStr = g.time || '';
+        // Strip trailing " PT" and parse h:mm AM/PM
+        const clean = timeStr.replace(/\s*PT\s*$/i, '').trim();
+        const match = clean.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+        if (!match) return null;
+        let hours = parseInt(match[1]);
+        const mins = parseInt(match[2]);
+        const ampm = match[3].toUpperCase();
+        if (ampm === 'PM' && hours !== 12) hours += 12;
+        if (ampm === 'AM' && hours === 12) hours = 0;
+        // Build a PT-equivalent date: convert PT offset to UTC
+        // PT is UTC-7 (PDT) or UTC-8 (PST). Use -7 as playoffs are in summer.
+        const utcMs = Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), hours + 7, mins, 0);
+        return utcMs;
+    } catch(e) { return null; }
+}
+
+function isGameLocked(g) {
+    const startMs = gameStartMs(g);
+    if (startMs === null) return false;
+    return Date.now() >= startMs + 15 * 60 * 1000; // 15 min after tipoff
+}
+
 function gameCard(g) {
     const { homeCount, awayCount, homeVoters, awayVoters } = getVoteCounts(g.id);
     const total = homeCount + awayCount;
@@ -735,7 +763,6 @@ function gameCard(g) {
     const awayPct = total > 0 ? Math.round((awayCount / total) * 100) : 50;
 
     const userPick = getUserPickForGame(g.id);
-    const voteSide = getUserVoteSide(g.id);
     const homeML = g.odds?.homeML;
     const awayML = g.odds?.awayML;
     const hasOdds = homeML !== null && awayML !== null;
@@ -747,11 +774,10 @@ function gameCard(g) {
     const awayTc = teamClass(g.away);
     const homeTc = teamClass(g.home);
 
-    // Wager panel state
-    const wagerOpen = (userPick && !hasWager) ? false : false; // only open when explicitly triggered
+    const locked = isGameLocked(g);
 
     return `
-    <div class="rounded-2xl p-4 relative" style="background:var(--surface);border:1px solid var(--border)">
+    <div class="rounded-2xl p-4 relative" style="background:var(--surface);border:1px solid ${locked ? 'rgba(255,255,255,0.04)' : 'var(--border)'}${locked ? ';opacity:0.75' : ''}">
         <!-- Info button -->
         <button class="info-btn" onclick="showVoters(${g.id}, '${g.away}', '${g.home}')" title="See who picked what">i</button>
 
@@ -763,7 +789,10 @@ function gameCard(g) {
                     <span style="color:var(--muted);font-size:14px"> @ </span>
                     <span class="tc-${homeTc}">${g.home}</span>
                 </div>
-                <div class="text-xs font-semibold mt-0.5" style="color:var(--muted)">${g.time}</div>
+                <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-xs font-semibold" style="color:var(--muted)">${g.time}</span>
+                    ${locked ? `<span class="text-xs font-black uppercase tracking-wider" style="color:#ef4444;font-family:'Barlow Condensed',sans-serif;font-size:10px">🔒 Locked</span>` : ''}
+                </div>
             </div>
             ${hasOdds ? `
             <div class="text-right text-xs" style="color:var(--muted)">
@@ -775,8 +804,8 @@ function gameCard(g) {
         <!-- Pick buttons -->
         <div class="grid grid-cols-2 gap-2 mb-3">
             <!-- Away -->
-            <button onclick="handlePickClick(${g.id}, 'away', '${g.away}', ${awayML})"
-                class="pick-btn rounded-xl px-3 py-3 text-left transition-all ${awaySelected ? 'selected-away' : ''}"
+            <button ${locked && !awaySelected ? 'disabled' : `onclick="handlePickClick(${g.id}, 'away', '${g.away}', ${awayML})"`}
+                class="pick-btn rounded-xl px-3 py-3 text-left transition-all ${awaySelected ? 'selected-away' : ''}${locked && !awaySelected ? ' opacity-40 cursor-not-allowed' : ''}"
                 style="background:var(--surface2)">
                 <div class="font-black text-sm text-white" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.01em">
                     ${awaySelected ? '✓ ' : ''}${g.away}
@@ -785,8 +814,8 @@ function gameCard(g) {
                 ${awaySelected && hasWager ? `<div class="mt-1"><span class="points-pill" style="background:rgba(245,158,11,0.15);color:var(--gold);border:1px solid rgba(245,158,11,0.3)">+${userPick.wagerPoints} pts wagered</span></div>` : ''}
             </button>
             <!-- Home -->
-            <button onclick="handlePickClick(${g.id}, 'home', '${g.home}', ${homeML})"
-                class="pick-btn rounded-xl px-3 py-3 text-left transition-all ${homeSelected ? 'selected-home' : ''}"
+            <button ${locked && !homeSelected ? 'disabled' : `onclick="handlePickClick(${g.id}, 'home', '${g.home}', ${homeML})"`}
+                class="pick-btn rounded-xl px-3 py-3 text-left transition-all ${homeSelected ? 'selected-home' : ''}${locked && !homeSelected ? ' opacity-40 cursor-not-allowed' : ''}"
                 style="background:var(--surface2)">
                 <div class="font-black text-sm text-white" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.01em">
                     ${homeSelected ? '✓ ' : ''}${g.home}
@@ -809,20 +838,20 @@ function gameCard(g) {
             </div>
         </div>
 
-        <!-- Wager panel -->
-        ${userPick && !hasWager ? `
+        <!-- Wager panel: only shown when pick exists, no wager yet, user has points, and game not locked -->
+        ${userPick && !hasWager && !userPick.skipWager && userPoints > 0 && !locked ? `
         <div class="rounded-xl p-3" style="background:var(--surface2);border:1px solid rgba(245,158,11,0.2)">
             <div class="text-xs font-black uppercase tracking-wider mb-2" style="color:var(--gold);font-family:'Barlow Condensed',sans-serif">Wager Extra Points?</div>
-            <div class="text-xs mb-2" style="color:var(--muted)">You have <strong style="color:white">${userPoints} pts</strong>. Wager to multiply return based on ESPN odds. Tap pick again to skip.</div>
+            <div class="text-xs mb-2" style="color:var(--muted)">You have <strong style="color:white">${userPoints} pts</strong>. Wager to multiply return based on ESPN odds.</div>
             <div class="flex gap-2">
                 <input type="number" id="wager-input-${g.id}" placeholder="0" min="1" max="${userPoints}"
                     class="flex-1 rounded-lg px-3 py-2 text-sm text-white font-bold"
                     style="background:var(--surface);border:1px solid var(--border-bright);outline:none"
                     oninput="updateWagerPreview(${g.id}, ${awaySelected ? awayML : homeML})">
-                <button onclick="confirmWager(${g.id}, ${awaySelected ? awayML : homeML})" 
+                <button onclick="confirmWager(${g.id}, ${awaySelected ? awayML : homeML})"
                     class="px-4 py-2 rounded-lg text-xs font-black uppercase text-white tracking-wider"
                     style="background:var(--gold);color:#000">Wager</button>
-                <button onclick="skipWager(${g.id})" 
+                <button onclick="skipWager(${g.id})"
                     class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider"
                     style="background:var(--surface);border:1px solid var(--border-bright);color:var(--muted)">Skip</button>
             </div>
@@ -830,8 +859,10 @@ function gameCard(g) {
         </div>
         ` : ''}
 
-        <!-- Cancel pick -->
-        ${userPick ? `
+        <!-- Footer row -->
+        ${locked ? `
+        <div class="mt-2 text-xs text-center font-semibold" style="color:var(--muted)">Picks closed · game in progress</div>
+        ` : userPick ? `
         <div class="mt-2 flex justify-between items-center">
             <span class="text-xs font-bold" style="color:var(--green)">✓ Picked ${userPick.team}</span>
             <button onclick="cancelPick(${g.id})" class="text-xs font-semibold hover:opacity-80" style="color:var(--muted)">Remove pick</button>
@@ -886,6 +917,8 @@ window.skipWager = async function(gameId) {
 // Clicking different team: switches pick
 window.handlePickClick = async function(gameId, side, team, ml) {
     if (userName === 'Guest') { showProfileModal(); return; }
+    const game = liveScheduleData.find(g => g.id === gameId);
+    if (game && isGameLocked(game)) return;
     const existing = getUserPickForGame(gameId);
 
     if (existing) {
@@ -1284,7 +1317,7 @@ function hideOverlay() {
 
 // ─── INIT ──────────────────────────────────────────────────────────
 async function init() {
-    document.getElementById('header-date').textContent = formatGameDate(new Date(), true) + ' · NBA Pick 'Em';
+    document.getElementById('header-date').textContent = formatGameDate(new Date(), true) + ' · NBA PLAYOFFS';
     updateUserNameUI();
 
     if (userName !== 'Guest') {
