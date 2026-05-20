@@ -153,7 +153,7 @@
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
             </div>
             <div>
-                <div class="text-white font-black text-lg tracking-tight" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:-0.01em">THEO'S <span style="color:var(--accent2)">PICKS</span></div>
+                <div class="text-white text-lg" style="font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:0.02em">THEO'S <span style="color:var(--accent2)">PICKS</span></div>
                 <div class="text-xs font-medium" style="color:var(--muted);font-size:9px;letter-spacing:0.08em;text-transform:uppercase" id="header-date">NBA Playoffs 2025</div>
             </div>
         </div>
@@ -1200,16 +1200,16 @@ function renderResults() {
             const awayTc = teamClass(r.away);
             const homeTc = teamClass(r.home);
             html += `
-            <div class="rounded-xl p-4 flex justify-between items-center" style="background:var(--surface);border:1px solid var(--border)">
-                <div class="font-black text-base" style="font-family:'Barlow Condensed',sans-serif">
-                    <span class="${awayWon ? `tc-${awayTc} text-white` : ''}" style="${!awayWon ? 'color:var(--muted)' : ''}">${r.away}</span>
-                    <span style="color:var(--border-bright)"> @ </span>
-                    <span class="${homeWon ? `tc-${homeTc} text-white` : ''}" style="${!homeWon ? 'color:var(--muted)' : ''}">${r.home}</span>
+            <div class="rounded-2xl p-4 flex justify-between items-center" style="background:var(--surface);border:1px solid var(--border)">
+                <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:600;letter-spacing:0.01em">
+                    <span class="${awayWon ? `tc-${awayTc}` : ''}" style="${!awayWon ? 'color:var(--muted)' : ''}">${r.away}</span>
+                    <span style="color:var(--border-bright);font-weight:400"> @ </span>
+                    <span class="${homeWon ? `tc-${homeTc}` : ''}" style="${!homeWon ? 'color:var(--muted)' : ''}">${r.home}</span>
                 </div>
-                <div class="font-black text-xl" style="font-family:'Barlow Condensed',sans-serif">
-                    <span class="${awayWon ? 'text-white' : ''}" style="${!awayWon ? 'color:var(--muted)' : ''}">${r.score[0]}</span>
-                    <span style="color:var(--border-bright)">–</span>
-                    <span class="${homeWon ? 'text-white' : ''}" style="${!homeWon ? 'color:var(--muted)' : ''}">${r.score[1]}</span>
+                <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:600;letter-spacing:0.02em">
+                    <span style="${!awayWon ? 'color:var(--muted)' : 'color:white'}">${r.score[0]}</span>
+                    <span style="color:var(--border-bright);font-weight:400;font-size:16px"> – </span>
+                    <span style="${!homeWon ? 'color:var(--muted)' : 'color:white'}">${r.score[1]}</span>
                 </div>
             </div>`;
         });
